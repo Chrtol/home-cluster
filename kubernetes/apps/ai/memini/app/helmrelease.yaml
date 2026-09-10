@@ -1,0 +1,144 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: memini
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: memini
+  maxHistory: 2
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    controllers:
+      main:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          main:
+            env:
+              # --- storage -------------------------------------------------
+              # SQLite, not Postgres. Memini's Postgres store creates the
+              # `vchord` extension and uses vchordrq indexes, which need a
+              # shared_preload_libraries entry; cluster-v17 pins the stock
+              # CNPG image with that setting commented out, so Postgres would
+              # need a custom image built for a trial.
+              MEMINI_BACKEND: sqlite
+              MEMINI_SQLITE_PATH: /data/memini.db
+
+              # --- embeddings ----------------------------------------------
+              # Everything model-shaped goes through LiteLLM so no consumer
+              # encodes which vendor answered.
+              MEMINI_EMBED_BASE_URL: http://litellm.ai.svc.cluster.local:4000/v1
+              MEMINI_EMBED_MODEL: qwen3-embedding
+              # Qwen3-Embedding-0.6B. This MUST match what the endpoint really
+              # returns: a mismatch does not error, it writes vectors that are
+              # silently unusable and can only be fixed by re-embedding.
+              MEMINI_EMBED_DIMS: "1024"
+              # Qwen3-Embedding is trained to be queried with an instruction
+              # prefix; without it recall is measurably worse for the same
+              # stored vectors. Documents are embedded bare, queries prefixed.
+              MEMINI_EMBED_QUERY_PREFIX: "Instruct: Given a user message, retrieve relevant past memories\nQuery: "
+              # Bounds what is FINDABLE, not what is stored: text past this is
+              # kept whole but its vector only covers the prefix. Held below
+              # llama-embed's 4096-token context, since ~8000 characters is
+              # roughly 2000-2600 tokens.
+              MEMINI_EMBED_MAX_ITEM_CHARS: "8000"
+              MEMINI_EMBED_MAX_CONCURRENCY: "2"
+
+              # --- consolidation and reranking, both deliberately off -------
+              # MEMINI_LLM_BASE_URL is left unset, which runs the server
+              # headless: no distillation model. Turn it on only after the
+              # basic round trip is proven, and keep any Ollama-backed
+              # generation inside the manual shift policy -- retrieval has to
+              # stay usable while the Windows desktop is asleep.
+              # MEMINI_RERANK is likewise unset; measure hybrid retrieval
+              # before adding a second model to the path.
+
+              # --- decay ----------------------------------------------------
+              # Demotion is ON by default at 168h and is the trap in this
+              # chart: a durable memory that was never recalled, is not marked
+              # important and is uncorroborated drops back to episodic after a
+              # week. For project knowledge -- which is written once, read
+              # rarely, and must survive -- that is backwards. Off for the
+              # trial. Revisit with real recall data rather than guessing a
+              # number.
+              MEMINI_DEMOTE_AFTER: "0"
+              MEMINI_SWEEP_INTERVAL: 1h
+
+              # --- access ---------------------------------------------------
+              MEMINI_DEFAULT_NAMESPACE: home-cluster
+              # Needs BOTH this and persistence.api-keys.enabled below. Either
+              # one alone fails silently: the mount just vanishes from the pod
+              # and the server boots with only the admin token.
+              MEMINI_API_KEYS_FILE: /etc/memini/api-keys.yaml
+              MEMINI_UI_ENABLED: "true"
+              MEMINI_LOG_LEVEL: info
+              MEMINI_LOG_FORMAT: json
+            envFrom:
+              - secretRef:
+                  name: memini-secret
+            resources:
+              # ESTIMATES -- replace from Goldilocks once this has held a real
+              # corpus. No CPU limit (plan section 6).
+              requests:
+                cpu: 25m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+    persistence:
+      data:
+        existingClaim: memini
+      # The chart ships this block with `enabled: false`, and Helm merges its
+      # defaults UNDERNEATH these values -- so omitting the flag here leaves it
+      # false and the keys file silently disappears.
+      api-keys:
+        enabled: true
+        name: memini-api-keys
+    route:
+      # API + MCP, on the external gateway. This is Christian's call, made
+      # ahead of WS3's client matrix: vendor-hosted connectors are fetched by
+      # the vendor's infrastructure, not by the phone, so a private endpoint is
+      # unreachable to them no matter what VPN the device runs.
+      #
+      # The bearer token is therefore the ONLY thing between the public
+      # internet and the memory store. MEMINI_API_KEY and the named keys are
+      # not optional here.
+      main:
+        enabled: true
+        annotations:
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+        hostnames: ["memini.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: external
+            namespace: network
+            sectionName: https
+      # Admin SPA, internal only. A signed-in token is same-origin-readable, so
+      # the UI does not belong on the same origin as the public API -- which is
+      # also why it needs its own hostname rather than a path on the first: the
+      # two gateways are different addresses and there is no split DNS here.
+      ui:
+        enabled: true
+        hostnames: ["memini-ui.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: internal
+            namespace: network
+            sectionName: https
+    serviceMonitor:
+      main:
+        enabled: true
+    grafanaDashboards:
+      # The ConfigMap carries grafana_dashboard: "1", which our sidecar matches
+      # across all namespaces, so the dashboard loads. It sets the folder via
+      # `grafana_dashboard_folder` while our sidecar reads `grafana_folder`, so
+      # expect it in the default folder rather than one named below.
+      enabled: true
+      folder: memini

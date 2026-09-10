@@ -1,0 +1,40 @@
+# LiteLLM proxy configuration.
+#
+# This is the vendor-agnostic layer the plan requires: one OpenAI-compatible
+# URL in front of every model, so a consumer never encodes which vendor
+# answered. Adding a hosted model here is a new model_list entry plus its key
+# in the litellm 1Password item -- no consumer changes.
+#
+# Running WITHOUT a database, so there are no virtual keys: every caller
+# presents the master key. That is acceptable while the only consumers are
+# in-cluster and Memini does its own per-client scoping through api-keys.yaml.
+# Per-consumer keys need the litellm-operator and a Postgres database.
+model_list:
+  # In-cluster CPU embedder. Chosen over a hosted embeddings API so recall keeps
+  # working while the Windows desktop is asleep, and so the trial makes no paid
+  # model API calls.
+  - model_name: qwen3-embedding
+    litellm_params:
+      # openai/ prefix selects the OpenAI-compatible client; the part after it
+      # is the model name sent upstream, which must match llama-server --alias.
+      model: openai/qwen3-embedding
+      api_base: http://llama-embed.ai.svc.cluster.local:8080/v1
+      # llama-server is unauthenticated and only reachable in-cluster, but the
+      # OpenAI client refuses to construct without something here.
+      api_key: not-used
+    model_info:
+      mode: embedding
+      # Qwen3-Embedding-0.6B. Consumers must agree with this exactly: a wrong
+      # dimension does not error, it writes unusable vectors.
+      output_vector_size: 1024
+
+litellm_settings:
+  # a cold llama.cpp embedder can take tens of seconds on its first request
+  request_timeout: 600
+  num_retries: 2
+  drop_params: true
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  # no database, so nothing to store models in
+  store_model_in_db: false

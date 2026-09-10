@@ -1,0 +1,40 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app memini
+  namespace: &namespace ai
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  components:
+    - ../../../../components/volsync
+  dependsOn:
+    # LiteLLM must exist before Memini writes anything: a memory stored while
+    # the embedder is unreachable is kept but vectorless, so it is findable by
+    # text and invisible to semantic recall until a backfill repairs it.
+    - name: litellm
+      namespace: ai
+    # supplies the nas-backup claim the VolSync mover mounts in this namespace
+    - name: nas
+      namespace: ai
+  interval: 1h
+  path: "./kubernetes/apps/ai/memini/app"
+  postBuild:
+    substitute:
+      APP: *app
+      # the PVC this app declares itself, not a chart-generated name
+      VOLSYNC_PVC: *app
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 10m

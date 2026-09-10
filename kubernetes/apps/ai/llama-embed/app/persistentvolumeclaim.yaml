@@ -1,0 +1,17 @@
+---
+# Model cache, not data: it holds one downloaded GGUF and can be rebuilt by
+# deleting the pod. Declared here rather than through the chart's `persistence`
+# block because bjw-s common only appends the volume identifier to the PVC name
+# once a second volume of the same kind is enabled -- adding one later would
+# rename this claim and silently provision an empty one, re-downloading 640 MB.
+# No VolSync: nothing here is worth backing up.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: llama-embed-models
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: csi-rbd-sc
+  resources:
+    requests:
+      storage: 2Gi

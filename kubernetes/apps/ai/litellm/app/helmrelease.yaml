@@ -1,0 +1,127 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: litellm
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  maxHistory: 2
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    controllers:
+      litellm:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/berriai/litellm
+              # the non-database image: the -database variant runs prisma
+              # migrations at startup and needs Postgres, which this
+              # DB-less deployment deliberately does not have
+              tag: v1.100.1@sha256:a3715fa7ad8387941ab697259bd2881d68931657247a41984f90fae6d11c62bf
+            # image CMD is just "--port 4000"; the entrypoint execs `litellm "$@"`
+            args:
+              - --port
+              - "4000"
+              - --config
+              - /etc/litellm/config.yaml
+            env:
+              # readOnlyRootFilesystem below turns every __pycache__ write into
+              # a failed import attempt; the same guard ai-orchestrator uses.
+              PYTHONDONTWRITEBYTECODE: "1"
+              # the image runs as root by default and we do not, so give HOME a
+              # writable path rather than letting libraries pick /root
+              HOME: /tmp
+              LITELLM_MODE: PRODUCTION
+              LITELLM_LOG: INFO
+            envFrom:
+              - secretRef:
+                  name: litellm-secret
+            probes:
+              # /health requires the master key; the liveliness and readiness
+              # endpoints do not, so probes need no credential.
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health/liveliness
+                    port: 4000
+                  initialDelaySeconds: 0
+                  periodSeconds: 30
+                  failureThreshold: 5
+              readiness: *probe
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health/readiness
+                    port: 4000
+                  periodSeconds: 5
+                  failureThreshold: 60
+            securityContext:
+              allowPrivilegeEscalation: false
+              # If this ever crash-loops on a write, check here first: the
+              # entrypoint is a bare `exec litellm`, so nothing should touch the
+              # image filesystem, but a new release could change that.
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              # ESTIMATES. LiteLLM is a Python async proxy; replace from
+              # Goldilocks once it has served real traffic. No CPU limit.
+              requests:
+                cpu: 50m
+                memory: 512Mi
+              limits:
+                memory: 2Gi
+        pod:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+    service:
+      app:
+        controller: litellm
+        ports:
+          http:
+            port: 4000
+    route:
+      # Internal only. The master key is the sole credential, so this must not
+      # reach the public internet -- and nothing off-LAN needs it: Memini is the
+      # only consumer and it calls the ClusterIP.
+      internal:
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 4000
+    persistence:
+      config:
+        type: configMap
+        name: litellm-config
+        globalMounts:
+          - path: /etc/litellm/config.yaml
+            subPath: config.yaml
+            readOnly: true
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp

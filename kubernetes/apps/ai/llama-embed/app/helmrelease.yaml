@@ -1,0 +1,147 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: llama-embed
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  maxHistory: 2
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    controllers:
+      llama-embed:
+        # RWO volume with one replica: a rolling update would leave the new pod
+        # unable to attach while the old one still holds the claim.
+        strategy: Recreate
+        initContainers:
+          # llama-server can fetch from Hugging Face itself, but that resolves
+          # the tag at every start and needs a writable cache it manages. An
+          # explicit URL keeps the exact artifact visible in Git, and the
+          # .part-then-rename makes a half-finished download impossible to
+          # mistake for a complete one -- `test -s` on the final name would
+          # otherwise accept a truncated file forever.
+          #
+          # Written without a single shell variable on purpose. This file goes
+          # through Flux postBuild envsubst before it reaches the cluster, and
+          # an undefined $name there expands to the empty string rather than
+          # failing -- a `mv "$model.part" "$model"` would arrive as `mv`.
+          download-model:
+            image:
+              repository: docker.io/curlimages/curl
+              tag: 8.22.0
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                set -eu
+                if [ -s /models/Qwen3-Embedding-0.6B-Q8_0.gguf ]; then
+                  echo "model already present, skipping download"
+                  exit 0
+                fi
+                curl -fL --retry 5 --retry-delay 5 -C - \
+                  -o /models/Qwen3-Embedding-0.6B-Q8_0.gguf.part \
+                  https://huggingface.co/Qwen/Qwen3-Embedding-0.6B-GGUF/resolve/main/Qwen3-Embedding-0.6B-Q8_0.gguf
+                mv /models/Qwen3-Embedding-0.6B-Q8_0.gguf.part /models/Qwen3-Embedding-0.6B-Q8_0.gguf
+            securityContext: &securityContext
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+        containers:
+          app:
+            image:
+              repository: ghcr.io/ggml-org/llama.cpp
+              tag: server@sha256:9116e6ed0f288247a9daaa610a3a30c061af2b1d6ee8c9acc0d402b65ec87c29
+            args:
+              - --model
+              - /models/Qwen3-Embedding-0.6B-Q8_0.gguf
+              # the name LiteLLM forwards as the model; keep it in step with
+              # litellm's config.yaml and memini's MEMINI_EMBED_MODEL
+              - --alias
+              - qwen3-embedding
+              - --host
+              - 0.0.0.0
+              - --port
+              - "8080"
+              - --embeddings
+              # Qwen3-Embedding is a causal model that encodes the sequence into
+              # its FINAL token. Mean pooling (llama.cpp's default for embedding
+              # models) silently produces vectors that are the wrong shape of
+              # wrong: valid floats, plausible cosine scores, poor recall.
+              - --pooling
+              - last
+              # a single sequence must fit in one micro-batch, so ubatch is held
+              # equal to ctx rather than left at its 512 default
+              - --ctx-size
+              - "4096"
+              - --batch-size
+              - "4096"
+              - --ubatch-size
+              - "4096"
+              - --threads
+              - "4"
+            probes:
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: 8080
+                  initialDelaySeconds: 0
+                  periodSeconds: 30
+                  failureThreshold: 5
+              readiness: *probe
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: 8080
+                  periodSeconds: 5
+                  failureThreshold: 60
+            securityContext: *securityContext
+            resources:
+              # ESTIMATES, not measurements -- ~640Mi of weights plus KV cache
+              # and compute buffers sized by ctx/ubatch. Replace both from
+              # Goldilocks once this has served real traffic. No CPU limit
+              # (plan section 6): throttling an embedder just makes recall slow.
+              requests:
+                cpu: 100m
+                memory: 1500Mi
+              limits:
+                memory: 3Gi
+        pod:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        controller: llama-embed
+        ports:
+          http:
+            port: 8080
+    persistence:
+      models:
+        existingClaim: llama-embed-models
+        globalMounts:
+          - path: /models

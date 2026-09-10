@@ -1,0 +1,18 @@
+---
+# The memory store. Declared here rather than through the chart's
+# `persistence.data` block for two reasons: bjw-s common derives PVC names from
+# how many volumes of that kind are enabled, so adding a second one later would
+# rename this claim and silently provision an empty store; and a claim this app
+# owns is not removed by a chart change or a release rename.
+#
+# VolSync backs it up nightly -- see VOLSYNC_PVC in ks.yaml.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: memini
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: csi-rbd-sc
+  resources:
+    requests:
+      storage: 5Gi

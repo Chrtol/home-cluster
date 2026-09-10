@@ -1,0 +1,21 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/source.toolkit.fluxcd.io/ocirepository_v1.json
+#
+# Deliberately NOT in kubernetes/flux/meta/oci/ with every other chart source.
+# cluster-meta reconciles that directory with `wait: true` and cluster-apps
+# dependsOn it, so a source there that cannot become Ready stops every app in
+# the cluster from reconciling. Every existing entry is ghcr.io; this chart
+# lives on one person's self-hosted registry. Scoped to this namespace, an
+# outage there degrades one HelmRelease instead of the whole cluster.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: memini
+spec:
+  interval: 15m
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    tag: v0.7.24
+  url: oci://registry.erwanleboucher.dev/eleboucher/charts/memini
