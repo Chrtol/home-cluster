@@ -1,4 +1,3 @@
----
 # yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -40,7 +39,7 @@ spec:
             # Tag only, no digest: app-template's image map has no digest field.
             image: &image
               repository: ghcr.io/chrtol/ai-orchestrator
-              tag: main-20260910223759 # {"$imagepolicy": "flux-system:ai-orchestrator:tag"}
+              tag: main-20260910231657 # {"$imagepolicy": "flux-system:ai-orchestrator:tag"}
             env: &env
               # readOnlyRootFilesystem below means every import would otherwise
               # attempt a __pycache__ write and silently fail.
@@ -56,7 +55,7 @@ spec:
               # Phase 2's coding Job is the dummy worker, which ships in this
               # same image. Spelled out rather than aliased to `&image`: that
               # anchor is a repository/tag map, and this needs one string.
-              JOB_IMAGE: ghcr.io/chrtol/ai-orchestrator:main-20260910223759@sha256:3af9bf3cdcb8dd105f297fa447c9dfb44f9f4f9d9395d8d0727343e58a6e4a41 # {"$imagepolicy": "flux-system:ai-orchestrator"}
+              JOB_IMAGE: ghcr.io/chrtol/ai-orchestrator:main-20260910231657@sha256:08d66dcc4acb69ad8579baaea49d3eb8de592850c98f790351e443bf73727fca # {"$imagepolicy": "flux-system:ai-orchestrator"}
               RECONCILE_INTERVAL_SECONDS: "300"
               # Plan §13 Phase 2's "deliberately fails when requested". 0 is
               # off. Set a step (1..STEPS, the dummy worker runs 6) to make the
@@ -73,7 +72,7 @@ spec:
             securityContext: &securityContext
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
-              capabilities: { drop: ["ALL"] }
+              capabilities: {drop: ["ALL"]}
             resources:
               # Measured 2026-09-09: both controllers idle at ~103Mi, flat over
               # every pod generation, so the 64Mi request was below steady state
@@ -107,7 +106,7 @@ spec:
                 enabled: true
                 custom: true
                 spec:
-                  httpGet: { path: /healthz, port: 8080 }
+                  httpGet: {path: /healthz, port: 8080}
                   initialDelaySeconds: 10
                   periodSeconds: 30
               readiness:
@@ -174,4 +173,4 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
-        seccompProfile: { type: RuntimeDefault }
+        seccompProfile: {type: RuntimeDefault}
