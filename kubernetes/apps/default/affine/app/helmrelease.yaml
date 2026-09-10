@@ -38,7 +38,7 @@ spec:
             dependsOn: init-db
             image:
               repository: ghcr.io/toeverything/affine
-              tag: stable@sha256:d9d145f9f47b862d1fa96e2a887052b5762846237f75fbb077be990ef646e05c
+              tag: stable@sha256:b649f5ce2384ffdf13c23bccf81d759e15973d59d0b0058af65d895a84373099
             command: ["/bin/sh", "-c"]
             args:
               - |
@@ -56,7 +56,7 @@ spec:
           app:
             image:
               repository: ghcr.io/toeverything/affine
-              tag: stable@sha256:d9d145f9f47b862d1fa96e2a887052b5762846237f75fbb077be990ef646e05c
+              tag: stable@sha256:b649f5ce2384ffdf13c23bccf81d759e15973d59d0b0058af65d895a84373099
             env:
               TZ: ${SECRET_TIMEZONE}
             envFrom: *envFrom
