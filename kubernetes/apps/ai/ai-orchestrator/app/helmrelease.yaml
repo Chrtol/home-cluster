@@ -101,14 +101,22 @@ spec:
             envFrom: *envFrom
             securityContext: *securityContext
             probes:
-              liveness: &probe
+              # Liveness is shallow; readiness pings Temporal. Sharing one
+              # probe meant readiness carried no information.
+              liveness:
                 enabled: true
                 custom: true
                 spec:
                   httpGet: { path: /healthz, port: 8080 }
                   initialDelaySeconds: 10
                   periodSeconds: 30
-              readiness: *probe
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: { path: /readyz, port: 8080 }
+                  initialDelaySeconds: 10
+                  periodSeconds: 30
             resources:
               # Measured 2026-09-09: both controllers idle at ~103Mi, flat over
               # every pod generation, so the 64Mi request was below steady state
