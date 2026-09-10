@@ -36,6 +36,17 @@ class Settings:
     # Image the coding Job runs. Phase 2 points this at the orchestrator's own
     # image, whose dummy worker stands in for OpenCode until Phase 4.
     job_image: str
+    # Phase 2 test affordance (plan §13): make the dummy worker fail at a chosen
+    # step so the repair path and the Blocked transition can be exercised for
+    # real. Settings-level on purpose — a handoff field would let untrusted board
+    # text steer execution. 0 disables it.
+    job_fail_at_step: int
+    # Blast radius for the knob above. Empty means every attempt fails, which is
+    # almost never what an operator wants on a board carrying real cards; naming
+    # the one card under test keeps the rest of the board working. The operator
+    # supplies this id from trusted config, so it is not the card describing
+    # itself.
+    job_fail_task_id: str
     reconcile_interval_seconds: int
 
     # --- dispatcher ---
@@ -62,6 +73,8 @@ class Settings:
             workspace_storage_class=os.environ.get("WORKSPACE_STORAGE_CLASS", "csi-rbd-sc"),
             workspace_size=os.environ.get("WORKSPACE_SIZE", "5Gi"),
             job_image=os.environ.get("JOB_IMAGE", ""),
+            job_fail_at_step=_int("JOB_FAIL_AT_STEP", 0),
+            job_fail_task_id=os.environ.get("JOB_FAIL_TASK_ID", ""),
             reconcile_interval_seconds=_int("RECONCILE_INTERVAL_SECONDS", 300),
             desktop_id=os.environ.get("DESKTOP_ID", "primary"),
             dispatcher_history_limit=_int("DISPATCHER_HISTORY_LIMIT", 500),
@@ -71,6 +84,21 @@ class Settings:
     @property
     def dispatcher_workflow_id(self) -> str:
         return f"desktop-dispatcher-{self.desktop_id}"
+
+    def fail_step_for(self, task_id: str) -> int:
+        """Which step, if any, this task's dummy Job should fail at.
+
+        Answered here rather than in the workflow so the knob takes effect on the
+        next Job the worker creates. A workflow-side source — a memo, like
+        `job_image` — is fixed when the card's workflow first starts, so arming
+        it would silently do nothing for every card the board already knows
+        about, which is exactly the set an operator would reach for to test with.
+        """
+        if not self.job_fail_at_step:
+            return 0
+        if self.job_fail_task_id and task_id != self.job_fail_task_id:
+            return 0
+        return self.job_fail_at_step
 
 
 def task_workflow_id(card_id: str) -> str:

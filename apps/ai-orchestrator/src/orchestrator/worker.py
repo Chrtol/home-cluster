@@ -121,6 +121,15 @@ async def main() -> None:
     context = await build_context(settings, client)
     activity_context.install(context)
 
+    if settings.job_fail_at_step:
+        # Loud, because an armed knob left in the HelmRelease would make every
+        # future attempt fail for a reason nothing on the board explains.
+        log.warning(
+            "JOB_FAIL_AT_STEP=%d is armed for task %s -- attempts will fail deliberately",
+            settings.job_fail_at_step,
+            settings.job_fail_task_id or "<every card>",
+        )
+
     if settings.kan_self_actor_id:
         log.info("kan origin marker configured: %s", settings.kan_self_actor_id)
     else:

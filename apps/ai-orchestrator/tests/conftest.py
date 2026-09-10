@@ -39,6 +39,10 @@ class FakeWorld:
     # job name -> how many times ensure_job was asked to create it. The Phase 2
     # gate is that this never exceeds one entry per attempt.
     created_jobs: list[str] = field(default_factory=list)
+    # The requests exactly as the *workflow* built them, before any Activity-side
+    # settings override. Asserting on these is how `fail_at_step` is pinned to
+    # trusted config rather than board text.
+    job_requests: list = field(default_factory=list)
     job_states: dict[str, JobState] = field(default_factory=dict)
     stopped_jobs: list[str] = field(default_factory=list)
     workspaces: list[str] = field(default_factory=list)
@@ -101,6 +105,7 @@ def build_activities(world: FakeWorld):
     async def ensure_job(request: k8s_acts.EnsureJobRequest) -> str:
         name = request.attempt.job_name
         world.created_jobs.append(name)
+        world.job_requests.append(request)
         # A real Job runs; the test drives completion by setting job_states.
         world.job_states.setdefault(name, JobState(name=name, exists=True, active=1))
         return name

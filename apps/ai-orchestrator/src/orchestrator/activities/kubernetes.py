@@ -16,7 +16,7 @@ convention:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from kubernetes_asyncio import client, config
 from kubernetes_asyncio.client.exceptions import ApiException
@@ -53,7 +53,9 @@ class EnsureJobRequest:
     # bound survives the orchestrator being down.
     deadline_seconds: int = 3600
     # Phase 2 only: makes the dummy worker fail at a chosen step so the repair
-    # path can be exercised on demand (plan §13 Phase 2).
+    # path can be exercised on demand (plan §13 Phase 2). The workflow always
+    # builds this as 0; the `ensure_job` Activity fills it from settings, so the
+    # value can never originate in board text.
     fail_at_step: int = 0
     steps: int = 6
 
@@ -281,7 +283,28 @@ async def ensure_workspace(attempt: AttemptRef) -> str:
 
 @activity.defn
 async def ensure_job(request: EnsureJobRequest) -> str:
-    return await context.current().jobs.ensure_job(request)
+    """Create the attempt's Job, applying the operator's failure knob if armed.
+
+    The knob is read here, in the Activity, and never in the workflow: workflow
+    code has to stay deterministic, so it could only reach a setting through a
+    memo fixed at workflow-start time, and the whole point of the knob is to
+    change behaviour for a card whose workflow already exists.
+
+    It deliberately cannot be reached from the handoff. `EnsureJobRequest`
+    carries `fail_at_step` so the Job builder has one place to read it from, but
+    nothing on the board can set it — plan §4: board text must not choose what
+    executes.
+    """
+    ctx = context.current()
+    fail_at = ctx.settings.fail_step_for(request.attempt.task_id)
+    if fail_at:
+        log.warning(
+            "JOB_FAIL_AT_STEP armed: %s will fail at step %d",
+            request.attempt.job_name,
+            fail_at,
+        )
+        request = replace(request, fail_at_step=fail_at)
+    return await ctx.jobs.ensure_job(request)
 
 
 @activity.defn

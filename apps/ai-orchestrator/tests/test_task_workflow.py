@@ -509,7 +509,7 @@ class TestStartSignalDelivery:
 
 class TestInfrastructureFailure:
     async def test_a_failing_activity_neither_kills_the_task_nor_strands_the_slot(
-        self, worker, world
+        self, worker, world, env
     ):
         """Regression for a real incident.
 
@@ -526,10 +526,25 @@ class TestInfrastructureFailure:
         dispatcher = await start_dispatcher(worker)
         task = await start_task(worker)
         await open_shift(dispatcher)
-        await task.signal("board_event", approval_event())
 
-        # The slot must come back, and no Job may have been created.
-        assert await wait_for(lambda: _slot_free(dispatcher), timeout=60), "slot was stranded"
+        # Stated rather than described, because it is the whole reason
+        # `_granted_at_least` exists: with nothing yet approved the slot is
+        # *already* free, so "wait until the slot is free" is satisfied before
+        # the code under test has run.
+        assert await _slot_free(dispatcher), "precondition: nothing granted yet"
+
+        await task.signal("board_event", approval_event())
+        assert await wait_for(lambda: _slot_taken(dispatcher), timeout=30), "slot was never granted"
+
+        # `ensure_workspace` now burns eight retries with exponential backoff --
+        # about 91s. Skip it explicitly: the test server only collapses time on
+        # its own while nothing is polling it, and every `wait_for` here is
+        # polling it.
+        await env.sleep(timedelta(minutes=3))
+
+        assert await wait_for(
+            lambda: _granted_at_least(dispatcher, 2), timeout=30
+        ), "slot was stranded: no second attempt was ever granted"
         assert world.created_jobs == []
 
         status = await task.query("status")
@@ -539,7 +554,7 @@ class TestInfrastructureFailure:
         assert status["last_outcome"] == ""
 
     async def test_it_retries_on_the_next_shift_once_infrastructure_recovers(
-        self, worker, world
+        self, worker, world, env
     ):
         """Keeping the approval is only useful if the retry actually happens."""
         world.set_handoff(CARD, sample_handoff(CARD))
@@ -548,15 +563,52 @@ class TestInfrastructureFailure:
         task = await start_task(worker)
         await open_shift(dispatcher)
         await task.signal("board_event", approval_event())
-        assert await wait_for(lambda: _slot_free(dispatcher), timeout=60)
+
+        # The first attempt has to genuinely fail before "it retried" means
+        # anything. Without this the Job asserted at the end is the *first*
+        # attempt succeeding, and the test proves nothing about recovery.
+        assert await wait_for(lambda: _slot_taken(dispatcher), timeout=30), "slot was never granted"
+        await env.sleep(timedelta(minutes=3))
+        assert await wait_for(
+            lambda: _granted_at_least(dispatcher, 2), timeout=30
+        ), "the first attempt never aborted"
+        assert any(m.startswith("infra-") for m, _ in world.comments)
+        assert world.created_jobs == []
 
         # Infrastructure is fixed; the task should get a Job without re-approval.
         world.workspace_broken = False
-        assert await wait_for(lambda: _has_job(world), timeout=60), "did not retry after recovery"
+        await env.sleep(timedelta(minutes=3))
+        assert await wait_for(lambda: _has_job(world), timeout=30), "did not retry after recovery"
+        assert (await task.query("status"))["approved"] is True
 
 
 async def _slot_free(handle: WorkflowHandle) -> bool:
     return (await handle.query("status"))["active"] == ""
+
+
+async def _slot_taken(handle: WorkflowHandle) -> bool:
+    return (await handle.query("status"))["active"] != ""
+
+
+def _granted_at_least(handle: WorkflowHandle, n: int):
+    """The slot came back, asserted on a counter rather than on live state.
+
+    "Wait until the slot is free" looks like the natural way to prove an aborted
+    attempt released it, and it is wrong twice over. It is true at t=0, before
+    anything has been granted -- which is how it passed while the assertions
+    after it inspected a workflow still mid-approval, a ~40% flake in the full
+    suite that never once reproduced when the test ran alone. And it is true
+    only for a blink afterwards, because the task re-enqueues the moment it
+    releases, so polling would usually miss the window it was aiming at.
+
+    `granted_total` only goes up. A second grant cannot happen unless the first
+    attempt released the slot, so it proves the same thing without a race.
+    """
+
+    async def check() -> bool:
+        return int((await handle.query("status"))["granted_total"]) >= n
+
+    return check()
 
 
 class TestDroppedTicket:

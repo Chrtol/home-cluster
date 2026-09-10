@@ -60,6 +60,15 @@ spec:
               # Keep it in step with the tag above.
               JOB_IMAGE: ghcr.io/chrtol/ai-orchestrator:main-20260909213848@sha256:f5e005983891b4d82dd39cf4dc2dc72de6999e51cd7c3c50ac19a5ee4b1f9f81
               RECONCILE_INTERVAL_SECONDS: "300"
+              # Plan §13 Phase 2's "deliberately fails when requested". 0 is
+              # off. Set a step (1..STEPS, the dummy worker runs 6) to make the
+              # attempt exit 17 there, which drives the card to Blocked.
+              #
+              # Set the card id too, or every attempt on every board fails. The
+              # worker logs a warning at startup whenever this is armed, so a
+              # value left behind here is visible rather than mysterious.
+              JOB_FAIL_AT_STEP: "0"
+              JOB_FAIL_TASK_ID: ""
             envFrom: &envFrom
               - secretRef:
                   name: ai-orchestrator-secret

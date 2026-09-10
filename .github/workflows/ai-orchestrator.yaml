@@ -17,7 +17,45 @@ env:
   IMAGE_NAME: ${{ github.repository_owner }}/ai-orchestrator
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          # Match the Dockerfile. A workflow that replays here but not in the
+          # deployed image would be a guard that lies.
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: |
+            apps/ai-orchestrator/requirements.txt
+            apps/ai-orchestrator/requirements-dev.txt
+
+      - name: Install dependencies
+        working-directory: ./apps/ai-orchestrator
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      # Deliberately first, and deliberately its own step. It needs no Temporal
+      # server, so it cannot be masked by the test-server download the suite
+      # below performs -- and a failure here means the change will wedge every
+      # workflow in flight, which deserves its own red X in the log rather than
+      # a line inside a hundred other results.
+      - name: Replay guard
+        working-directory: ./apps/ai-orchestrator
+        run: pytest tests/test_replay.py -v
+
+      - name: Tests
+        working-directory: ./apps/ai-orchestrator
+        run: pytest --ignore=tests/test_replay.py -q
+
   build:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
