@@ -41,7 +41,7 @@ spec:
             # git-write credential reachable from this namespace.
             image: &image
               repository: ghcr.io/chrtol/ai-orchestrator
-              tag: main-20260910114705@sha256:c882937f8acbf07fac9aec4829cd7a327568b68ae5e3cce06772ffc536ef9f4c
+              tag: main-20260910155725@sha256:77d452ff9795cb6a3e1a6d68aab0426d3c00922a3c0f1d0eceaa06c46a4d69c1
             env: &env
               # readOnlyRootFilesystem below means every import would otherwise
               # attempt a __pycache__ write and silently fail.
@@ -58,7 +58,7 @@ spec:
               # same image. Spelled out rather than aliased to `&image`: that
               # anchor is a repository/tag map, and this needs one string.
               # Keep it in step with the tag above.
-              JOB_IMAGE: ghcr.io/chrtol/ai-orchestrator:main-20260910114705@sha256:c882937f8acbf07fac9aec4829cd7a327568b68ae5e3cce06772ffc536ef9f4c
+              JOB_IMAGE: ghcr.io/chrtol/ai-orchestrator:main-20260910155725@sha256:77d452ff9795cb6a3e1a6d68aab0426d3c00922a3c0f1d0eceaa06c46a4d69c1
               RECONCILE_INTERVAL_SECONDS: "300"
               # Plan §13 Phase 2's "deliberately fails when requested". 0 is
               # off. Set a step (1..STEPS, the dummy worker runs 6) to make the
