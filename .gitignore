@@ -28,3 +28,4 @@ apps/reptile-tracker/.planning/
 .planning
 tmp/*
 .env
+.kube/
