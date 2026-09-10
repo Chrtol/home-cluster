@@ -30,7 +30,7 @@ spec:
           app:
             image:
               repository: ghcr.io/getmydia/mydia
-              tag: 0.12.0-pg@sha256:3d64970b2f18c14df395d716c215561d2b986cf903f7e4f95c9cbf3a27c2aa29
+              tag: 0.14.0-pg@sha256:039164f69e409d139b98091b7a0c1ee96b2cec2110b7c9bfe138acb7318e8f26
             command:
               - /bin/sh
               - -c
