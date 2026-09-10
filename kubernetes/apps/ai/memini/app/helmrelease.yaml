@@ -121,6 +121,28 @@ spec:
           - name: external
             namespace: network
             sectionName: https
+      # The SAME API + MCP surface as `main`, on the internal gateway.
+      #
+      # Not redundant: `memini.${SECRET_DOMAIN}` resolves to the VPS public
+      # address, so a LAN client using it hairpins out to the VPS, through the
+      # WireGuard tunnel, back through OPNSense and into Envoy -- for every
+      # single memory call. This route resolves to 10.0.30.43 and stays local.
+      #
+      # Use this one from anything on the LAN or Tailscale (Claude Desktop via
+      # an mcp-remote bridge, Claude Code, the orchestrator). `main` exists for
+      # vendor-hosted infrastructure, which cannot reach a private address.
+      # Same bearer auth on both.
+      internal:
+        enabled: true
+        hostnames: ["memini-api.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: main
+                port: http
       # Admin SPA, internal only. A signed-in token is same-origin-readable, so
       # the UI does not belong on the same origin as the public API -- which is
       # also why it needs its own hostname rather than a path on the first: the
