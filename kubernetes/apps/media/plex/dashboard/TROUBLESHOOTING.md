@@ -6,8 +6,8 @@ This guide provides LogQL queries and troubleshooting steps for debugging Plex i
 
 ## Quick Access
 
-- **Grafana Dashboard**: https://grafana.cftollefsen.com/d/plex-monitoring
-- **Loki Explore**: https://grafana.cftollefsen.com/explore
+- **Grafana Dashboard**: https://grafana.${SECRET_DOMAIN}/d/plex-monitoring
+- **Loki Explore**: https://grafana.${SECRET_DOMAIN}/explore
 
 ## Common LogQL Queries
 
@@ -32,7 +32,7 @@ This guide provides LogQL queries and troubleshooting steps for debugging Plex i
 ```logql
 {namespace="network", pod=~"external-ingress-nginx-controller.*"}
   | json
-  | vhost="plex.cftollefsen.com"
+  | vhost="plex.${SECRET_DOMAIN}"
   | status >= 400
   | line_format "{{.time}} [{{.status}}] {{.method}} {{.path}} - User: {{.http_user_agent}}"
 ```
@@ -42,7 +42,7 @@ This guide provides LogQL queries and troubleshooting steps for debugging Plex i
 sum by (status) (
   count_over_time({namespace="network", pod=~"external-ingress-nginx-controller.*"}
     | json
-    | vhost="plex.cftollefsen.com"
+    | vhost="plex.${SECRET_DOMAIN}"
     | status >= 400 [5m])
 )
 ```
@@ -53,7 +53,7 @@ sum by (status) (
 ```logql
 {namespace="network", pod=~"external-ingress-nginx-controller.*"}
   | json
-  | vhost="plex.cftollefsen.com"
+  | vhost="plex.${SECRET_DOMAIN}"
   | unwrap request_time
   | request_time > 2
   | line_format "{{.time}} {{.path}} took {{.request_time}}s - {{.http_user_agent}}"
@@ -64,7 +64,7 @@ sum by (status) (
 quantile_over_time(0.95,
   {namespace="network", pod=~"external-ingress-nginx-controller.*"}
     | json
-    | vhost="plex.cftollefsen.com"
+    | vhost="plex.${SECRET_DOMAIN}"
     | unwrap request_time [5m]
 ) by ()
 ```
@@ -77,7 +77,7 @@ topk(10,
   sum by (http_user_agent) (
     count_over_time({namespace="network", pod=~"external-ingress-nginx-controller.*"}
       | json
-      | vhost="plex.cftollefsen.com"
+      | vhost="plex.${SECRET_DOMAIN}"
       | status >= 400 [1h])
   )
 )
@@ -87,7 +87,7 @@ topk(10,
 ```logql
 {namespace="network", pod=~"external-ingress-nginx-controller.*"}
   | json
-  | vhost="plex.cftollefsen.com"
+  | vhost="plex.${SECRET_DOMAIN}"
   | http_user_agent =~ "(?i)plex.*ios"
   | status >= 400
 ```
@@ -98,7 +98,7 @@ topk(10,
 ```logql
 {namespace="network", pod=~"external-ingress-nginx-controller.*"}
   | json
-  | vhost="plex.cftollefsen.com"
+  | vhost="plex.${SECRET_DOMAIN}"
   | http_user_agent !~ "(?i)(gatus|blackbox|prometheus)"
   | path =~ "/video/.*"
 ```
@@ -108,7 +108,7 @@ topk(10,
 sum by (http_user_agent) (
   rate({namespace="network", pod=~"external-ingress-nginx-controller.*"}
     | json
-    | vhost="plex.cftollefsen.com"
+    | vhost="plex.${SECRET_DOMAIN}"
     | unwrap bytes_sent [5m])
 )
 ```
@@ -151,7 +151,7 @@ sum by (http_user_agent) (
    ```logql
    {namespace="network", pod=~"external-ingress-nginx-controller.*"}
      | json
-     | vhost="plex.cftollefsen.com"
+     | vhost="plex.${SECRET_DOMAIN}"
      | status >= 400
    ```
 
@@ -161,7 +161,7 @@ sum by (http_user_agent) (
    ```logql
    {namespace="network", pod=~"external-ingress-nginx-controller.*"}
      | json
-     | vhost="plex.cftollefsen.com"
+     | vhost="plex.${SECRET_DOMAIN}"
      | http_user_agent =~ "(?i)keyword"
    ```
 
@@ -169,7 +169,7 @@ sum by (http_user_agent) (
    ```logql
    {namespace="network", pod=~"external-ingress-nginx-controller.*"}
      | json
-     | vhost="plex.cftollefsen.com"
+     | vhost="plex.${SECRET_DOMAIN}"
      | unwrap request_time
    ```
 
@@ -179,7 +179,7 @@ sum by (http_user_agent) (
    ```logql
    {namespace="network", pod=~"external-ingress-nginx-controller.*"}
      | json
-     | vhost="plex.cftollefsen.com"
+     | vhost="plex.${SECRET_DOMAIN}"
      | status = 504
    ```
 
@@ -204,7 +204,7 @@ sum by (http_user_agent) (
    ```logql
    {namespace="network", pod=~"external-ingress-nginx-controller.*"}
      | json
-     | vhost="plex.cftollefsen.com"
+     | vhost="plex.${SECRET_DOMAIN}"
      | path =~ "/video/.*"
      | status != 200
    ```
@@ -226,7 +226,7 @@ Add to Prometheus AlertManager:
   expr: |
     sum(rate({namespace="network", pod=~"external-ingress-nginx-controller.*"}
       | json
-      | vhost="plex.cftollefsen.com"
+      | vhost="plex.${SECRET_DOMAIN}"
       | status >= 500 [5m])) > 0.1
   for: 5m
   annotations:
@@ -242,7 +242,7 @@ Add to Prometheus AlertManager:
     quantile_over_time(0.95,
       {namespace="network", pod=~"external-ingress-nginx-controller.*"}
         | json
-        | vhost="plex.cftollefsen.com"
+        | vhost="plex.${SECRET_DOMAIN}"
         | unwrap request_time [5m]
     ) > 5
   for: 10m

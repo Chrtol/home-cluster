@@ -124,7 +124,7 @@ curl http://localhost:8080/metrics
 
 ### 6. Verify Prometheus Scraping
 
-1. Open Prometheus: https://prometheus.cftollefsen.com (or internal URL)
+1. Open Prometheus: https://prometheus.${SECRET_DOMAIN} (or internal URL)
 2. Go to **Status → Targets**
 3. Find `serviceMonitor/observability/opnsense-exporter-app/0`
 4. Should show **State: UP**

@@ -53,9 +53,9 @@ FluxCD will:
 
 ## Accessing the Dashboard
 
-1. Navigate to Grafana: https://grafana.cftollefsen.com
+1. Navigate to Grafana: https://grafana.${SECRET_DOMAIN}
 2. Go to Dashboards → Media → Plex Monitoring
-3. Or direct link: https://grafana.cftollefsen.com/d/plex-monitoring
+3. Or direct link: https://grafana.${SECRET_DOMAIN}/d/plex-monitoring
 
 ## Troubleshooting
 

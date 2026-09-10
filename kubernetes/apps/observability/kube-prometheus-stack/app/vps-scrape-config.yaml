@@ -12,7 +12,7 @@ spec:
         job: vps-node-exporter
         instance: vps
       targets:
-        - vps.cftollefsen.com
+        - vps.${SECRET_DOMAIN}
   metricsPath: /metrics/node
   scheme: https
   basicAuth:

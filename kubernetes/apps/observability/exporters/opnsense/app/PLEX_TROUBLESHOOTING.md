@@ -166,7 +166,7 @@ Combine OPNsense metrics with Loki logs for complete picture:
    ```logql
    {namespace="network", pod=~"external-ingress-nginx-controller.*"}
      | json
-     | vhost="plex.cftollefsen.com"
+     | vhost="plex.${SECRET_DOMAIN}"
      | unwrap request_time
      | request_time > 2
    ```
