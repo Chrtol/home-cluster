@@ -40,6 +40,23 @@ spec:
           - name: alertname
             value: KubeCPUOvercommit
             matchType: =
+      # A failed Job in ai-jobs is an expected outcome, not an incident. The
+      # orchestrator moves the card to Blocked with a `failed-` comment, so the
+      # board is already the notification; this alert only duplicates it.
+      #
+      # Scoped to the namespace deliberately, and matched on BOTH labels: a
+      # failed Job anywhere else must still page. For the same reason
+      # KubeJobFailed is *not* added to the catch-all's `!~` alertname list
+      # below — that list is unscoped and would disable it cluster-wide. This
+      # route sits above the catch-all, and first match wins.
+      - receiver: "null"
+        matchers:
+          - name: alertname
+            value: KubeJobFailed
+            matchType: =
+          - name: namespace
+            value: ai-jobs
+            matchType: =
       - receiver: n8n-smart-routing
         matchers:
           - name: alertname
