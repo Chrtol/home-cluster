@@ -37,11 +37,10 @@ spec:
         containers:
           app:
             # Built from apps/ai-orchestrator by .github/workflows/ai-orchestrator.yaml.
-            # Pinned by hand: no ImageUpdateAutomation, which would need a
-            # git-write credential reachable from this namespace.
+            # Tag only, no digest: app-template's image map has no digest field.
             image: &image
               repository: ghcr.io/chrtol/ai-orchestrator
-              tag: main-20260910155725@sha256:77d452ff9795cb6a3e1a6d68aab0426d3c00922a3c0f1d0eceaa06c46a4d69c1
+              tag: main-20260910223759 # {"$imagepolicy": "flux-system:ai-orchestrator:tag"}
             env: &env
               # readOnlyRootFilesystem below means every import would otherwise
               # attempt a __pycache__ write and silently fail.
@@ -57,8 +56,7 @@ spec:
               # Phase 2's coding Job is the dummy worker, which ships in this
               # same image. Spelled out rather than aliased to `&image`: that
               # anchor is a repository/tag map, and this needs one string.
-              # Keep it in step with the tag above.
-              JOB_IMAGE: ghcr.io/chrtol/ai-orchestrator:main-20260910155725@sha256:77d452ff9795cb6a3e1a6d68aab0426d3c00922a3c0f1d0eceaa06c46a4d69c1
+              JOB_IMAGE: ghcr.io/chrtol/ai-orchestrator:main-20260910223759@sha256:3af9bf3cdcb8dd105f297fa447c9dfb44f9f4f9d9395d8d0727343e58a6e4a41 # {"$imagepolicy": "flux-system:ai-orchestrator"}
               RECONCILE_INTERVAL_SECONDS: "300"
               # Plan §13 Phase 2's "deliberately fails when requested". 0 is
               # off. Set a step (1..STEPS, the dummy worker runs 6) to make the

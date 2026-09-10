@@ -6,8 +6,7 @@ resources:
   - ./helmrelease.yaml
   - ./backendtrafficpolicy.yaml
   - ./externalsecret.yaml
-  - ./externalsecret-flux-ssh.yaml
-  - ./gitrepository-write.yaml
-  - ./imagerepository.yaml
-  - ./imagepolicy.yaml
-  - ./imageupdateautomation.yaml
+  # Image automation for this app lives in
+  # kubernetes/apps/flux-system/image-automation/app/reptile-tracker.yaml —
+  # it has to share a namespace with the write credential it commits through.
+  # The setter markers in helmrelease.yaml point at `flux-system:`.

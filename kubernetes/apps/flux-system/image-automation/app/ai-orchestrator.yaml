@@ -1,0 +1,54 @@
+---
+# Kept out of the `ai` namespace: pushing tag bumps needs a repo write key, and
+# `ai` is where AI-generated coding Jobs run.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: ai-orchestrator
+  namespace: flux-system
+spec:
+  image: ghcr.io/chrtol/ai-orchestrator
+  interval: 1m
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: ai-orchestrator
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: ai-orchestrator
+  # JOB_IMAGE's setter writes a digest; without this there is none to write.
+  digestReflectionPolicy: Always
+  policy:
+    numerical:
+      order: asc
+  filterTags:
+    pattern: '^main-([0-9]+)$'
+    extract: '$1'
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageUpdateAutomation
+metadata:
+  name: ai-orchestrator
+  namespace: flux-system
+spec:
+  interval: 1m
+  sourceRef:
+    kind: GitRepository
+    name: home-cluster-write
+    namespace: flux-system
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        email: fluxcdbot@users.noreply.github.com
+        name: fluxcdbot
+      messageTemplate: 'chore(ai-orchestrator): update image'
+    push:
+      branch: main
+  update:
+    path: ./kubernetes/apps/ai/ai-orchestrator
+    strategy: Setters

@@ -1,10 +1,13 @@
 ---
-# Separate GitRepository with SSH write access for image automation
+# Write access, for ImageUpdateAutomation only. The `flux-system` GitRepository
+# is the read path. prune:disabled: shared by every automation here.
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: GitRepository
 metadata:
   name: home-cluster-write
-  namespace: default
+  namespace: flux-system
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
 spec:
   interval: 1m
   url: ssh://git@github.com/chrtol/home-cluster.git
