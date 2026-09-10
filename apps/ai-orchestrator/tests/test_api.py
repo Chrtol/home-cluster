@@ -1,21 +1,8 @@
 """The HTTP surface: the one process reachable from off-cluster.
 
-`test_events.py` covers the *logic* these endpoints call — signature checking,
-normalization, handoff parsing. Nothing covered the wiring: whether a verified
-event actually reaches Temporal, what the pod reports when Temporal does not,
-and which of the branches in `api.py` a real deployment can even reach.
-
-Two questions the brief asked, answered here by test rather than by reading:
-
-* **Is `_temporal()`'s 503 branch reachable?** No — not through a server. See
-  `TestLifespan`. It is reachable from a test that skips the lifespan, which is
-  worth knowing precisely so nobody mistakes that for production coverage.
-* **Can `/healthz` be green while every webhook is dropped?** Yes, and that is
-  deliberate — see `TestHealthAndReadiness`.
-
-These run against a real Temporal server (the shared `worker` fixture) rather
-than a mocked client wherever the assertion is about delivery, because a mock
-would happily accept a signal the real server rejects.
+test_events.py covers the logic these endpoints call. This covers the wiring:
+whether a verified event actually reaches Temporal, what the pod reports when
+Temporal does not, and which branches a real deployment can reach at all.
 """
 
 from __future__ import annotations
@@ -74,25 +61,14 @@ def signed(payload: dict, secret: str = SECRET) -> tuple[bytes, dict[str, str]]:
 
 @asynccontextmanager
 async def http(*, raise_app_exceptions: bool = True):
-    """Drive the ASGI app directly.
-
-    Note what this does NOT do: run the lifespan. Every test here therefore
-    starts with `api._client` in whatever state the test put it in, which is the
-    only way the 503 branch is reachable at all.
-    """
+    """Drive the ASGI app directly."""
     transport = httpx.ASGITransport(app=api.app, raise_app_exceptions=raise_app_exceptions)
     async with httpx.AsyncClient(transport=transport, base_url="http://api.test") as client:
         yield client
 
 
 class BrokenTemporal:
-    """A client that connected once and whose server has since gone away.
-
-    Every call raises `UNAVAILABLE`, which is what a real client does against a
-    dead frontend. Deliberately not a Mock: the point is to prove which
-    *exception type* each endpoint handles, and a Mock would let a wrong type
-    through unnoticed.
-    """
+    """A client that connected once and whose server has since gone away."""
 
     status = RPCStatusCode.UNAVAILABLE
 
@@ -130,13 +106,7 @@ class MissingWorkflow(BrokenTemporal):
 
 @pytest_asyncio.fixture
 async def wired(worker, monkeypatch):
-    """Point the api module at the test server, with a known webhook secret.
-
-    `worker` yields `env.client` with `TaskWorkflow` registered on
-    `TASK_QUEUE`; production's task queue is `ai-coding`, so the settings
-    override is what makes a started workflow actually be picked up rather than
-    sitting unstarted and making every assertion below vacuous.
-    """
+    """Point the api module at the test server, with a known webhook secret."""
     monkeypatch.setattr(api, "_client", worker)
     monkeypatch.setattr(
         api,
@@ -174,14 +144,7 @@ class TestLifespan:
     """Which of `api.py`'s branches a running server can actually reach."""
 
     async def test_the_client_is_connected_before_the_app_serves_anything(self, monkeypatch):
-        """`_temporal()`'s 503 is unreachable through a server, and here is why.
-
-        The lifespan assigns `_client` *before* its yield, and Starlette does
-        not serve a request until the lifespan yields. So a request that reaches
-        a route has necessarily passed the assignment. Asserting that the app is
-        actually wired to this lifespan is the load-bearing half — without it
-        the test proves a property of a function nothing calls.
-        """
+        """`_temporal()`'s 503 is unreachable through a server, and here is why."""
         assert api.app.router.lifespan_context is api.lifespan
 
         monkeypatch.setattr(api, "_client", None)
@@ -200,13 +163,7 @@ class TestLifespan:
     async def test_a_failed_connection_stops_the_app_starting_rather_than_serving_503(
         self, monkeypatch
     ):
-        """The other half: connect failure never becomes a 503, it aborts boot.
-
-        Starlette turns an exception before the yield into `lifespan.startup.failed`
-        and the process exits. A pod that cannot reach Temporal therefore
-        CrashLoops — visible — instead of quietly answering 503 to kan, which
-        never retries.
-        """
+        """The other half: connect failure never becomes a 503, it aborts boot."""
         monkeypatch.setattr(api, "_client", None)
 
         async def refuse(*_args, **_kwargs):
@@ -221,12 +178,7 @@ class TestLifespan:
         assert api._client is None
 
     async def test_the_503_branch_is_reachable_only_by_skipping_the_lifespan(self, monkeypatch):
-        """Recorded so the branch is not mistaken for production coverage.
-
-        `ASGITransport` does not run the lifespan protocol, so `_client` stays
-        None and `_temporal()` raises. A test that exercises this path is
-        testing the test harness, not the deployment.
-        """
+        """Recorded so the branch is not mistaken for production coverage."""
         monkeypatch.setattr(api, "_client", None)
         monkeypatch.setattr(api, "_settings", replace(api._settings, kan_webhook_secret=SECRET))
 
@@ -240,15 +192,7 @@ class TestLifespan:
 
 class TestHealthAndReadiness:
     async def test_liveness_stays_green_while_every_webhook_is_dropped(self, offline):
-        """Answering the brief's second question: yes, and on purpose.
-
-        `/healthz` is the liveness probe. A Temporal outage is not fixed by
-        restarting this pod — the gRPC channel reconnects on its own — so a
-        liveness probe that failed on it would flap the one process able to
-        accept the events, and would still not deliver them. The cost is that
-        the outage leaves no mark on this pod at all, which is what `/readyz`
-        is for.
-        """
+        """The pod calls itself healthy while losing events. Deliberate."""
         body, headers = signed(card_payload())
         async with http() as client:
             health = await client.get("/healthz")
@@ -261,11 +205,7 @@ class TestHealthAndReadiness:
         assert webhook.status_code == 503
 
     async def test_readiness_goes_red_when_temporal_is_unreachable(self, offline):
-        """The signal liveness deliberately does not carry.
-
-        Without this, readiness and liveness pointed at the same unconditional
-        handler, so readiness carried no information whatsoever.
-        """
+        """The signal liveness deliberately does not carry."""
         async with http() as client:
             response = await client.get("/readyz")
 
@@ -280,14 +220,7 @@ class TestHealthAndReadiness:
         assert response.json() == {"status": "ready"}
 
     async def test_readiness_is_green_with_no_worker_polling(self, env, monkeypatch):
-        """A readiness probe that also failed on a worker outage would be wrong.
-
-        The api pod's job is to accept and durably record events. Temporal
-        holding a signal for a task queue with nothing polling it is a
-        *success* — it is the entire reason a worker restart does not lose
-        webhooks. So this deliberately uses the bare `env` fixture, with no
-        `worker`: nothing anywhere is polling any task queue.
-        """
+        """A readiness probe that also failed on a worker outage would be wrong."""
         monkeypatch.setattr(api, "_client", env.client)
 
         async with http() as client:
@@ -302,7 +235,7 @@ class TestBoardWebhook:
         payload = card_payload(card_id="card-deliver")
         workflow_id = task_workflow_id("card-deliver")
 
-        # §6.6: the assertion below means nothing unless the workflow is absent
+        # The assertion below means nothing unless the workflow is absent
         # first. A leftover run from another test would satisfy every check.
         assert not await _exists(wired, workflow_id)
 
@@ -318,15 +251,7 @@ class TestBoardWebhook:
         assert status["events_handled"] == 1
 
     async def test_a_second_delivery_signals_the_running_workflow(self, wired):
-        """The §6.4 discipline: call it twice.
-
-        `start_workflow(..., start_signal=...)` is a SignalWithStart, so the
-        second delivery for a card must signal the existing run rather than
-        raise `WorkflowAlreadyStartedError`. That error is not an `RPCError`,
-        so the `except RPCError` here would not catch it and the endpoint would
-        500 — exactly the shape of §6.4, on the path a busy board takes
-        constantly and a first-event test never reaches.
-        """
+        """Call it twice: the second delivery must signal, not fail."""
         workflow_id = task_workflow_id("card-twice")
         first_body, first_headers = signed(card_payload(card_id="card-twice"))
         second_body, second_headers = signed(
@@ -345,11 +270,7 @@ class TestBoardWebhook:
         assert status["events_handled"] == 2
 
     async def test_a_redelivery_of_the_same_event_is_accepted_and_ignored(self, wired):
-        """Byte-identical redelivery: 202 at the edge, deduped in the workflow.
-
-        The api must not try to dedup — it has no memory across pods. The
-        contract is that it accepts and the workflow's seen-set absorbs it.
-        """
+        """Byte-identical redelivery: 202 at the edge, deduped in the workflow."""
         workflow_id = task_workflow_id("card-dupe")
         body, headers = signed(card_payload(card_id="card-dupe"))
 
@@ -386,14 +307,7 @@ class TestBoardWebhook:
         assert not await _exists(wired, workflow_id)
 
     async def test_a_missing_secret_rejects_every_delivery(self, wired, monkeypatch):
-        """Fail closed.
-
-        `KAN_WEBHOOK_SECRET` defaults to `""`, so a Secret that lost the key —
-        or an ExternalSecret pointing at a 1Password item that does not exist —
-        leaves the one off-cluster endpoint with no authentication at all. It
-        must reject rather than accept, and the rejection must not depend on the
-        caller omitting a signature.
-        """
+        """Fail closed."""
         monkeypatch.setattr(api, "_settings", replace(api._settings, kan_webhook_secret=""))
         workflow_id = task_workflow_id("card-nosecret")
         # Correctly signed for the secret the deployment *should* have.
@@ -408,11 +322,7 @@ class TestBoardWebhook:
     async def test_the_orchestrators_own_writes_are_dropped_without_starting_a_workflow(
         self, wired, monkeypatch
     ):
-        """Plan §8's loop rule, at the edge.
-
-        204 rather than 202: nothing was delivered, and saying 202 would make a
-        dropped self-event indistinguishable from a delivered one in kan's log.
-        """
+        """The loop guard, at the edge."""
         monkeypatch.setattr(api, "_settings", replace(api._settings, kan_self_actor_id="self-1"))
         workflow_id = task_workflow_id("card-selfloop")
         body, headers = signed(
@@ -428,10 +338,7 @@ class TestBoardWebhook:
     async def test_a_human_event_still_passes_while_the_marker_is_configured(
         self, wired, monkeypatch
     ):
-        """The §6.5 half of the test above: prove the filter is not matching all.
-
-        A short-circuit that dropped everything would pass the previous test.
-        """
+        """Prove the filter above is not simply dropping everything."""
         monkeypatch.setattr(api, "_settings", replace(api._settings, kan_self_actor_id="self-1"))
         workflow_id = task_workflow_id("card-human")
         body, headers = signed(
@@ -463,11 +370,7 @@ class TestBoardWebhook:
 
 
 class TestOperatorEndpoints:
-    """`/tasks`, `/dispatcher`, `/shifts/*` — ClusterIP-only, human-facing.
-
-    These are read during an incident, so the failure they report has to be the
-    failure that happened.
-    """
+    """`/tasks`, `/dispatcher`, `/shifts/*` — ClusterIP-only, human-facing."""
 
     async def test_a_missing_workflow_is_404(self, wired):
         async with http() as client:
@@ -476,14 +379,7 @@ class TestOperatorEndpoints:
         assert response.status_code == 404
 
     async def test_temporal_being_down_is_not_reported_as_a_missing_card(self, offline):
-        """Regression: this used to 404.
-
-        `except RPCError -> 404` conflated "no such workflow" with "the cluster
-        is down", so the endpoint an operator reaches for first would say the
-        card's workflow does not exist during precisely the outage that makes
-        every card unreachable. Both are `RPCError`; only the status code
-        distinguishes them.
-        """
+        """Regression: this used to 404."""
         async with http() as client:
             task = await client.get("/tasks/card-1")
             dispatcher = await client.get("/dispatcher")
@@ -492,7 +388,7 @@ class TestOperatorEndpoints:
         assert dispatcher.status_code == 503
 
     async def test_a_missing_dispatcher_is_still_404(self, monkeypatch):
-        """The §6.5 half: prove the 503 above is not simply "everything is 503"."""
+        """Prove the 503 above is not simply "everything is 503"."""
         monkeypatch.setattr(api, "_client", MissingWorkflow())
 
         async with http() as client:
@@ -503,14 +399,7 @@ class TestOperatorEndpoints:
         assert dispatcher.status_code == 404
 
     async def test_opening_a_shift_while_temporal_is_down_reports_503_not_500(self, offline):
-        """These three used to catch nothing at all.
-
-        An unhandled `RPCError` surfaces as an opaque 500 with no body, at the
-        moment a human is trying to start work. `raise_app_exceptions=False`
-        makes the ASGI transport render the 500 instead of re-raising it, so
-        this test observes what a caller would see rather than what pytest
-        would.
-        """
+        """These three used to catch nothing at all."""
         async with http(raise_app_exceptions=False) as client:
             start = await client.post("/shifts/start", json={"actor": "christian"})
             beat = await client.post("/shifts/shift-1/heartbeat")
@@ -519,11 +408,7 @@ class TestOperatorEndpoints:
         assert [start.status_code, beat.status_code, stop.status_code] == [503, 503, 503]
 
     async def test_a_shift_can_be_opened_heartbeaten_and_stopped(self, wired):
-        """The happy path, end to end through the real dispatcher.
-
-        Also the §6.5 counterweight to the test above: without it, an endpoint
-        that returned 503 unconditionally would pass.
-        """
+        """The happy path, end to end through the real dispatcher."""
         from orchestrator.workflows.dispatcher import DesktopDispatcherWorkflow, DispatcherState
 
         dispatcher_id = api._settings.dispatcher_workflow_id

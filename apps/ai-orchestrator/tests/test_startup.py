@@ -1,14 +1,8 @@
-"""The process-lifecycle surface: configuration, context build, shutdown.
+"""Configuration, context build and shutdown.
 
-PHASE_2 §6.4 was latent for a whole phase because the worker started cleanly
-exactly once, and §6.7 was the third instance of that same shape. The discipline
-this file follows is therefore: **call each thing twice**, and prefer a test
-that mutates process-global state over one that starts from a clean slate,
-because a clean slate is what hid the bug.
-
-`test_worker_startup.py` covers `ensure_singletons` against a real server. This
-file covers everything upstream of it — `Settings.from_env`, `build_context` —
-and the shutdown path downstream.
+The discipline here is to call each thing twice. The worst bug in this app so
+far was a worker that started cleanly exactly once, and any test starting from
+a clean process is blind to that shape.
 """
 
 from __future__ import annotations
@@ -63,13 +57,7 @@ def clean_env(monkeypatch):
 
 class TestSettingsFromEnv:
     def test_the_defaults_are_the_deployed_values(self, clean_env):
-        """A default silently drifting from the manifest is a config bug.
-
-        Every one of these is what the pod gets if its env var goes missing —
-        an ExternalSecret pointing at a renamed 1Password field, say. The
-        credentials default to empty (fail closed); the addresses default to
-        the real cluster.
-        """
+        """A default silently drifting from the manifest is a config bug."""
         settings = Settings.from_env()
 
         assert settings.address == "temporal-frontend.ai.svc.cluster.local:7233"
@@ -89,12 +77,7 @@ class TestSettingsFromEnv:
         assert settings.job_fail_at_step == 0
 
     def test_every_documented_variable_is_actually_read(self, clean_env):
-        """Catches a key typo'd on one side only.
-
-        A `Settings` field reading `JOB_NAMESPACE` while the manifest sets
-        `JOBS_NAMESPACE` type-checks, starts, and quietly uses the default
-        namespace forever.
-        """
+        """Catches a key typo'd on one side only."""
         markers = {}
         for name, field in DOCUMENTED.items():
             marker = "7" if field.endswith(("_step", "_seconds", "_limit")) else f"set-{name}"
@@ -107,12 +90,7 @@ class TestSettingsFromEnv:
         assert not unread, f"env vars not reaching Settings: {unread}"
 
     def test_the_helmrelease_sets_no_variable_the_app_ignores(self):
-        """The manifest and the reader must not drift apart.
-
-        The reverse of the test above: a variable set in the HelmRelease that
-        nothing reads looks like live configuration and is not. Skips rather
-        than fails if run outside a full repo checkout.
-        """
+        """The manifest and the reader must not drift apart."""
         if not HELMRELEASE.exists():  # pragma: no cover - only outside the repo
             pytest.skip("HelmRelease not present; app checked out on its own")
 
@@ -126,14 +104,7 @@ class TestSettingsFromEnv:
         assert not unknown, f"HelmRelease sets variables Settings never reads: {sorted(unknown)}"
 
     def test_the_history_limit_settings_reach_no_consumer(self):
-        """Pins a finding rather than a behaviour: these two do nothing.
-
-        Both workflows hardcode their Continue-As-New thresholds, so
-        `TASK_HISTORY_LIMIT` and `DISPATCHER_HISTORY_LIMIT` are parsed, stored
-        and never consulted. Recorded as a test so that whoever wires them up
-        is told to delete this test and take the `workflow.patched()` gate that
-        the change needs — see the note in settings.py.
-        """
+        """Pins a finding rather than a behaviour: these two do nothing."""
         src = Path(__file__).resolve().parents[1] / "src" / "orchestrator"
         consumers = [
             path.name
@@ -151,13 +122,7 @@ class TestSettingsFromEnv:
         assert "signals_handled >= 500" in (src / "workflows" / "dispatcher.py").read_text()
 
     def test_a_zero_reconcile_interval_is_refused_rather_than_hot_looping(self, clean_env):
-        """`0` means "off" for the knob two fields away. Here it means no sleep.
-
-        `ReconcileWorkflow` does `workflow.sleep(timedelta(seconds=interval))`
-        at the bottom of its loop, so 0 sweeps every board continuously — a
-        kan request storm plus a history that rolls forever, from one plausible
-        config edit.
-        """
+        """`0` means "off" for the knob two fields away. Here it means no sleep."""
         clean_env.setenv("RECONCILE_INTERVAL_SECONDS", "0")
 
         with pytest.raises(ValueError) as caught:
@@ -174,18 +139,13 @@ class TestSettingsFromEnv:
             Settings.from_env()
 
     def test_a_valid_reconcile_interval_still_passes(self, clean_env):
-        """§6.5's counterweight: prove the guard is not refusing everything."""
+        """Prove the guard is not refusing everything."""
         clean_env.setenv("RECONCILE_INTERVAL_SECONDS", "60")
 
         assert Settings.from_env().reconcile_interval_seconds == 60
 
     def test_a_malformed_integer_names_the_variable_it_choked_on(self, clean_env):
-        """Both processes read settings at startup, so this is a CrashLoop.
-
-        The message is the entire diagnostic surface — there is no running pod
-        to inspect — and a bare `invalid literal for int()` does not say which
-        of eighteen variables is wrong.
-        """
+        """Both processes read settings at startup, so this is a CrashLoop."""
         clean_env.setenv("TASK_HISTORY_LIMIT", "twelve")
 
         with pytest.raises(ValueError) as caught:
@@ -195,12 +155,7 @@ class TestSettingsFromEnv:
         assert "twelve" in str(caught.value)
 
     def test_job_fail_at_step_zero_still_means_disabled(self, clean_env):
-        """The interval guard must not have leaked onto the knob it borrows from.
-
-        `JOB_FAIL_AT_STEP=0` is how the HelmRelease disarms the deliberate
-        failure. If validation rejected 0 here, the deployed manifest would
-        CrashLoop both pods.
-        """
+        """The interval guard must not have leaked onto the knob it borrows from."""
         clean_env.setenv("JOB_FAIL_AT_STEP", "0")
 
         settings = Settings.from_env()
@@ -209,12 +164,7 @@ class TestSettingsFromEnv:
         assert settings.fail_step_for("any-card") == 0
 
     def test_from_env_is_stable_across_repeated_calls(self, clean_env):
-        """The §6.4 discipline, at its cheapest.
-
-        `api.py` calls this at import and `worker.main` calls it again in the
-        same image. A `from_env` that consumed the environment — `os.environ.pop`
-        instead of `.get`, say — would give the second caller silent defaults.
-        """
+        """api.py calls this at import and worker.main again, in the same image."""
         clean_env.setenv("DESKTOP_ID", "secondary")
         clean_env.setenv("JOB_FAIL_AT_STEP", "3")
 
@@ -233,7 +183,7 @@ class TestSettingsFromEnv:
         assert Settings.from_env().dispatcher_workflow_id == "desktop-dispatcher-laptop"
 
     def test_the_fail_knob_is_scoped_to_the_named_card(self, clean_env):
-        """§9's warning, as a test: unscoped means every card on every board."""
+        """Unscoped, the knob fails every card on every board."""
         clean_env.setenv("JOB_FAIL_AT_STEP", "3")
         clean_env.setenv("JOB_FAIL_TASK_ID", "card-under-test")
         scoped = Settings.from_env()
@@ -244,7 +194,7 @@ class TestSettingsFromEnv:
         clean_env.delenv("JOB_FAIL_TASK_ID")
         unscoped = Settings.from_env()
 
-        # The blast radius §9 warns about, pinned so it stays a known property.
+        # Pinned so the blast radius stays a known property.
         assert unscoped.fail_step_for("some-other-card") == 3
 
 
@@ -265,16 +215,7 @@ class TestProjectRegistry:
             projects.load(tmp_path / "nope.yaml")
 
     def test_an_empty_projects_file_loads_to_an_allowlist_of_nothing(self, tmp_path):
-        """Pinned as a known sharp edge, not endorsed.
-
-        A truncated file, or one whose top-level `projects:` key gets renamed,
-        produces an empty registry and a worker that starts perfectly happily.
-        Every card then fails with `ProjectUnknown`. That is at least visible on
-        the card rather than silent, which is why it is recorded here rather
-        than turned into a startup assertion — but it is the reason
-        `test_the_deployed_projects_file_loads` above asserts a non-empty
-        result.
-        """
+        """Pinned as a known sharp edge, not endorsed."""
         empty = tmp_path / "projects.yaml"
         empty.write_text("projects: []\n")
 
@@ -285,7 +226,7 @@ class TestProjectRegistry:
             registry.for_board("AI Test")
 
     def test_a_check_written_as_a_shell_string_is_refused(self, tmp_path):
-        """Plan §11's privilege boundary, at load time."""
+        """A check ID must not be able to smuggle a shell pipeline."""
         config = tmp_path / "projects.yaml"
         config.write_text(
             "projects:\n"
@@ -304,8 +245,7 @@ class TestBuildContext:
 
     @pytest.fixture
     def no_cluster(self, monkeypatch):
-        """`load_config` talks to a kubeconfig or a service account; neither
-        exists in CI, and the assertions here are not about it."""
+        """`load_config` talks to a kubeconfig or a service account; neither"""
         calls = []
 
         async def fake_load_config():
@@ -337,13 +277,7 @@ class TestBuildContext:
             await context.kan.aclose()
 
     async def test_it_can_be_called_twice_with_independent_clients(self, settings, no_cluster):
-        """§6.4: the second call is the one nothing had ever made.
-
-        The failure this guards is a shared or class-level httpx client, where
-        closing the first context on shutdown would leave the second one with a
-        client that raises on every kan call — a worker that works until
-        something restarts it in-process.
-        """
+        """The second call is the one nothing had ever made."""
         first = await worker.build_context(settings, client=None)
         second = await worker.build_context(settings, client=None)
         try:
@@ -360,14 +294,7 @@ class TestBuildContext:
     async def test_a_broken_projects_file_fails_before_any_handle_is_opened(
         self, clean_env, tmp_path, no_cluster
     ):
-        """Ordering matters: a config error must not leak an open client.
-
-        `build_context` constructs the kan client first and loads projects
-        second, so a bad config raises with an httpx client already open and
-        nothing to close it — `main`'s `finally` never runs because `context`
-        was never bound. Pinned because the fix, if it is ever wanted, is to
-        load the config first.
-        """
+        """Ordering matters: a config error must not leak an open client."""
         config = tmp_path / "projects.yaml"
         config.write_text("projects: {not: a list}\n")
         clean_env.setenv("PROJECTS_PATH", str(config))
@@ -376,11 +303,7 @@ class TestBuildContext:
             await worker.build_context(Settings.from_env(), client=None)
 
     async def test_the_kan_client_is_closed_on_shutdown(self, settings, no_cluster):
-        """The shutdown path, which is one `finally` in `main`.
-
-        Asserted on the object `main` would close rather than on `main` itself,
-        because `main` blocks on `worker.run()` forever.
-        """
+        """The shutdown path, which is one `finally` in `main`."""
         context = await worker.build_context(settings, client=None)
 
         assert not context.kan._client.is_closed
@@ -396,5 +319,5 @@ class TestBuildContext:
 
 
 def test_the_workflow_id_is_keyed_on_the_card_not_the_revision():
-    """§2.1, pinned: the webhook addresses a workflow knowing only the publicId."""
+    """The webhook addresses a workflow knowing only the card publicId."""
     assert task_workflow_id("h7v89xpcvsqd") == "task-h7v89xpcvsqd"

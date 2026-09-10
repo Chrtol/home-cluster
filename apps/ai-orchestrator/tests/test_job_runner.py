@@ -1,17 +1,9 @@
-"""`JobRunner`: the Kubernetes half of deduplication and fencing.
+"""JobRunner: the Kubernetes half of deduplication and fencing.
 
-PHASE_2 §8's gate table records adopt-on-409 as "✅ deterministic names +
-adopt-on-409". Only the first half was true. `conftest.FakeWorld.ensure_job`
-appends a name and returns; it never raises a 409, so every branch below the
-`except ApiException` in `JobRunner.ensure_job` had never executed in a test —
-including the identity comparison that is the whole point of adopting.
-
-Everything here fakes the Kubernetes *API calls* and keeps the real model
-classes, so the objects asserted on are the objects a real API server would
-receive. That matters for the central coupling: `create` writes the handoff
-hash onto the Job's own metadata and the adopt path reads it back from there.
-Annotate only the pod template and adoption mismatches every time, while a
-fake-activity test stays green.
+The fake ensure_job in conftest never raises a 409, so nothing below the
+`except ApiException` in JobRunner.ensure_job had ever run in a test. These
+fake the API calls but keep the real V1* models, so the objects asserted on are
+the objects a real API server would receive.
 """
 
 from __future__ import annotations
@@ -48,13 +40,7 @@ def request(handoff_hash: str = "hash-aaa", **overrides) -> k8s.EnsureJobRequest
 
 
 class FakeApi:
-    """Records calls and replays scripted outcomes.
-
-    A list of outcomes per method, consumed in order: an exception is raised,
-    anything else is returned. Running out is an error rather than a repeat,
-    so a test that makes an unexpected extra call fails loudly instead of
-    quietly getting the previous answer again.
-    """
+    """Records calls and replays scripted outcomes."""
 
     def __init__(self, **scripts):
         self.scripts = {name: list(values) for name, values in scripts.items()}
@@ -184,14 +170,7 @@ class TestEnsureJobAdoption:
         assert api.names() == ["create_job"], "a fresh create must not read anything back"
 
     async def test_the_hash_adoption_compares_is_the_one_create_writes(self, api, runner):
-        """The coupling that makes adoption possible, asserted end to end.
-
-        `ensure_job`'s adopt path reads `ANN_HASH` from the *Job's* metadata.
-        If `_build_job` put the identity annotations only on the pod template —
-        which is where they are also needed, and an easy place to leave them —
-        every adoption would raise `JobIdentityMismatch` against a Job it
-        created itself. No fake-activity test can see this.
-        """
+        """The coupling that makes adoption possible, asserted end to end."""
         api.scripts["create_job"] = [None]
         await runner.ensure_job(request("hash-aaa"))
 
@@ -201,11 +180,7 @@ class TestEnsureJobAdoption:
         assert created.spec.template.metadata.annotations[k8s.ANN_HASH] == "hash-aaa"
 
     async def test_a_restart_mid_attempt_adopts_instead_of_duplicating(self, api, runner):
-        """Plan §8: a worker that dies after creating a Job must not start a second.
-
-        Kubernetes' name uniqueness does the deduplication; the orchestrator's
-        job is only to read the 409 correctly.
-        """
+        """A worker that dies after creating a Job must not start a second."""
         api.scripts["create_job"] = [conflict()]
         api.scripts["read_job"] = [ExistingJob({k8s.ANN_HASH: "hash-aaa"}, active=1)]
 
@@ -215,12 +190,7 @@ class TestEnsureJobAdoption:
         assert api.names() == ["create_job", "read_job"]
 
     async def test_adoption_refuses_a_job_left_over_from_another_revision(self, api, runner):
-        """The check that makes adoption safe rather than merely convenient.
-
-        Same card, same attempt number, different approved handoff — so the
-        deterministic name collides with a Job doing *different* work. Adopting
-        it would report the old revision's result against the new approval.
-        """
+        """The check that makes adoption safe rather than merely convenient."""
         api.scripts["create_job"] = [conflict()]
         api.scripts["read_job"] = [ExistingJob({k8s.ANN_HASH: "hash-OLD"}, active=1)]
 
@@ -233,18 +203,7 @@ class TestEnsureJobAdoption:
         assert "hash-OLD" in str(caught.value) and "hash-NEW" in str(caught.value)
 
     async def test_a_new_revision_gets_a_new_name_so_mismatch_is_defence_in_depth(self):
-        """Why the identity check above almost never fires in production.
-
-        `AttemptRef.slug` hashes `board:task:handoff_hash`, so approving a new
-        revision changes the Job's *name*, not merely its annotation — there is
-        no collision left to adopt, and the ordinary re-approval path never
-        reaches the mismatch branch at all. What it actually guards is a 10-hex
-        slug collision or a hand-made Job of the same name.
-
-        Recorded because the two tests around it would otherwise read as
-        evidence that production reaches that branch. It is the same shape as
-        `api._temporal()`'s 503: real code, worth keeping, not on a live path.
-        """
+        """Why the identity check above almost never fires in production."""
         assert attempt("hash-aaa").job_name != attempt("hash-NEW").job_name
 
         # A repair of the *same* handoff keeps the slug, so it shares the
@@ -263,11 +222,7 @@ class TestEnsureJobAdoption:
         assert caught.value.type == "JobIdentityMismatch"
 
     async def test_an_error_that_is_not_a_conflict_propagates(self, api, runner):
-        """§6.5's counterweight: the handler must not treat every failure as adoption.
-
-        A 403 from a missing RBAC Role — §6.1, which actually happened — must
-        surface as an infrastructure fault, not be read as "already exists".
-        """
+        """The handler must not treat every failure as adoption."""
         api.scripts["create_job"] = [ApiException(status=403, reason="Forbidden")]
 
         with pytest.raises(ApiException) as caught:
@@ -285,18 +240,13 @@ class TestJobShape:
         await runner.ensure_job(request())
 
         job = api.calls[0][2]
-        # Plan §7: the workflow owns the repair policy. A backoffLimit above 0
+        # The workflow owns the repair policy. A backoffLimit above 0
         # would silently re-run an attempt the workflow already reported on.
         assert job.spec.backoff_limit == 0
         assert job.spec.template.spec.restart_policy == "Never"
 
     async def test_the_job_sets_no_ttl(self, api, runner):
-        """Plan §12: evidence is retained until collection succeeds.
-
-        A `ttlSecondsAfterFinished` here would recreate §6.7 from inside the
-        orchestrator — the very bug just fixed, where a collected Job became
-        indistinguishable from an interrupted one.
-        """
+        """Job evidence is retained until the orchestrator has collected it."""
         api.scripts["create_job"] = [None]
         await runner.ensure_job(request())
 
@@ -342,12 +292,7 @@ class TestJobShape:
 
 class TestObserve:
     async def test_a_collected_job_reports_gone_not_failed(self, api, runner):
-        """The input side of §6.7.
-
-        `observe` returns early with `failed=0`, which is correct — nothing
-        observed a failure. Distinguishing the two is the workflow's job, and
-        this pins that `observe` does not invent an outcome.
-        """
+        """observe() must not invent an outcome for a Job that was collected."""
         api.scripts["read_job"] = [ApiException(status=404, reason="NotFound")]
 
         state = await runner.observe("ai-deadbeef-a1")
@@ -368,7 +313,7 @@ class TestObserve:
         assert state.terminated is False
 
     async def test_a_failed_job_carries_the_exit_code(self, api, runner):
-        """§7f's exit 17 is how the board explains a deliberate failure."""
+        """The exit code is how the board explains a deliberate failure."""
         api.scripts["read_job"] = [ExistingJob({}, failed=1)]
         api.scripts["list_pods"] = [PodList([Pod("Failed", exit_code=17)])]
 
@@ -396,12 +341,7 @@ class TestObserve:
 
 
 class TestFencing:
-    """PHASE_2 §8's third ⚠️ row: fencing beyond the happy path.
-
-    `confirm_terminated` is what stands between a partitioned node and two
-    writers on one RWO volume. Every branch, not just the one where the pod
-    exited cleanly.
-    """
+    """Fencing: what stands between a partitioned node and two writers."""
 
     @pytest.fixture(autouse=True)
     def installed(self, runner, monkeypatch):
@@ -428,14 +368,7 @@ class TestFencing:
         assert await k8s.confirm_terminated("ai-deadbeef-a1") is False
 
     async def test_a_pod_on_a_partitioned_node_is_not_fenced(self, api, runner):
-        """The case the whole mechanism exists for.
-
-        `Unknown` means the kubelet stopped answering, not that the process
-        stopped. Certifying it would let the dispatcher admit a second writer
-        to a volume the first may still be holding. The dispatcher's response
-        is to keep the slot held — `test_dispatcher.test_unfenced_release_holds_the_slot`
-        is the other half of this.
-        """
+        """The case the whole mechanism exists for."""
         api.scripts["read_job"] = [ExistingJob({}, active=0)]
         api.scripts["list_pods"] = [PodList([Pod("Unknown")])]
 
@@ -451,12 +384,7 @@ class TestFencing:
         assert await k8s.confirm_terminated("ai-deadbeef-a1") is False
 
     async def test_a_job_with_no_pods_yet_is_not_fenced(self, api, runner):
-        """`terminated` requires evidence, and no pods is no evidence.
-
-        A Job whose pod has not been created yet reports `active=0` with an
-        empty phase list. Reading that as terminated would fence an attempt
-        that is about to start running.
-        """
+        """`terminated` requires evidence, and no pods is no evidence."""
         api.scripts["read_job"] = [ExistingJob({}, active=0)]
         api.scripts["list_pods"] = [PodList([])]
 
@@ -491,7 +419,7 @@ class TestEnsureWorkspace:
         assert await runner.ensure_workspace(attempt()) == attempt().workspace_name
 
     async def test_a_forbidden_read_propagates(self, api, runner):
-        """§6.1: a missing RBAC Role must not look like a missing claim."""
+        """A missing RBAC Role must not look like a missing claim."""
         api.scripts["read_pvc"] = [ApiException(status=403, reason="Forbidden")]
 
         with pytest.raises(ApiException) as caught:

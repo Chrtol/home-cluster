@@ -1,14 +1,11 @@
 """FastAPI process: the board webhook and the operator/shift endpoints.
 
-Separate process, same image, per plan §7. Only `POST /webhooks/board` is routed
-from outside the cluster; everything else is ClusterIP-only and reached by
-port-forward until Phase 3 gives the shift endpoints a real authentication
-story.
+Separate process, same image as the worker. Only `POST /webhooks/board` is
+routed from outside the cluster; the rest is ClusterIP-only, reached by
+port-forward, and not yet authenticated.
 
-The webhook's authentication *is* the HMAC signature. There is no session, no
-bearer token and no forward auth on that path, because kan cannot present any of
-them — `sendWebhookToUrl` sets exactly three headers and none of them is an
-Authorization header.
+The webhook's authentication is the HMAC signature and nothing else: kan sets
+exactly three headers and none of them is Authorization.
 """
 
 from __future__ import annotations
@@ -60,11 +57,8 @@ app = FastAPI(title="ai-orchestrator", lifespan=lifespan)
 
 
 def _temporal() -> Client:
-    # Unreachable through a running server: `lifespan` assigns `_client` before
-    # its yield, and Starlette serves nothing until the lifespan yields, so a
-    # connect failure aborts startup rather than arriving here. Kept as a guard
-    # for direct ASGI callers -- which is exactly what the tests are, so a test
-    # that lands on this 503 is testing the harness. See test_api.TestLifespan.
+    # Unreachable through a running server: lifespan assigns _client before its
+    # yield, so a connect failure aborts startup instead of landing here.
     if _client is None:
         raise HTTPException(status_code=503, detail="temporal client not ready")
     return _client
@@ -73,10 +67,8 @@ def _temporal() -> Client:
 def _rpc_failure(exc: RPCError) -> HTTPException:
     """Distinguish "no such workflow" from "the cluster is unreachable".
 
-    Both arrive as `RPCError`, and treating them alike made every operator
-    endpoint answer 404 during an outage -- telling whoever is debugging that
-    the card's workflow does not exist at the one moment no card is reachable.
-    Only the gRPC status separates them.
+    Both arrive as RPCError. Reporting an outage as 404 tells whoever is
+    debugging the card's workflow is gone, at the one moment none are reachable.
     """
     if exc.status is RPCStatusCode.NOT_FOUND:
         return HTTPException(status_code=404, detail=str(exc))
@@ -87,10 +79,9 @@ def _rpc_failure(exc: RPCError) -> HTTPException:
 async def healthz() -> dict[str, str]:
     """Liveness: is this process serving?
 
-    Deliberately shallow, and deliberately blind to Temporal. The gRPC channel
-    reconnects on its own, so a liveness probe that failed on a Temporal outage
-    would restart the only process able to accept webhooks without making any
-    of them deliverable. `/readyz` carries that signal instead.
+    Deliberately blind to Temporal — the gRPC channel reconnects on its own, so
+    restarting on an outage would flap the pod without making anything
+    deliverable. /readyz carries that signal.
     """
     return {"status": "ok"}
 
@@ -99,15 +90,8 @@ async def healthz() -> dict[str, str]:
 async def readyz() -> dict[str, str]:
     """Readiness: could a webhook arriving now actually be delivered?
 
-    Without this, readiness and liveness both pointed at `/healthz`, so
-    readiness carried no information at all and a Temporal outage left no mark
-    on this pod. It does not restore a lost event -- kan never retries, and the
-    reconciliation sweep is still the only backstop -- it makes the window
-    visible.
-
-    Checks the frontend, not the task queue: Temporal accepting a signal for a
-    queue with no poller is a success, and is precisely why a worker restart
-    does not lose webhooks.
+    Checks the frontend, not the task queue — Temporal holding a signal for a
+    queue with no poller is why a worker restart does not lose webhooks.
     """
     client = _temporal()
     try:
@@ -124,11 +108,8 @@ async def readyz() -> dict[str, str]:
 async def board_webhook(request: Request) -> Response:
     """Verify, normalize and durably deliver one kan event.
 
-    Returns 202 only once Temporal has accepted the signal. Plan §8 requires a
-    retryable failure when Temporal is unavailable — though with kan that is a
-    courtesy rather than a recovery mechanism, since it never retries. The
-    reconciliation sweep is what actually recovers a dropped event, so a 5xx
-    here means "lost until the next sweep", not "lost forever".
+    202 only once Temporal has accepted the signal. A 5xx means "lost until the
+    next reconciliation sweep": kan never retries.
     """
     body = await request.body()
 
@@ -143,10 +124,9 @@ async def board_webhook(request: Request) -> Response:
         log.warning("rejected webhook: %s", exc)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    # Defence in depth for plan §8's loop rule. The state machine is already
-    # structurally loop-free — the orchestrator never writes 'Ready for local',
-    # the only stage that triggers a dispatch — but if the orchestrator is given
-    # its own kan user, its own writes stop round-tripping at all.
+    # Defence in depth against a loop. The state machine is already
+    # structurally loop-free: the orchestrator never writes 'Ready for local',
+    # the only stage that triggers a dispatch.
     if _settings.kan_self_actor_id and event.actor and event.actor.id == _settings.kan_self_actor_id:
         return Response(status_code=204)
 
@@ -197,12 +177,7 @@ class StartShift(BaseModel):
 
 @app.post("/shifts/start")
 async def start_shift(body: StartShift) -> dict[str, str]:
-    """Authorize a bounded desktop window.
-
-    Phase 2 mints the lease so the dispatcher can be exercised end to end.
-    Phase 3 replaces the caller with the PowerShell launcher and gives this
-    endpoint a real authenticated identity; `actor` is not yet verified.
-    """
+    """Authorize a bounded desktop window. `actor` is not yet verified."""
     now = datetime.now(timezone.utc)
     shift_id = f"shift-{int(now.timestamp())}"
     lease = ShiftLease(
@@ -216,9 +191,6 @@ async def start_shift(body: StartShift) -> dict[str, str]:
     try:
         await handle.signal("shift_start", lease)
     except RPCError as exc:
-        # These three caught nothing at all, so an unreachable Temporal reached
-        # the caller as a bodiless 500 -- at the moment a human is trying to
-        # start work, which is the worst possible time for an opaque error.
         raise _rpc_failure(exc) from exc
     return {"shift_id": shift_id, "hard_end": lease.hard_end}
 

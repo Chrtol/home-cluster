@@ -1,9 +1,7 @@
 """The worker must be able to restart.
 
-A worker that only starts cleanly once is not a worker. This exercises the real
-`ensure_singletons` against a real server, twice, because the failure mode it
-guards is invisible on a first boot: the singletons do not exist yet, so the
-duplicate-start path is never taken until a restart.
+Exercises ensure_singletons against a real server, twice: the failure it guards
+is invisible on a first boot, because the singletons do not exist yet.
 """
 
 from __future__ import annotations
@@ -30,11 +28,7 @@ async def bare_env():
 
 
 async def test_ensure_singletons_is_safe_to_call_twice(bare_env):
-    """Regression: the second call used to raise WorkflowAlreadyStartedError.
-
-    That is not an RPCError, so the `except RPCError` around it never caught it
-    and the worker crash-looped on every boot after the first.
-    """
+    """Regression: the second call used to raise WorkflowAlreadyStartedError."""
     settings = Settings.from_env()
 
     await ensure_singletons(settings, bare_env.client)
@@ -47,22 +41,15 @@ async def test_ensure_singletons_is_safe_to_call_twice(bare_env):
 
 
 async def test_the_singletons_come_back_after_an_operator_terminates_one(bare_env):
-    """PHASE_2 §9's documented recovery, as a test.
-
-    §9 tells an operator to terminate a wedged workflow. Both singletons are
-    started with `USE_EXISTING`, which governs a *running* workflow — a
-    terminated one is closed, so the next boot has to start a fresh run rather
-    than adopt the corpse or refuse. Nothing had ever exercised that: the
-    existing restart test only ever sees them Running.
-    """
+    """The documented recovery for a wedged singleton: terminate it."""
     settings = Settings.from_env()
     await ensure_singletons(settings, bare_env.client)
 
     handle = bare_env.client.get_workflow_handle(settings.dispatcher_workflow_id)
     before = (await handle.describe()).run_id
-    await handle.terminate("simulating the §9 operator recovery")
+    await handle.terminate("simulating an operator recovery")
 
-    # §6.6: the assertion below is only meaningful if the state really changed.
+    # The assertion below is only meaningful if the state really changed.
     assert (await handle.describe()).status.name == "TERMINATED"
 
     await ensure_singletons(settings, bare_env.client)
@@ -73,13 +60,7 @@ async def test_the_singletons_come_back_after_an_operator_terminates_one(bare_en
 
 
 async def test_a_worker_that_cannot_reach_temporal_refuses_to_start(bare_env, monkeypatch):
-    """The catch must re-raise, not log and continue.
-
-    A swallowed failure here is worse than a crash: the worker comes up, polls
-    happily, and every approved card enqueues to a dispatcher that does not
-    exist. That is §6.3's deadlock — a task waiting forever on a slot nothing
-    can grant — reached silently instead of loudly.
-    """
+    """The catch must re-raise, not log and continue."""
     settings = Settings.from_env()
 
     async def unreachable(*_args, **_kwargs):
@@ -92,15 +73,7 @@ async def test_a_worker_that_cannot_reach_temporal_refuses_to_start(bare_env, mo
 
 
 async def test_an_error_that_is_not_an_rpc_error_is_not_swallowed_either(bare_env, monkeypatch):
-    """§6.4 was `except RPCError` being too narrow. This pins the shape.
-
-    `WorkflowAlreadyStartedError` is not an `RPCError`, which is exactly why
-    the original catch missed it and the worker crash-looped on every boot
-    after the first. The catch is still narrow — that is now correct, because
-    `USE_EXISTING` removes the duplicate-start case at the source rather than
-    by catching it — so what matters is that anything else propagates rather
-    than being mistaken for success.
-    """
+    """The catch is narrow; anything it does not name must still propagate."""
     settings = Settings.from_env()
 
     async def surprising(*_args, **_kwargs):
@@ -113,14 +86,7 @@ async def test_an_error_that_is_not_an_rpc_error_is_not_swallowed_either(bare_en
 
 
 async def test_both_singletons_are_started_not_just_the_first(bare_env):
-    """§6.5's counterweight to the two tests above.
-
-    `ensure_singletons` builds both coroutines eagerly in the loop's tuple, so
-    a failure on the first leaves the second never awaited. That is fine while
-    the handler re-raises — but it means "the first one worked" and "both
-    worked" are different claims, and only the second is the one the worker
-    depends on.
-    """
+    """Counterweight: "the first one worked" is not "both worked"."""
     settings = Settings.from_env()
     await ensure_singletons(settings, bare_env.client)
 
