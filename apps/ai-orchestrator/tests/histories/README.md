@@ -58,9 +58,13 @@ in `ai-activity/ai_workflow_optimization/PHASE_2_Board_Lifecycle.md` §7d, as a
 file.
 
 It contains board ids, a card description and the operator's name and email, as
-kan recorded them. Nothing secret, and the same identifiers already appear in
-the Phase 2 write-up; it is left verbatim rather than redacted because editing a
-payload risks turning a nondeterminism fixture into a decode-error fixture, and
-the test would not notice the difference.
+kan recorded them. No credentials, no hostnames; the email is already the author
+of every commit in this repository, so it is not published here for the first
+time.
+
+It is left verbatim because it is evidence. A hand-edited capture invites the
+question of what else was changed, which is the one property this file is
+supposed to have. If it ever needs to carry no real data, recapture the same
+divergence from a board seeded with placeholders rather than editing this one.
 
 To capture another, see `scripts/capture-history.sh`.
