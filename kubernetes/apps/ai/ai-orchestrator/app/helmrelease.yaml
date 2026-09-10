@@ -67,8 +67,8 @@ spec:
               # Set the card id too, or every attempt on every board fails. The
               # worker logs a warning at startup whenever this is armed, so a
               # value left behind here is visible rather than mysterious.
-              JOB_FAIL_AT_STEP: "0"
-              JOB_FAIL_TASK_ID: ""
+              JOB_FAIL_AT_STEP: "3"
+              JOB_FAIL_TASK_ID: "h7v89xpcvsqd"
             envFrom: &envFrom
               - secretRef:
                   name: ai-orchestrator-secret
