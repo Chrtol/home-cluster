@@ -39,7 +39,7 @@ spec:
             # Tag only, no digest: app-template's image map has no digest field.
             image: &image
               repository: ghcr.io/chrtol/ai-orchestrator
-              tag: main-20260911115559 # {"$imagepolicy": "flux-system:ai-orchestrator:tag"}
+              tag: main-20260911130100 # {"$imagepolicy": "flux-system:ai-orchestrator:tag"}
             env: &env
               # readOnlyRootFilesystem below means every import would otherwise
               # attempt a __pycache__ write and silently fail.
@@ -55,7 +55,7 @@ spec:
               # Phase 2's coding Job is the dummy worker, which ships in this
               # same image. Spelled out rather than aliased to `&image`: that
               # anchor is a repository/tag map, and this needs one string.
-              JOB_IMAGE: ghcr.io/chrtol/ai-orchestrator:main-20260911115559@sha256:17f59be0e3e133f65d16e90ba06b6abc0db944511abd47e02ce22dc0a23f0ba9 # {"$imagepolicy": "flux-system:ai-orchestrator"}
+              JOB_IMAGE: ghcr.io/chrtol/ai-orchestrator:main-20260911130100@sha256:6cbaf361e05f2bb0819f27f9d269dc9b5f9988cba1bde5fa6ff453e3803512e2 # {"$imagepolicy": "flux-system:ai-orchestrator"}
               RECONCILE_INTERVAL_SECONDS: "300"
               # Context assembly reads reviewed lessons from here. Internal
               # service name: this is the orchestrator talking to Memini
