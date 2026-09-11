@@ -216,6 +216,8 @@ spec:
                   secretKeyRef:
                     name: qbittorrent-private-secret
                     key: GLUETUN_CONTROL_SERVER_API_KEY
+              QBITTORRENT_HOST: localhost
+              QBITTORRENT_WEBUI_PORT: *port
             securityContext:
               runAsUser: 568
               runAsGroup: 568

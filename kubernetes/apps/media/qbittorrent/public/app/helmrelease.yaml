@@ -185,6 +185,40 @@ spec:
                 memory: 146Mi
               limits:
                 memory: 256Mi
+          # Same watchdog as qbittorrent-private: cycles the tunnel on a
+          # sustained forwarded-port==0, and reconciles qBittorrent's listen
+          # port against gluetun's. The port-forward sidecar above cannot be
+          # relied on for the latter — it aborts on an empty /v1/publicip/ip,
+          # which persists after a control-server tunnel cycle even while
+          # NAT-PMP is healthy, leaving qBittorrent firewalled on a stale port.
+          port-watchdog:
+            image:
+              repository: docker.io/alpine/curl
+              tag: 8.21.0@sha256:7e0084208deb6b1dd71bba78e4d5ada7e29054b7782214d037fa78739faf3fe9
+            command:
+              - /bin/sh
+              - /scripts/port-watchdog.sh
+            env:
+              GLUETUN_CONTROL_SERVER_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: qbittorrent-secret
+                    key: GLUETUN_CONTROL_SERVER_API_KEY
+              QBITTORRENT_HOST: localhost
+              QBITTORRENT_WEBUI_PORT: *port
+            securityContext:
+              runAsUser: 568
+              runAsGroup: 568
+              runAsNonRoot: true
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 5m
+                memory: 16Mi
+              limits:
+                memory: 32Mi
     defaultPodOptions:
       # Bulk NFS writer -- keep off Plex's node. See the qbittorrent-private
       # helmrelease for the full reasoning (single-TCP-connection NFS mounts put
@@ -264,4 +298,13 @@ spec:
             coredns:
               - path: /etc/coredns/Corefile
                 subPath: Corefile
+                readOnly: true
+      port-watchdog:
+        type: configMap
+        name: qbittorrent-port-watchdog
+        advancedMounts:
+          qbittorrent:
+            port-watchdog:
+              - path: /scripts/port-watchdog.sh
+                subPath: port-watchdog.sh
                 readOnly: true
