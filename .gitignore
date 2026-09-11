@@ -24,7 +24,9 @@ Thumbs.db
 ai-activity/*
 # Log files
 *.log
-apps/reptile-tracker/.planning/
+# Planning lives in the private home-planning repo, and each app now carries
+# its own in its own private repo. This guards the PUBLIC repo against a
+# stray GSD Core run writing planning content here.
 .planning
 tmp/*
 .env

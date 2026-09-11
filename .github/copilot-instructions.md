@@ -44,7 +44,7 @@ To update the `reptile-tracker` application's container image:
 - **Kustomize**: We use Kustomize extensively to manage environment-specific configurations and to patch Helm charts. Look for `kustomization.yaml` files.
 - **HelmReleases**: Applications are deployed via Flux `HelmRelease` resources, not direct Helm commands. Values are often defined directly within the `HelmRelease` YAML.
 - **Secrets**: When you need to add or update a secret, edit the corresponding `.sops.yaml` file. The CI/CD pipeline will handle encryption/decryption as long as the `age.key` is present. Do not commit unencrypted secrets.
-- **Custom Applications**: The `reptile-tracker` (`/apps/reptile-tracker`) is a good example of a custom app in this cluster. It has a FastAPI backend and a React frontend. Development instructions are in its `README.md`, but remember that deployment is handled by the manifests in `/kubernetes/apps/default/reptile-tracker/`.
+- **Custom Applications**: The `reptile-tracker` is a good example of a custom app in this cluster. It has a FastAPI backend and a React frontend. Its **source lives in its own private repository**, not here; this repo holds only the deployment manifests, in `/kubernetes/apps/default/reptile-tracker/`. The same split applies to `ai-orchestrator`. Images are built by each app's own repo and the tag is written back here by Flux image automation.
 
 ## ❌ What to Avoid
 

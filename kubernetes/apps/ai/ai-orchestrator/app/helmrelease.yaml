@@ -35,7 +35,7 @@ spec:
           automountServiceAccountToken: true
         containers:
           app:
-            # Built from apps/ai-orchestrator by .github/workflows/ai-orchestrator.yaml.
+            # Built from the chrtol/ai-orchestrator repo by its own workflow.
             # Tag only, no digest: app-template's image map has no digest field.
             image: &image
               repository: ghcr.io/chrtol/ai-orchestrator
