@@ -116,6 +116,16 @@ spec:
         enabled: true
         annotations:
           external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+          # gatus-sidecar: this port serves ONLY /v1, /mcp, /healthz and /readyz
+          # -- there is no "/", so the sidecar's default bare-host probe gets a
+          # 404 and reports a perfectly healthy service down. /healthz sits
+          # outside the bearer gate by design, so the probe needs no credential.
+          gatus.home-operations.com/endpoint: |
+            group: external
+            path: /healthz
+            conditions:
+              - "[STATUS] == 200"
+              - "[BODY].status == ok"
         hostnames: ["memini.${SECRET_DOMAIN}"]
         parentRefs:
           - name: external
@@ -134,6 +144,14 @@ spec:
       # Same bearer auth on both.
       internal:
         enabled: true
+        annotations:
+          # same 404-on-"/" problem as the external route above
+          gatus.home-operations.com/endpoint: |
+            group: internal
+            path: /healthz
+            conditions:
+              - "[STATUS] == 200"
+              - "[BODY].status == ok"
         hostnames: ["memini-api.${SECRET_DOMAIN}"]
         parentRefs:
           - name: internal
