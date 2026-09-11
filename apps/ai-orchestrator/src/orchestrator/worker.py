@@ -38,6 +38,7 @@ ACTIVITIES = [
     k8s_acts.ensure_job,
     k8s_acts.observe_job,
     k8s_acts.stop_job,
+    k8s_acts.delete_job,
     k8s_acts.confirm_terminated,
     reconcile_acts.reconcile_board,
 ]

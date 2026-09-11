@@ -125,6 +125,13 @@ class HandoffInvalid(Exception):
 
 
 _REQUIRED = ("task_id", "spec_revision", "design_revision", "repository", "base_commit", "goal")
+# Plan §4 traceability rests on these naming one immutable object. A branch name
+# or `HEAD` parses and reads fine, but it points at whatever that ref means
+# today, so editing the design leaves the field -- and therefore
+# `content_hash()` -- unchanged and approval silently survives the edit it was
+# supposed to be revoked by.
+_REVISION_FIELDS = ("spec_revision", "design_revision")
+_REVISION_REF = re.compile(r"^[^@\s]+@[0-9a-f]{40}$")
 _STR_LISTS = (
     "scope",
     "out_of_scope",
@@ -163,6 +170,13 @@ def parse_handoff(description: str | None) -> Handoff:
         raise HandoffInvalid(f"handoff missing required fields: {', '.join(missing)}")
 
     fields: dict[str, Any] = {k: str(loaded[k]).strip() for k in _REQUIRED}
+    for key in _REVISION_FIELDS:
+        if not _REVISION_REF.match(fields[key]):
+            raise HandoffInvalid(
+                f"handoff field {key!r} must be '<path>@<40-hex-commit-sha>', "
+                f"got {fields[key]!r}"
+            )
+
     for key in _STR_LISTS:
         raw = loaded.get(key) or []
         if isinstance(raw, str):
@@ -175,6 +189,26 @@ def parse_handoff(description: str | None) -> Handoff:
     # actor from the verified board identity on the move event, never from a
     # field anything on the card could have written.
     return Handoff(**fields)
+
+
+def parse_handoff_for_card(description: str | None, card_id: str) -> Handoff:
+    """Parse the handoff and refuse one that claims to be a different card.
+
+    `task_id` is what a planning document follows back to the board, so a card
+    carrying another card's id makes that record lie. It is only an audit-trail
+    fix: dispatch is built from the card id the event carried, never from this
+    field, so a mismatch could never have executed against the wrong task.
+
+    Separate from `parse_handoff` because only a caller holding the card knows
+    what the id should be -- and both callers are activities, so this changes
+    activity *results*, not workflow commands, and needs no patch gate.
+    """
+    handoff = parse_handoff(description)
+    if handoff.task_id != card_id:
+        raise HandoffInvalid(
+            f"handoff claims task_id {handoff.task_id!r} but sits on card {card_id!r}"
+        )
+    return handoff
 
 
 def dumps_handoff(handoff: Handoff) -> str:

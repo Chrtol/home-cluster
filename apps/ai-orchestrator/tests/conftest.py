@@ -35,6 +35,10 @@ class FakeWorld:
 
     moves: list[tuple[str, Stage]] = field(default_factory=list)
     comments: list[tuple[str, str]] = field(default_factory=list)
+    # Board writes and job deletions interleaved in the order they happened.
+    # The per-kind lists above cannot answer "did the card get its comment
+    # before the evidence was deleted?", which is the whole point of §12.
+    timeline: list[tuple[str, str]] = field(default_factory=list)
 
     # job name -> how many times ensure_job was asked to create it. The Phase 2
     # gate is that this never exceeds one entry per attempt.
@@ -45,12 +49,16 @@ class FakeWorld:
     job_requests: list = field(default_factory=list)
     job_states: dict[str, JobState] = field(default_factory=dict)
     stopped_jobs: list[str] = field(default_factory=list)
+    # Collected *after* the outcome was published, unlike stopped_jobs.
+    deleted_jobs: list[str] = field(default_factory=list)
     workspaces: list[str] = field(default_factory=list)
     # Set False to simulate a node partition: the job cannot be proven stopped.
     fenceable: bool = True
     # Set True to make ensure_workspace fail every time, as a missing RBAC Role
     # does -- an infrastructure fault, not a task fault.
     workspace_broken: bool = False
+    # Set True to make delete_job fail every time, as a wedged API server would.
+    delete_broken: bool = False
 
     def set_handoff(self, card_id: str, handoff: Handoff) -> None:
         self.handoffs[card_id] = handoff
@@ -86,12 +94,14 @@ def build_activities(world: FakeWorld):
     @activity.defn(name="move_card")
     async def move_card(request: board_acts.MoveRequest) -> bool:
         world.moves.append((request.card_id, request.stage))
+        world.timeline.append(("move", request.stage.value))
         world.stages[request.card_id] = request.stage
         return True
 
     @activity.defn(name="publish_comment")
     async def publish_comment(request: board_acts.CommentRequest) -> bool:
         world.comments.append((request.marker, request.text))
+        world.timeline.append(("comment", request.marker))
         return True
 
     @activity.defn(name="ensure_workspace")
@@ -121,6 +131,14 @@ def build_activities(world: FakeWorld):
             name=name, exists=True, failed=1, terminated=True, pod_phases=["Failed"]
         )
 
+    @activity.defn(name="delete_job")
+    async def delete_job(name: str) -> None:
+        if world.delete_broken:
+            raise RuntimeError("jobs.batch is forbidden (simulated 403)")
+        world.deleted_jobs.append(name)
+        world.timeline.append(("delete_job", name))
+        world.job_states[name] = JobState(name=name, exists=False, terminated=True)
+
     @activity.defn(name="confirm_terminated")
     async def confirm_terminated(name: str) -> bool:
         return world.fenceable
@@ -141,6 +159,7 @@ def build_activities(world: FakeWorld):
         ensure_job,
         observe_job,
         stop_job,
+        delete_job,
         confirm_terminated,
         configured_board_ids,
         reconcile_board,
@@ -184,8 +203,8 @@ async def worker(env, world):
 def sample_handoff(card_id: str = "card-1", **overrides) -> Handoff:
     body = dict(
         task_id=card_id,
-        spec_revision="spec-1",
-        design_revision="design-1",
+        spec_revision="specs/card-1.md@" + "b" * 40,
+        design_revision="designs/card-1.md@" + "c" * 40,
         repository="chrtol/home-cluster",
         base_commit="a" * 40,
         goal="do the thing",

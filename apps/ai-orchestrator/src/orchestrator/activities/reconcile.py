@@ -22,7 +22,7 @@ import logging
 
 from temporalio import activity
 
-from ..board.events import parse_handoff
+from ..board.events import parse_handoff_for_card
 from ..contracts import BoardActor, BoardEvent, EventKind, Stage
 from . import context
 
@@ -53,7 +53,7 @@ async def reconcile_board(board_name: str) -> int:
 
     for card in cards:
         try:
-            handoff = parse_handoff(card.description)
+            handoff = parse_handoff_for_card(card.description, card.public_id)
         except Exception as exc:  # noqa: BLE001 - a bad card must not stop the sweep
             log.info("reconcile: skipping %s, %s", card.public_id, exc)
             continue

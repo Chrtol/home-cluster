@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from temporalio import activity
 from temporalio.exceptions import ApplicationError
 
-from ..board.events import HandoffInvalid, parse_handoff
+from ..board.events import HandoffInvalid, parse_handoff_for_card
 from ..board.kan import KanNotFound
 from ..contracts import CardSnapshot, Stage
 from ..projects import CheckNotAllowed, ProjectUnknown, RepositoryNotAllowed
@@ -46,7 +46,7 @@ async def fetch_card(card_id: str) -> CardSnapshot:
     )
 
     try:
-        handoff = parse_handoff(card.description)
+        handoff = parse_handoff_for_card(card.description, card.public_id)
         project = ctx.projects.assert_repository(card.board_name, handoff.repository)
         project.resolve_checks(handoff.acceptance_checks)
     except (HandoffInvalid, ProjectUnknown, RepositoryNotAllowed, CheckNotAllowed) as exc:

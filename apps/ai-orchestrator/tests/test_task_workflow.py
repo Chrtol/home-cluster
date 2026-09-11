@@ -207,7 +207,7 @@ class TestStaleApproval:
         assert not world.created_jobs, "nothing may run before a shift is open"
 
         # The design changes while the task waits for the desktop.
-        world.set_handoff(CARD, sample_handoff(CARD, design_revision="design-2"))
+        world.set_handoff(CARD, sample_handoff(CARD, design_revision="designs/card-1.md@" + "d" * 40))
 
         await open_shift(dispatcher)
 
@@ -269,7 +269,7 @@ class TestStaleApproval:
         assert await wait_for(lambda: _approved(task))
 
         # The edit lands; its webhook is lost, so no event reaches the task.
-        world.set_handoff(CARD, sample_handoff(CARD, design_revision="design-2"))
+        world.set_handoff(CARD, sample_handoff(CARD, design_revision="designs/card-1.md@" + "d" * 40))
 
         await task.signal("board_event", sweep_event())
 
@@ -529,6 +529,162 @@ class TestAttemptLifecycle:
             attempt_number=1,
         ).job_name
         assert world.created_jobs[0] == expected
+
+
+class TestEvidenceCollection:
+    """Plan §12: keep a Job until its evidence has been collected.
+
+    `ensure_job` sets no `ttlSecondsAfterFinished` precisely so nothing reaps a
+    Job on a timer, but nothing deleted them afterwards either, so
+    `kube-cleanup-operator` did it 60 minutes after failure whether or not
+    anyone had read the failure. The §6.7 fix stopped that being *misread* as an
+    interruption; it did not stop the evidence going. The operator now leaves
+    these Jobs alone, and the workflow -- the only thing that knows when the
+    outcome has been recorded -- deletes its own.
+
+    The ordering is the whole point, so every test here asserts on the
+    interleaved timeline rather than on the per-kind lists.
+    """
+
+    async def test_a_failed_attempt_is_collected_only_after_the_card_says_so(
+        self, worker, world
+    ):
+        world.set_handoff(CARD, sample_handoff(CARD))
+        dispatcher = await start_dispatcher(worker)
+        task = await start_task(worker)
+        await open_shift(dispatcher)
+        await task.signal("board_event", approval_event())
+
+        assert await wait_for(lambda: _has_job(world))
+        job = world.created_jobs[0]
+        world.job_states[job] = JobState(
+            name=job, exists=True, failed=1, terminated=True, pod_phases=["Failed"], exit_code=17
+        )
+
+        assert await wait_for(lambda: _attempt_settled(task), timeout=40)
+
+        assert world.deleted_jobs == [job], world.timeline
+        _assert_collected_after_publishing(world, job, f"failed-{job}", Stage.BLOCKED)
+
+    async def test_a_successful_attempt_is_collected_only_after_the_card_says_so(
+        self, worker, world
+    ):
+        world.set_handoff(CARD, sample_handoff(CARD))
+        dispatcher = await start_dispatcher(worker)
+        task = await start_task(worker)
+        await open_shift(dispatcher)
+        await task.signal("board_event", approval_event())
+
+        assert await wait_for(lambda: _has_job(world))
+        job = world.created_jobs[0]
+        world.job_states[job] = JobState(
+            name=job, exists=True, succeeded=1, terminated=True, pod_phases=["Succeeded"]
+        )
+
+        assert await wait_for(lambda: _attempt_settled(task), timeout=40)
+
+        assert world.deleted_jobs == [job], world.timeline
+        _assert_collected_after_publishing(world, job, f"done-{job}", Stage.REVIEW)
+
+    async def test_a_failed_collection_does_not_kill_the_workflow(self, worker, world):
+        """Cleanup is the last thing that should be able to orphan a card.
+
+        The outcome is already published and the slot already released by the
+        time collection runs, so letting an exhausted retry propagate would fail
+        the workflow -- and a failed workflow answers no further board event --
+        purely to tidy up a Job.
+        """
+        world.set_handoff(CARD, sample_handoff(CARD))
+        world.delete_broken = True
+        dispatcher = await start_dispatcher(worker)
+        task = await start_task(worker)
+        await open_shift(dispatcher)
+        await task.signal("board_event", approval_event())
+
+        assert await wait_for(lambda: _has_job(world))
+        job = world.created_jobs[0]
+        world.job_states[job] = JobState(
+            name=job, exists=True, failed=1, terminated=True, pod_phases=["Failed"], exit_code=17
+        )
+
+        assert await wait_for(lambda: _moved_to(world, Stage.BLOCKED), timeout=40)
+        assert await wait_for(lambda: _attempt_settled(task), timeout=60), (
+            "the workflow never got past the failing collection"
+        )
+
+        # Control: the deletion really was attempted and really did fail.
+        assert world.deleted_jobs == [], world.timeline
+
+        # Still alive and still answering, which is the whole point.
+        assert (await task.query("status"))["last_outcome"] == "failed"
+        described = await task.describe()
+        assert described.status.name == "RUNNING", described.status
+
+    async def test_an_interrupted_attempt_keeps_its_job(self, worker, world):
+        """An interruption is not an outcome, so its Job is not spent evidence.
+
+        The card keeps its approval and the attempt resumes on the next shift
+        against the same workspace; deleting the Job here would throw away a
+        checkpoint nobody has finished with.
+        """
+        world.set_handoff(CARD, sample_handoff(CARD))
+        dispatcher = await start_dispatcher(worker)
+        task = await start_task(worker)
+        await open_shift(dispatcher)
+        await task.signal("board_event", approval_event())
+
+        assert await wait_for(lambda: _has_job(world))
+        job = world.created_jobs[0]
+        await task.signal("stop", "operator")
+
+        # Gate on the *resume*, not on the attempt going quiet. The shift is
+        # still open, so the kept approval dispatches attempt 2 almost at once
+        # and `active_job` refills -- and attempt 2 cannot start until attempt
+        # 1 has unwound, which is strictly after its collection decision.
+        assert await wait_for(lambda: _attempts_reached(world, 2), timeout=40), (
+            f"the interrupted attempt never resumed: {world.created_jobs}"
+        )
+
+        # Control: the attempt really did end, and by the stop path.
+        assert world.stopped_jobs == [job], world.timeline
+        assert any(m == f"interrupted-{job}" for m, _ in world.comments), world.comments
+        assert world.deleted_jobs == [], world.timeline
+
+
+# --------------------------------------------------------------- query helpers
+
+
+def _attempt_settled(task: WorkflowHandle):
+    """Has the attempt run all the way past collection?
+
+    `active_job` is cleared in the `finally` that closes the attempt, which is
+    strictly after `_collect_job`. Waiting on it means these tests never have to
+    sleep a guessed interval to decide that a deletion is *not* coming.
+    """
+
+    async def check() -> bool:
+        status = await task.query("status")
+        return bool(status["last_outcome"]) and not status["active_job"]
+
+    return check()
+
+
+def _attempts_reached(world, n: int):
+    async def check() -> bool:
+        return len(world.created_jobs) >= n
+
+    return check()
+
+
+def _assert_collected_after_publishing(world, job: str, marker: str, stage: Stage) -> None:
+    timeline = world.timeline
+    assert ("delete_job", job) in timeline, timeline
+    assert ("comment", marker) in timeline, timeline
+    assert ("move", stage.value) in timeline, timeline
+
+    deleted = timeline.index(("delete_job", job))
+    assert timeline.index(("comment", marker)) < deleted, timeline
+    assert timeline.index(("move", stage.value)) < deleted, timeline
 
 
 # --------------------------------------------------------------- query helpers

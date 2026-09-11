@@ -57,6 +57,14 @@ _WRITE = dict(
     start_to_close_timeout=timedelta(seconds=60),
     retry_policy=RetryPolicy(maximum_attempts=8, maximum_interval=timedelta(seconds=30)),
 )
+# Janitorial work, run after the outcome is already on the card. It gets its own
+# short policy because the workflow is *blocked* while an Activity retries: under
+# `_WRITE` a Job that cannot be deleted would keep this workflow busy for minutes,
+# deaf to every board event, over cleanup nobody is waiting on.
+_CLEANUP = dict(
+    start_to_close_timeout=timedelta(seconds=30),
+    retry_policy=RetryPolicy(maximum_attempts=3, maximum_interval=timedelta(seconds=5)),
+)
 
 POLL_INTERVAL = timedelta(seconds=15)
 # How often a queued task re-sends its ticket to the dispatcher. `enqueue` is
@@ -74,6 +82,13 @@ ENQUEUE_REFRESH = timedelta(minutes=5)
 # Safe to retire with `workflow.deprecate_patch` once no TaskWorkflow started
 # before the deploy is still running.
 PATCH_VANISHED_JOB = "vanished-job-is-not-resumable"
+
+# Patch gate for plan §12's other half, retaining evidence. This one adds a
+# command *after* a point live workflows have already run through -- an attempt
+# that finished last week reached `_finish` and issued nothing more -- so
+# replaying it against unpatched code must still issue nothing. Same retirement
+# rule as above.
+PATCH_DELETE_JOB_AFTER_FINISH = "delete-job-after-finish"
 
 
 @dataclass
@@ -443,6 +458,9 @@ class TaskWorkflow:
 
             await self._release(approval, grant, fenced=True, outcome=result.outcome.value)
             await self._finish(result)
+            # Strictly after `_finish`: the Job *is* the evidence, so it may not
+            # be collected until the outcome it proves is on the card.
+            await self._collect_job(result)
         finally:
             self._busy = False
             self._state.active_job = ""
@@ -638,6 +656,42 @@ class TaskWorkflow:
         )
         await self._move(Stage.BLOCKED)
         self._state.approval = None
+
+    async def _collect_job(self, result: AttemptResult) -> None:
+        """Delete the attempt's Job, now that `_finish` has recorded its outcome.
+
+        Plan §12 keeps a Job until its evidence has been collected, which is why
+        `ensure_job` sets no `ttlSecondsAfterFinished`. Nothing was deleting them
+        afterwards, so `kube-cleanup-operator` did it on a 60-minute timer that
+        knows nothing about whether anyone read the failure -- the §6.7 fix stops
+        that being *misread* as an interruption, it does not stop the evidence
+        going. The operator is now told to leave these Jobs alone, so the
+        workflow that knows when the evidence has served its purpose owns the
+        deletion instead.
+
+        An INTERRUPTED attempt is exempt: it keeps its approval and resumes on
+        the next shift, so its Job is not finished evidence.
+        """
+        if result.outcome is AttemptOutcome.INTERRUPTED:
+            return
+        if not result.job_name:
+            return
+        if workflow.patched(PATCH_DELETE_JOB_AFTER_FINISH):
+            try:
+                await workflow.execute_activity(
+                    k8s_acts.delete_job, result.job_name, **_CLEANUP
+                )
+            except Exception as exc:  # noqa: BLE001
+                # Cleanup must not be able to kill the workflow. By this point
+                # the outcome is already on the card and the slot is already
+                # released, so failing here would orphan the card from every
+                # future board event to tidy up a Job -- the same reasoning that
+                # puts a catch around `_execute`. An uncollected Job stays
+                # visible in `ai-jobs` and harms nothing; the operator no longer
+                # collects it either, so it waits for a human.
+                workflow.logger.warning(
+                    "could not collect job %s: %s", result.job_name, exc
+                )
 
     # ------------------------------------------------------------ small helpers
 

@@ -21,6 +21,7 @@ fast and offline.
 
 from __future__ import annotations
 
+import base64
 import json
 import pathlib
 
@@ -84,6 +85,52 @@ async def test_history_still_replays(path: pathlib.Path):
     board, then regenerate deliberately.
     """
     await _replayer().replay_workflow(_load(path))
+
+
+# Patch id -> the history that recorded the *patched* side of that gate.
+#
+# A `workflow.patched` gate is invisible to the test above. Every history
+# captured before the gate shipped answers False at it and replays clean whether
+# the new branch is correct, broken or deleted -- so a corpus of only those
+# proves nothing about the branch the gate was added for. The entry below exists
+# so at least one fixture has actually been through it.
+PATCHED_BRANCHES = {
+    "delete-job-after-finish": "task-evidence-collected",
+}
+
+
+def _recorded_patch_ids(path: pathlib.Path) -> set[str]:
+    """Patch ids a history went through.
+
+    Temporal records these as `core_patch` marker events whose payload is
+    base64-encoded JSON, so grepping the file for the id finds nothing.
+    """
+    ids: set[str] = set()
+    for event in json.loads(path.read_text()).get("events", []):
+        attrs = event.get("markerRecordedEventAttributes")
+        if not attrs or attrs.get("markerName") != "core_patch":
+            continue
+        for detail in (attrs.get("details") or {}).values():
+            for payload in detail.get("payloads") or []:
+                data = payload.get("data")
+                if data:
+                    ids.add(json.loads(base64.b64decode(data))["id"])
+    return ids
+
+
+@pytest.mark.parametrize("patch_id,stem", sorted(PATCHED_BRANCHES.items()))
+def test_a_patch_gate_has_a_history_that_took_it(patch_id: str, stem: str):
+    """Regenerating that fixture against code without the gate must be loud.
+
+    It would otherwise leave a file that still replays perfectly and no longer
+    covers anything, which is the quietest possible way to lose a guard.
+    """
+    path = HISTORIES / f"{stem}.json"
+    assert path in CLEAN, f"{path.name} is missing from the clean corpus"
+    assert patch_id in _recorded_patch_ids(path), (
+        f"{path.name} no longer records patch {patch_id!r}, so nothing exercises "
+        f"the patched branch any more"
+    )
 
 
 @pytest.mark.parametrize("path", BROKEN, ids=lambda p: p.stem)

@@ -150,8 +150,8 @@ class TestDedupKey:
 
 HANDOFF = {
     "task_id": "abcdefghijkl",
-    "spec_revision": "spec-1",
-    "design_revision": "design-3",
+    "spec_revision": "specs/widget-poller.md@" + "b" * 40,
+    "design_revision": "designs/widget-poller.md@" + "c" * 40,
     "repository": "chrtol/home-cluster",
     "base_commit": "a" * 40,
     "goal": "Retry the widget poller on 5xx",
@@ -208,6 +208,62 @@ class TestParseHandoff:
             parse_handoff("<p>!!python/object/apply:os.system ['echo pwned']</p>")
 
 
+class TestRevisionReferences:
+    """Task 2: `spec_revision` and `design_revision` must be content-addressed.
+
+    The traceability design leans on one property: editing the design changes
+    the field, which changes `content_hash()`, which revokes the approval bound
+    to the old hash. A mutable reference -- a branch name, `HEAD`, a tag -- keeps
+    pointing at "whatever that means now", so the field never changes and the
+    approval silently survives the edit that was supposed to revoke it.
+
+    Shape only, on purpose. Resolving the reference would need a read credential
+    for a private repo and egress the default-deny NetworkPolicy blocks, and it
+    would buy existence-checking rather than integrity -- a human at Design
+    review already looked at the thing.
+    """
+
+    @pytest.mark.parametrize("field", ["spec_revision", "design_revision"])
+    @pytest.mark.parametrize(
+        "value",
+        [
+            "main",
+            "HEAD",
+            "v1.2.0",
+            "design-1",
+            # Right idea, no path to say which object it is.
+            "a" * 40,
+            # A path, but the ref is not a full commit sha.
+            "designs/thing.md@abc1234",
+            "designs/thing.md@HEAD",
+            # Uppercase: git writes object names in lowercase hex, and allowing
+            # both would make two spellings of one commit hash differently.
+            "designs/thing.md@" + "A" * 40,
+            "designs/thing.md@" + "a" * 39,
+            "designs/thing.md@" + "a" * 41,
+            # Not hex at all, but the right length.
+            "designs/thing.md@" + "z" * 40,
+            "designs/thing @" + "a" * 40,
+        ],
+    )
+    def test_a_mutable_or_malformed_reference_is_rejected(self, field, value):
+        with pytest.raises(HandoffInvalid, match=field):
+            parse_handoff(dumps_handoff_dict({**HANDOFF, field: value}))
+
+    @pytest.mark.parametrize("field", ["spec_revision", "design_revision"])
+    def test_a_content_addressed_reference_is_accepted(self, field):
+        """Control. Without it the rejections above could be rejecting anything."""
+        value = "planning/designs/thing.md@" + "0123456789abcdef" * 2 + "01234567"
+        assert len(value.split("@")[1]) == 40
+        handoff = parse_handoff(dumps_handoff_dict({**HANDOFF, field: value}))
+        assert getattr(handoff, field) == value
+
+    def test_the_error_says_what_the_shape_should_be(self):
+        """The message is the only instruction the person editing the card gets."""
+        with pytest.raises(HandoffInvalid, match="40-hex-commit-sha"):
+            parse_handoff(dumps_handoff_dict({**HANDOFF, "design_revision": "main"}))
+
+
 class TestHandoffHash:
     def test_reordering_a_list_is_not_a_material_change(self):
         a = parse_handoff(dumps_handoff_dict({**HANDOFF, "scope": ["x.py", "y.py"]}))
@@ -218,7 +274,7 @@ class TestHandoffHash:
         "field,value",
         [
             ("base_commit", "b" * 40),
-            ("design_revision", "design-4"),
+            ("design_revision", "designs/widget-poller.md@" + "d" * 40),
             ("goal", "something else entirely"),
             ("allowed_paths", ["tests/**"]),
             ("acceptance_checks", ["unit", "integration"]),

@@ -1,6 +1,7 @@
 """Regenerate the clean replay corpus in `tests/histories/`.
 
-    python scripts/generate_histories.py
+    python scripts/generate_histories.py                    # every scenario
+    python scripts/generate_histories.py evidence_collected  # just one
 
 Each scenario is driven through a real Temporal test server exactly as the
 tests drive it, and the resulting history is written out. `tests/test_replay.py`
@@ -130,7 +131,7 @@ async def stale_approval(client, world: FakeWorld) -> dict[str, WorkflowHandle]:
     await task.signal("board_event", approval_event())
     assert await wait_for(lambda: _approved(task)), "approval was never recorded"
 
-    world.set_handoff(CARD, sample_handoff(CARD, design_revision="design-2"))
+    world.set_handoff(CARD, sample_handoff(CARD, design_revision="designs/card-1.md@" + "d" * 40))
     await _open_shift(dispatcher)
 
     assert await wait_for(
@@ -188,13 +189,63 @@ async def infrastructure_abort(client, world: FakeWorld) -> dict[str, WorkflowHa
     return {"task-infrastructure-abort": task}
 
 
-SCENARIOS = (happy_path, blocked, stale_approval, queued_awaiting_shift, infrastructure_abort)
+async def evidence_collected(client, world: FakeWorld) -> dict[str, WorkflowHandle]:
+    """A finished attempt whose Job is then collected (plan §12).
+
+    Every other task fixture here was captured before `delete-job-after-finish`
+    existed, so none of them carries its marker and all of them exercise the
+    *unpatched* side of the gate -- which is worth having, but it means a later
+    change to the collection branch would sail past the guard untouched. This
+    one records the patched side.
+    """
+    world.set_handoff(CARD, sample_handoff(CARD))
+    dispatcher, task = await _start(client, world)
+    await _open_shift(dispatcher)
+    await task.signal("board_event", approval_event())
+
+    assert await wait_for(lambda: _has_job(world)), "no job was created"
+    job = world.created_jobs[0]
+    world.job_states[job] = JobState(
+        name=job, exists=True, succeeded=1, terminated=True, pod_phases=["Succeeded"]
+    )
+    assert await wait_for(lambda: _moved_to(world, Stage.REVIEW), timeout=40), "never reached Review"
+    assert await wait_for(
+        lambda: _job_collected(world, job), timeout=40
+    ), f"the job was never collected: {world.timeline}"
+    return {"task-evidence-collected": task}
+
+
+def _job_collected(world: FakeWorld, job: str):
+    async def check() -> bool:
+        return job in world.deleted_jobs
+
+    return check()
+
+
+SCENARIOS = (
+    happy_path,
+    blocked,
+    stale_approval,
+    queued_awaiting_shift,
+    infrastructure_abort,
+    evidence_collected,
+)
 
 
 async def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
+    # Name scenarios on the command line to write only those. Adding one fixture
+    # should never mean rewriting histories that are currently passing -- see the
+    # warning at the top of this file.
+    wanted = set(sys.argv[1:])
+    unknown = wanted - {s.__name__ for s in SCENARIOS}
+    if unknown:
+        print(f"unknown scenario(s): {', '.join(sorted(unknown))}", file=sys.stderr)
+        return 2
+    selected = [s for s in SCENARIOS if not wanted or s.__name__ in wanted]
+
     written = []
-    for scenario in SCENARIOS:
+    for scenario in selected:
         env = await WorkflowEnvironment.start_time_skipping(
             data_converter=pydantic_data_converter
         )

@@ -318,6 +318,19 @@ async def stop_job(name: str) -> None:
 
 
 @activity.defn
+async def delete_job(name: str) -> None:
+    """Collect a finished attempt's Job now that its outcome has been recorded.
+
+    Mechanically identical to `stop_job` -- same foreground propagation, same
+    tolerance of a Job that is already gone -- but a distinct name, because the
+    two mean opposite things in a history: `stop_job` ends an attempt that was
+    still running, this runs only once the board already carries the outcome.
+    Plan §12: retain evidence until collection succeeds, then clean up.
+    """
+    await context.current().jobs.stop(name)
+
+
+@activity.defn
 async def confirm_terminated(name: str) -> bool:
     """Is it safe to let another writer touch this workspace?
 
