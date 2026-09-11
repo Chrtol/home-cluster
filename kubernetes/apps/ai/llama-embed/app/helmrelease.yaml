@@ -95,6 +95,16 @@ spec:
               - "4096"
               - --threads
               - "4"
+              # Pin the slot count. Without this llama-server defaults to 4
+              # slots and allocates n_ctx_slot of KV for EACH -- 4 x 4096 =
+              # 16384 tokens, ~1.9GB, which OOMKilled the pod at a 3Gi limit
+              # on 2026-09-11. Memini never sends more than
+              # MEMINI_EMBED_MAX_CONCURRENCY (2) concurrent embed requests, so
+              # the other two slots were pure cost. Keep these two numbers in
+              # step: raising memini's concurrency without raising this will
+              # queue requests, and raising this without more memory will OOM.
+              - --parallel
+              - "2"
             probes:
               liveness: &probe
                 enabled: true
@@ -124,7 +134,11 @@ spec:
               # (plan section 6): throttling an embedder just makes recall slow.
               requests:
                 cpu: 100m
-                memory: 1500Mi
+                # MEASURED 2026-09-11, not estimated: 2947Mi steady with the
+                # 4 default slots. With --parallel 2 the KV halves, so ~2Gi is
+                # the real floor. Goldilocks suggested 4.2Gi, which was sizing
+                # for the 4-slot mistake rather than the fixed config.
+                memory: 2Gi
               limits:
                 memory: 3Gi
         pod:
