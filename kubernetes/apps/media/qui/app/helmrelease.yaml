@@ -88,7 +88,7 @@ spec:
         existingClaim: "{{ .Release.Name }}"
       # Mount the /data PARENT (not just torrents) so qui's orphan scan can see
       # /data/media hardlink targets and correctly protect referenced files.
-      # Without this, media-hardlinked files (e.g. readmeabook -> /data/media/audiobooks)
+      # Without this, media-hardlinked files (e.g. shelfmark -> /data/media/audiobooks)
       # are flagged as orphans and the scan reports "path inaccessible".
       media:
         existingClaim: nas-data

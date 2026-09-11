@@ -47,7 +47,7 @@ spec:
               - key: app.kubernetes.io/name
                 operator: In
                 values: [outline, homarr, reptile-tracker, paperless, postiz, affine]
-        # media: readmeabook, tracearr, immich
+        # media: tracearr, immich
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: media
@@ -55,7 +55,7 @@ spec:
             matchExpressions:
               - key: app.kubernetes.io/name
                 operator: In
-                values: [readmeabook, tracearr, immich]
+                values: [tracearr, immich]
         # security: authentik (uses dragonfly as its cache/broker)
         - namespaceSelector:
             matchLabels:

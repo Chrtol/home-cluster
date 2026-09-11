@@ -62,7 +62,6 @@ data:
       audiobooks: "/data/torrents/audiobooks"
       books: "/data/torrents/books"
       music: "/data/torrents/music"
-      readmeabook: "/data/media/audiobooks"
       cleanuparr-unlinked: "/data/torrents/cleanuparr-unlinked"
       seedbuild: "/data/torrents/seedbuild"
 
