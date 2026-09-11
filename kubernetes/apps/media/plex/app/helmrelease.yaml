@@ -89,8 +89,11 @@ spec:
       # The nodeAffinity below is PREFERRED and on its own it does NOT work: verified
       # 2026-08-22 that Plex still landed on lenovo2 with dell1's slot free, because
       # weight 100 (scored x2) loses to NodeResourcesFit/LeastAllocated + ImageLocality
-      # -- lenovo2 is the least-allocated node in the cluster and already had the image
-      # cached. A preference can lose, and here it loses every time.
+      # -- at the time lenovo2 was the least-allocated node in the cluster and already
+      # had the image cached. A preference can lose, and here it lost every time.
+      #
+      # Stale since b8cbed3d5 right-sized requests: dell1 is now the least-allocated node.
+      # The required podAntiAffinity is kept anyway -- scoring shifts as requests change.
       #
       # What actually pins Plex to dell1 is the REQUIRED podAntiAffinity: immich-server
       # and frigate are barred from dell1 (nodeAffinity DoesNotExist on the same label)
@@ -107,6 +110,10 @@ spec:
       # Ordering gotcha: this is only deterministic once BOTH lenovos hold a GPU
       # consumer. Until frigate is deployed one lenovo is free and Plex may sit there.
       # Deploy frigate first, restart Plex last.
+      #
+      # Nothing enforces that spread at runtime (the descheduler only remediates REQUIRED
+      # anti-affinity), so once lost it stays lost and Plex drifts off dell1 -- it did on
+      # 2026-09-11. Alerted by PlexGpuConsumerSpreadBroken.
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

@@ -113,6 +113,39 @@ spec:
             summary: "Plex is experiencing high CPU usage"
             description: "Plex CPU usage is at {{ $value | humanizePercentage }}. Heavy transcoding may be occurring."
 
+    - name: plex.placement
+      interval: 5m
+      rules:
+        # Plex's dell1 pin depends on both lenovos holding a GPU consumer; that spread is
+        # a preferred rule nothing enforces at runtime. Long `for:` because two consumers
+        # on one node is also the legitimate dell1-down state.
+        - alert: PlexGpuConsumerSpreadBroken
+          expr: |
+            count by (node) (
+              kube_pod_labels{label_gpu_home_arpa_consumer="true"}
+              * on (namespace, pod) group_left (node) kube_pod_info
+            ) > 1
+          for: 1h
+          labels:
+            severity: warning
+            category: plex-placement
+          annotations:
+            summary: "Two GPU consumers share node {{ $labels.node }} — Plex's dell1 pin is not holding"
+            description: "{{ $value }} pods labelled gpu.home.arpa/consumer are on {{ $labels.node }}. While both frigate and immich-server sit on one lenovo, the other lenovo is feasible for Plex and it can schedule off dell1. Restart immich-server or frigate to re-spread them, then restart Plex. Expected to fire if dell1 is down."
+
+        # Guards the rule above: drop the label from kube-state-metrics and it would
+        # report healthy forever rather than failing loudly.
+        - alert: PlexGpuConsumerMetricMissing
+          expr: |
+            absent(kube_pod_labels{label_gpu_home_arpa_consumer="true"})
+          for: 30m
+          labels:
+            severity: warning
+            category: plex-placement
+          annotations:
+            summary: "GPU-consumer pod labels missing from kube-state-metrics"
+            description: "kube_pod_labels{label_gpu_home_arpa_consumer=\"true\"} returns no series, so PlexGpuConsumerSpreadBroken cannot fire. Check the kube-state-metrics label allowlist."
+
     - name: plex.network
       interval: 1m
       rules:
