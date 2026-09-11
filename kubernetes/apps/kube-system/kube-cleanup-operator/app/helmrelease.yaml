@@ -22,6 +22,18 @@ spec:
     args:
       - --delete-failed-after=60m
       - --delete-successful-after=0
+      # Leave the AI orchestrator's Jobs alone: they are the evidence of an
+      # attempt, and its workflow deletes each one itself once the outcome has
+      # been recorded on the board. Collecting them on a 60-minute timer instead
+      # destroyed failures nobody had read yet.
+      #
+      # A label exclusion rather than a namespace one because v0.8.2's
+      # --namespace takes a single namespace to *include*, with no way to
+      # exclude. The selector is applied to the ListWatch of both the Job and
+      # the Pod informer, so the operator never even sees these objects, and
+      # `key!=value` matches everything lacking the label -- verified against
+      # this cluster's API: every other Job in every namespace still matches.
+      - --label-selector=orchestrator.ai/managed!=true
       - --delete-pending-pods-after=0
       - --delete-evicted-pods-after=0
       - --delete-orphaned-pods-after=0
