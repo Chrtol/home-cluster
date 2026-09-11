@@ -1,0 +1,17 @@
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: "${APP}-route-timeout"
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: "${ROUTE_TIMEOUT_TARGET:=${APP}}"
+  timeout:
+    tcp:
+      connectTimeout: "${ROUTE_TIMEOUT_CONNECT:=10s}"
+    http:
+      # "0s" disables the cap entirely — use that for long-lived streams
+      # (SSE, Socket.IO, MCP), not a large finite value.
+      requestTimeout: "${ROUTE_TIMEOUT_REQUEST:=180s}"

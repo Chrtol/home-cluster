@@ -17,6 +17,10 @@ spec:
   components:
     - ../../../../components/cnpg
     - ../../../../components/ext-auth
+    # Interactive search fans out to every Prowlarr indexer; a measured episode
+    # search took 26s, past Envoy's 15s default, so the WebUI showed "Unable to
+    # load results for this episode search" on a 504.
+    - ../../../../components/route-timeout
   postBuild:
     substitute:
       APP: *app

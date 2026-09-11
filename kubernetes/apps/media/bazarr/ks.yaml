@@ -18,6 +18,8 @@ spec:
     - ../../../../components/cnpg
     - ../../../../components/ext-auth
     - ../../../../components/proxy-application
+    # Subtitle provider search fans out the same way — see sonarr's ks.yaml.
+    - ../../../../components/route-timeout
   postBuild:
     substitute:
       APP: *app

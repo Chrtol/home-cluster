@@ -40,6 +40,7 @@ Conventions that apply to every component:
 | `oidc-application` | Authentik OIDC provider + groups | consume generated secret |
 | `proxy-application` | Authentik proxy provider | none |
 | `ext-auth` | HTTPRoute + Envoy ext-auth via Authentik | none (replaces app route) |
+| `route-timeout` | Raise (or disable) Envoy's 15s route response timeout | none |
 | `s3-bucket` | Garage bucket + key (operator CRs) on garage-operated | consume `${APP}-s3-credentials` |
 | `s3-bucket/cors` | PutBucketCors Job (browser-upload apps) | opt-in add-on; set `CORS_SUBDOMAIN` |
 | `repos/app-template` | app-template OCIRepository | `chartRef` |
@@ -310,6 +311,39 @@ it via `chartRef: {kind: OCIRepository, name: app-template, namespace: flux-syst
 Namespace scaffolding: the namespace object plus SOPS-encrypted
 `cluster-secrets` and age key. Used by namespace kustomizations, not by
 individual apps.
+
+## `route-timeout`
+
+Envoy's default route response timeout is 15s and is NOT set anywhere in this
+repo — a route with no `BackendTrafficPolicy` silently inherits it. Anything
+slower gets a 504 with `response_flags=UT`, `response_code_details=response_timeout`,
+which apps surface as a generic "try again later". Retrying never helps when the
+work is reliably slower than the deadline.
+
+```yaml
+components:
+  - ../../../../components/route-timeout
+postBuild:
+  substitute:
+    APP: *app
+```
+
+| Variable | Default | When to override |
+|---|---|---|
+| `ROUTE_TIMEOUT_TARGET` | `${APP}` | HTTPRoute is not named after the app |
+| `ROUTE_TIMEOUT_REQUEST` | `180s` | `0s` for long-lived streams (SSE, Socket.IO, MCP) |
+| `ROUTE_TIMEOUT_CONNECT` | `10s` | rarely |
+
+Two distinct cases, with opposite fixes:
+
+- **Slow finite request** (indexer search fan-out: sonarr, radarr, bazarr,
+  prowlarr) — raise the ceiling. The default 180s is right.
+- **Long-lived stream** (`/api/stream`, `/socket.io/`, MCP `POST /mcp`) — set
+  `ROUTE_TIMEOUT_REQUEST: 0s` to disable the cap. A large finite value only
+  makes the disconnect less frequent, it does not fix it.
+
+To find affected routes, grep the Envoy access logs for `response_timeout` and
+group by `route_name`.
 
 ## Troubleshooting
 

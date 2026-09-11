@@ -17,6 +17,9 @@ spec:
   components:
     - ../../../../components/cnpg
     - ../../../../components/ext-auth
+    # Its own UI search queries every indexer at once — the slowest one sets the
+    # response time, same fan-out as sonarr's.
+    - ../../../../components/route-timeout
   postBuild:
     substitute:
       APP: *app

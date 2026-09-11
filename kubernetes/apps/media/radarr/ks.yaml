@@ -16,6 +16,8 @@ spec:
   components:
     - ../../../../components/cnpg
     - ../../../../components/ext-auth
+    # Same interactive-search fan-out as sonarr — see its ks.yaml.
+    - ../../../../components/route-timeout
   prune: true
   sourceRef:
     kind: GitRepository
