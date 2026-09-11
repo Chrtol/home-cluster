@@ -158,9 +158,12 @@ spec:
               capabilities: { drop: ["ALL"] }
             resources:
               # No CPU limit -- recheck bursts to several cores; throttling stretches them.
+              #
+              # Request tracks RSS (~300Mi); working set swings to 2.6Gi on reclaimable
+              # page cache. Was 4Gi, which put the pod 113Mi over dell1's free memory.
               requests:
                 cpu: 600m
-                memory: 4Gi
+                memory: 1Gi
               limits:
                 memory: 6Gi
           port-forward:
@@ -270,20 +273,10 @@ spec:
               limits:
                 memory: 32Mi
     defaultPodOptions:
-      # Keep this bulk NFS writer off Plex's node. One NFS mount multiplexes all I/O
-      # for a client<->server pair over a SINGLE TCP connection, so 69 MB/s of torrent
-      # writes put Plex's reads at the back of the queue -- 2026-08-07 seeks stalled
-      # 30s+ while the NAS itself sat at 26% disk busy and load 1.55. Anti-affinity
-      # rather than a nodeSelector so the rule tracks Plex if its GPU affinity moves it.
-      # IgnoredDuringExecution: nothing evicts if Plex later lands here (e.g. dell1
-      # down); they separate again on the next restart.
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - topologyKey: kubernetes.io/hostname
-              labelSelector:
-                matchLabels:
-                  app.kubernetes.io/name: plex
+      # Plex anti-affinity dropped 2026-09-12: nconnect=16 retired the NFS head-of-line
+      # blocking it guarded, and this instance seeds rather than writes. Unconstrained it
+      # lands on dell1, which absorbs its ~2.6 cores of WireGuard softirq. sabnzbd, the
+      # actual bulk writer, keeps its rule.
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
