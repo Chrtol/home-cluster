@@ -74,6 +74,17 @@ class Settings:
     dispatcher_history_limit: int
     task_history_limit: int
 
+    # --- memory ---
+    # Read-only retrieval for context assembly. An empty key disables it: the
+    # manifest then records lessons as degraded and the attempt runs anyway,
+    # because optional lessons must never block execution.
+    #
+    # Last, and the only fields here carrying defaults, because every other one
+    # is passed positionally by callers that predate them. A field added in the
+    # middle without a default breaks all of them at once.
+    memini_base_url: str = "http://memini.ai.svc.cluster.local:8080"
+    memini_api_key: str = ""
+
     @classmethod
     def from_env(cls) -> "Settings":
         return cls(
@@ -94,6 +105,10 @@ class Settings:
             job_fail_at_step=_int("JOB_FAIL_AT_STEP", 0),
             job_fail_task_id=os.environ.get("JOB_FAIL_TASK_ID", ""),
             reconcile_interval_seconds=_interval("RECONCILE_INTERVAL_SECONDS", 300),
+            memini_base_url=os.environ.get(
+                "MEMINI_BASE_URL", "http://memini.ai.svc.cluster.local:8080"
+            ),
+            memini_api_key=os.environ.get("MEMINI_API_KEY", ""),
             desktop_id=os.environ.get("DESKTOP_ID", "primary"),
             dispatcher_history_limit=_int("DISPATCHER_HISTORY_LIMIT", 500),
             task_history_limit=_int("TASK_HISTORY_LIMIT", 200),

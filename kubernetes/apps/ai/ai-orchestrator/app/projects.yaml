@@ -20,5 +20,14 @@ projects:
     # Phase 2 runs the dummy worker from the orchestrator's own image. Phase 4
     # replaces this with a per-project image carrying OpenCode and the toolchain.
     image: ""
+    # Which Memini namespace this project's reviewed lessons come from. A
+    # privilege decision like `repository` above: it decides whose knowledge an
+    # attempt on this board can be shown.
+    #
+    # Leaving it unset does NOT mean "use the default" — it means no lessons are
+    # retrieved at all, and every package says so. Falling back to the API key's
+    # own default namespace would be the quiet failure: this board would start
+    # reading another project's lessons and nothing would report it.
+    memory_namespace: home-cluster
     checks:
       unit: ["python", "-m", "pytest", "-q"]

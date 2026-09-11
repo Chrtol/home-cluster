@@ -16,9 +16,13 @@ from temporalio.contrib.pydantic import pydantic_data_converter
 from temporalio.testing import WorkflowEnvironment
 from temporalio.worker import Worker
 
+from orchestrator.activities import assemble as assemble_acts
 from orchestrator.activities import board as board_acts
 from orchestrator.activities import kubernetes as k8s_acts
+from orchestrator.context import assemble
+from orchestrator.context.manifest import LessonsStatus
 from orchestrator.contracts import AttemptRef, CardSnapshot, Handoff, JobState, Stage
+from orchestrator.memory.memini import Lesson
 
 TASK_QUEUE = "test-queue"
 
@@ -52,6 +56,14 @@ class FakeWorld:
     # Collected *after* the outcome was published, unlike stopped_jobs.
     deleted_jobs: list[str] = field(default_factory=list)
     workspaces: list[str] = field(default_factory=list)
+    # The requests the workflow built for context assembly, and the ConfigMaps
+    # that resulted. `assemble_requests` is what proves a resumed attempt was
+    # pointed at the right prior one.
+    assemble_requests: list = field(default_factory=list)
+    context_maps: list[str] = field(default_factory=list)
+    # Lessons the fake Memini hands back. Empty is the normal case; a test that
+    # cares about retrieval sets it.
+    lessons: list[Lesson] = field(default_factory=list)
     # Set False to simulate a node partition: the job cannot be proven stopped.
     fenceable: bool = True
     # Set True to make ensure_workspace fail every time, as a missing RBAC Role
@@ -111,6 +123,33 @@ def build_activities(world: FakeWorld):
         world.workspaces.append(attempt.workspace_name)
         return attempt.workspace_name
 
+    @activity.defn(name="assemble_context")
+    async def assemble_context(
+        request: assemble_acts.AssembleRequest,
+    ) -> assemble.ContextPackage:
+        # The real assembler, not a stub: it is pure, so running it here keeps
+        # the package the workflow tests see identical to the deployed one.
+        # Only the Memini call is faked, which is the only part that does I/O.
+        world.assemble_requests.append(request)
+        return assemble.build(
+            approval=request.approval,
+            handoff=request.handoff,
+            attempt=request.attempt,
+            job_image=request.job_image,
+            policy_text=assemble_acts.policy_text(),
+            lessons=list(world.lessons),
+            lessons_status=LessonsStatus(
+                status="ok", considered=len(world.lessons), namespace="test-namespace"
+            ),
+            previous_attempt=request.previous_attempt,
+            built_at="2026-01-01T00:00:00+00:00",
+        )
+
+    @activity.defn(name="ensure_context")
+    async def ensure_context(request: k8s_acts.EnsureContextRequest) -> str:
+        world.context_maps.append(request.attempt.context_name)
+        return request.attempt.context_name
+
     @activity.defn(name="ensure_job")
     async def ensure_job(request: k8s_acts.EnsureJobRequest) -> str:
         name = request.attempt.job_name
@@ -155,7 +194,9 @@ def build_activities(world: FakeWorld):
         fetch_card,
         move_card,
         publish_comment,
+        assemble_context,
         ensure_workspace,
+        ensure_context,
         ensure_job,
         observe_job,
         stop_job,

@@ -239,6 +239,16 @@ class AttemptRef:
         """
         return f"ws-{self.slug}"
 
+    @property
+    def context_name(self) -> str:
+        """The attempt's context ConfigMap. Per *attempt*, unlike the workspace.
+
+        A repair is assembled fresh -- it carries a different prior checkpoint
+        and may select different lessons -- so the package cannot be shared the
+        way the workspace tree is.
+        """
+        return f"ctx-{self.slug}-a{self.attempt_number}"
+
 
 class AttemptOutcome(str, Enum):
     """How one attempt ended, from the orchestrator's point of view.

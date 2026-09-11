@@ -57,6 +57,11 @@ spec:
               # anchor is a repository/tag map, and this needs one string.
               JOB_IMAGE: ghcr.io/chrtol/ai-orchestrator:main-20260911111820@sha256:4b44f5faf8f4d6ddfb1e185c7bb0ae38aade09bbad2d3f789789789625f7174e # {"$imagepolicy": "flux-system:ai-orchestrator"}
               RECONCILE_INTERVAL_SECONDS: "300"
+              # Context assembly reads reviewed lessons from here. Internal
+              # service name: this is the orchestrator talking to Memini
+              # in-cluster, not the external route Claude Desktop uses. The key
+              # itself arrives via the secret, never as a value here.
+              MEMINI_BASE_URL: http://memini.ai.svc.cluster.local:8080
               # Plan §13 Phase 2's "deliberately fails when requested". 0 is
               # off. Set a step (1..STEPS, the dummy worker runs 6) to make the
               # attempt exit 17 there, which drives the card to Blocked.

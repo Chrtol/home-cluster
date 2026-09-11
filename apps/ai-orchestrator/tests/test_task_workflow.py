@@ -651,6 +651,72 @@ class TestEvidenceCollection:
         assert world.deleted_jobs == [], world.timeline
 
 
+class TestContextPackage:
+    """The workflow half of context assembly.
+
+    The package's *contents* are tested in test_context_assembly.py against the
+    pure assembler. What can only be checked here is the wiring: that a package
+    is built before the Job that mounts it, and that a resumed attempt is told
+    which attempt it is resuming.
+    """
+
+    async def test_every_attempt_gets_a_package_before_its_job(self, worker, world):
+        world.set_handoff(CARD, sample_handoff(CARD))
+        dispatcher = await start_dispatcher(worker)
+        task = await start_task(worker)
+        await open_shift(dispatcher)
+        await task.signal("board_event", approval_event())
+
+        assert await wait_for(lambda: _has_job(world))
+        request = world.job_requests[0]
+
+        assert world.context_maps == [request.attempt.context_name]
+        # The pod mounts this by name. A Job created with a ConfigMap that does
+        # not exist yet stays in ContainerCreating rather than failing in a way
+        # the workflow can read, so the order is the guarantee.
+        assert request.context_config_map == request.attempt.context_name
+
+    async def test_the_first_attempt_is_not_told_to_resume_anything(self, worker, world):
+        world.set_handoff(CARD, sample_handoff(CARD))
+        dispatcher = await start_dispatcher(worker)
+        task = await start_task(worker)
+        await open_shift(dispatcher)
+        await task.signal("board_event", approval_event())
+
+        assert await wait_for(lambda: _has_job(world))
+        assert world.assemble_requests[0].previous_attempt == ""
+
+    async def test_a_resumed_attempt_is_pointed_at_the_one_it_continues(self, worker, world):
+        """The orchestrator half of fresh-session recovery.
+
+        The worker can only resume from a checkpoint it is told about, so an
+        interrupted attempt is worth nothing unless the *next* attempt's package
+        names it. This is that link.
+        """
+        world.set_handoff(CARD, sample_handoff(CARD))
+        dispatcher = await start_dispatcher(worker)
+        task = await start_task(worker)
+        await open_shift(dispatcher)
+        await task.signal("board_event", approval_event())
+
+        assert await wait_for(lambda: _has_job(world))
+        first = world.created_jobs[0]
+        await task.signal("stop", "operator")
+
+        assert await wait_for(lambda: _attempts_reached(world, 2), timeout=40), (
+            f"the interrupted attempt never resumed: {world.created_jobs}"
+        )
+        assert await wait_for(lambda: len(world.assemble_requests) >= 2, timeout=20)
+
+        assert world.assemble_requests[1].previous_attempt == first
+        # Same workspace volume, so the checkpoint is reachable; different
+        # context, so the resume pointer is the only thing carried over.
+        assert world.assemble_requests[1].attempt.workspace_name == (
+            world.assemble_requests[0].attempt.workspace_name
+        )
+        assert world.context_maps[1] != world.context_maps[0]
+
+
 # --------------------------------------------------------------- query helpers
 
 

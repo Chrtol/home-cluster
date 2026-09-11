@@ -14,6 +14,7 @@ from temporalio.exceptions import ApplicationError
 
 from orchestrator.activities import context as activity_context
 from orchestrator.activities import kubernetes as k8s
+from orchestrator.context.manifest import ContextPackage
 from orchestrator.contracts import AttemptRef
 
 NAMESPACE = "ai-jobs"
@@ -79,6 +80,15 @@ class FakeApi:
     async def create_namespaced_persistent_volume_claim(self, namespace, body):
         return self._next("create_pvc", namespace, body)
 
+    async def create_namespaced_config_map(self, namespace, body):
+        return self._next("create_cm", namespace, body)
+
+    async def read_namespaced_config_map(self, name, namespace):
+        return self._next("read_cm", name, namespace)
+
+    async def patch_namespaced_config_map(self, name, namespace, body):
+        return self._next("patch_cm", name, namespace, body)
+
 
 class Pod:
     """Just enough of V1Pod for `observe` and `_first_exit_code`."""
@@ -121,14 +131,21 @@ class JobStatus:
 
 
 class ExistingJob:
-    def __init__(self, annotations: dict | None, active=0, succeeded=0, failed=0):
-        self.metadata = _Meta(annotations)
+    def __init__(self, annotations: dict | None, active=0, succeeded=0, failed=0, uid=None):
+        self.metadata = _Meta(annotations, uid=uid)
         self.status = JobStatus(active, succeeded, failed)
 
 
+class ExistingConfigMap:
+    def __init__(self, annotations: dict | None):
+        self.metadata = _Meta(annotations)
+
+
 class _Meta:
-    def __init__(self, annotations):
+    def __init__(self, annotations, uid=None, name="ai-probe"):
         self.annotations = annotations
+        self.uid = uid
+        self.name = name
 
 
 @pytest.fixture
@@ -156,6 +173,125 @@ def runner():
 
 def conflict() -> ApiException:
     return ApiException(status=409, reason="AlreadyExists")
+
+
+def package(files=None) -> ContextPackage:
+    body = files or {"policy.md": "be careful", "handoff.json": "{}"}
+    return ContextPackage(files=body, total_bytes=sum(len(v.encode()) for v in body.values()))
+
+
+def context_request(handoff_hash: str = "hash-aaa", **overrides) -> k8s.EnsureContextRequest:
+    body = dict(attempt=attempt(handoff_hash), package=package())
+    body.update(overrides)
+    return k8s.EnsureContextRequest(**body)
+
+
+class TestEnsureContext:
+    """The ConfigMap the attempt's pod mounts at /context.
+
+    It has to exist before the Job, be impossible to edit afterwards, and refuse
+    to be confused with a package built for a different approved revision.
+    """
+
+    async def test_a_fresh_attempt_writes_an_immutable_configmap(self, api, runner):
+        api.scripts["create_cm"] = [None]
+
+        name = await runner.ensure_context(context_request())
+
+        assert name == attempt().context_name
+        (_, _, created) = api.calls[0]
+        assert created.immutable is True, (
+            "a mutable package could be edited between the write and the pod reading it"
+        )
+        assert set(created.data) == {"policy.md", "handoff.json"}
+        assert created.metadata.labels[k8s.LABEL_MANAGED] == "true"
+        assert created.metadata.annotations[k8s.ANN_HASH] == "hash-aaa"
+
+    async def test_a_retry_adopts_the_package_already_there(self, api, runner):
+        """The Activity can be retried after a write that actually succeeded."""
+        api.scripts["create_cm"] = [conflict()]
+        api.scripts["read_cm"] = [ExistingConfigMap({k8s.ANN_HASH: "hash-aaa"})]
+
+        assert await runner.ensure_context(context_request("hash-aaa")) == attempt("hash-aaa").context_name
+        assert api.names() == ["create_cm", "read_cm"]
+
+    async def test_it_refuses_a_package_built_for_another_revision(self, api, runner):
+        """Immutability means a stale package cannot be corrected in place.
+
+        So the mismatch has to be refused rather than worked around: mounting it
+        would hand the attempt a contract nobody approved for this attempt.
+        """
+        api.scripts["create_cm"] = [conflict()]
+        api.scripts["read_cm"] = [ExistingConfigMap({k8s.ANN_HASH: "hash-old"})]
+
+        with pytest.raises(ApplicationError) as caught:
+            await runner.ensure_context(context_request("hash-aaa"))
+        assert caught.value.type == "ContextIdentityMismatch"
+        assert caught.value.non_retryable is True
+
+    async def test_each_attempt_gets_its_own_package_on_one_shared_workspace(self):
+        first, second = attempt("hash-aaa", 1), attempt("hash-aaa", 2)
+        assert first.context_name != second.context_name
+        assert first.workspace_name == second.workspace_name
+
+
+class TestTheContextMount:
+    def test_the_job_mounts_the_package_read_only(self, runner):
+        job = runner._build_job(request(context_config_map="ctx-abc-a1"))
+        container = job.spec.template.spec.containers[0]
+        mount = next(m for m in container.volume_mounts if m.mount_path == "/context")
+        volume = next(v for v in job.spec.template.spec.volumes if v.name == "context")
+
+        assert mount.read_only is True
+        assert volume.config_map.name == "ctx-abc-a1"
+        # 0444: an attempt that could rewrite its own instructions could rewrite
+        # the contract it is judged against.
+        assert volume.config_map.default_mode == 0o444
+
+    def test_a_job_built_without_one_is_unchanged(self, runner):
+        """Attempts from before the patch gate must keep their old Job spec.
+
+        Both shapes are live at once until every pre-deploy card has drained, and
+        an adopted Job is matched by name -- so the old shape has to stay exactly
+        as it was.
+        """
+        job = runner._build_job(request())
+        container = job.spec.template.spec.containers[0]
+
+        assert [m.mount_path for m in container.volume_mounts] == ["/workspace", "/tmp"]
+        assert [v.name for v in job.spec.template.spec.volumes] == ["workspace", "tmp"]
+
+    async def test_the_job_becomes_the_package_owner(self, api, runner):
+        """So collecting the attempt's evidence collects its context too."""
+        api.scripts["create_job"] = [ExistingJob({}, uid="uid-123")]
+        api.scripts["patch_cm"] = [None]
+
+        await runner.ensure_job(request(context_config_map="ctx-abc-a1"))
+
+        (_, name, _, body) = next(c for c in api.calls if c[0] == "patch_cm")
+        assert name == "ctx-abc-a1"
+        owner = body["metadata"]["ownerReferences"][0]
+        assert owner["uid"] == "uid-123"
+        assert owner["kind"] == "Job"
+
+    async def test_an_ownership_failure_does_not_fail_the_attempt(self, api, runner):
+        """The package is already written and the pod is about to read it.
+
+        Trading a running attempt for a ConfigMap that GC will miss is the wrong
+        way round; the managed label leaves an orphan findable.
+        """
+        api.scripts["create_job"] = [ExistingJob({}, uid="uid-123")]
+        api.scripts["patch_cm"] = [ApiException(status=403, reason="Forbidden")]
+
+        assert await runner.ensure_job(request(context_config_map="ctx-abc-a1")) == attempt().job_name
+
+    async def test_nothing_is_patched_when_there_is_no_package(self, api, runner):
+        """Control: the patch above is driven by the request, not by every create."""
+        api.scripts["create_job"] = [ExistingJob({}, uid="uid-123")]
+
+        await runner.ensure_job(request())
+
+        assert "patch_cm" not in api.names()
 
 
 class TestEnsureJobAdoption:

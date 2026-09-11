@@ -41,6 +41,10 @@ DOCUMENTED = {
     "DESKTOP_ID": "desktop_id",
     "DISPATCHER_HISTORY_LIMIT": "dispatcher_history_limit",
     "TASK_HISTORY_LIMIT": "task_history_limit",
+    "MEMINI_BASE_URL": "memini_base_url",
+    # Arrives through the secret rather than the env block, like the kan
+    # credentials above; listed because `Settings.from_env` reads it.
+    "MEMINI_API_KEY": "memini_api_key",
 }
 
 # Set in the HelmRelease but deliberately not read by Settings.
@@ -73,6 +77,11 @@ class TestSettingsFromEnv:
         # accepting unsigned ones.
         assert settings.kan_api_key == ""
         assert settings.kan_webhook_secret == ""
+        # Including the memory one. Empty is survivable rather than fatal --
+        # every context package records its own retrieval status, so a missing
+        # key degrades lessons instead of failing attempts.
+        assert settings.memini_api_key == ""
+        assert settings.memini_base_url == "http://memini.ai.svc.cluster.local:8080"
         # And the failure knob is off unless explicitly armed.
         assert settings.job_fail_at_step == 0
 

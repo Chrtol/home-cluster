@@ -23,6 +23,7 @@ from kubernetes_asyncio.client.exceptions import ApiException
 from temporalio import activity
 from temporalio.exceptions import ApplicationError
 
+from ..context.manifest import ContextPackage
 from ..contracts import AttemptRef, JobState
 from . import context
 
@@ -58,6 +59,17 @@ class EnsureJobRequest:
     # value can never originate in board text.
     fail_at_step: int = 0
     steps: int = 6
+    # The attempt's context ConfigMap, mounted read-only at `/context`. Empty
+    # means no mount, which is what a workflow that predates the context patch
+    # gate builds -- so an in-flight attempt's Job spec is unchanged and still
+    # adoptable by name.
+    context_config_map: str = ""
+
+
+@dataclass(frozen=True)
+class EnsureContextRequest:
+    attempt: AttemptRef
+    package: ContextPackage
 
 
 class JobRunner:
@@ -112,8 +124,117 @@ class JobRunner:
                     raise
         return name
 
+    async def ensure_context(self, request: EnsureContextRequest) -> str:
+        """Write the attempt's context package, or adopt the identical one.
+
+        Immutable: the package is what a human approved plus what the trusted
+        layer selected, and a mutable one could be edited between the write and
+        the pod reading it. Immutability also means a second write with
+        different content cannot succeed, so the adoption path below compares
+        the handoff hash and refuses rather than assuming the two agree.
+
+        No `ownerReferences` yet -- the Job that will own this does not exist
+        until the next call. `ensure_job` attaches them once it does.
+        """
+        attempt = request.attempt
+        name = attempt.context_name
+        body = client.V1ConfigMap(
+            metadata=client.V1ObjectMeta(
+                name=name,
+                labels={LABEL_MANAGED: "true"},
+                annotations={
+                    ANN_TASK: attempt.task_id,
+                    ANN_BOARD: attempt.board_id,
+                    ANN_HASH: attempt.handoff_hash,
+                    ANN_ATTEMPT: str(attempt.attempt_number),
+                },
+            ),
+            immutable=True,
+            data=dict(request.package.files),
+        )
+
+        async with client.ApiClient() as api:
+            core = client.CoreV1Api(api)
+            try:
+                await core.create_namespaced_config_map(self.namespace, body)
+                log.info(
+                    "created context %s (%d bytes)", name, request.package.total_bytes
+                )
+                return name
+            except ApiException as exc:
+                if exc.status != 409:
+                    raise
+
+            existing = await core.read_namespaced_config_map(name, self.namespace)
+            found = (existing.metadata.annotations or {}).get(ANN_HASH)
+            if found != attempt.handoff_hash:
+                raise ApplicationError(
+                    f"context {name} exists for handoff {found!r}, "
+                    f"expected {attempt.handoff_hash!r}",
+                    type="ContextIdentityMismatch",
+                    non_retryable=True,
+                )
+            log.info("adopted existing context %s", name)
+            return name
+
+    async def _own_context(self, name: str, job: client.V1Job) -> None:
+        """Make the Job the owner of its context, so collection takes both.
+
+        Best effort by design. The package is already written and the pod is
+        about to read it; failing the attempt here would trade a running task
+        for a ConfigMap that garbage collection will otherwise miss, and the
+        managed label makes an orphan findable either way.
+
+        Immutability covers `data`, not metadata, so this patch is legal on the
+        object written above.
+        """
+        uid = getattr(getattr(job, "metadata", None), "uid", None)
+        if not uid:
+            # No UID means no owner to point at. Nothing to do, and nothing
+            # worth failing a running attempt over.
+            return
+        patch = {
+            "metadata": {
+                "ownerReferences": [
+                    {
+                        "apiVersion": "batch/v1",
+                        "kind": "Job",
+                        "name": job.metadata.name,
+                        "uid": uid,
+                        "blockOwnerDeletion": False,
+                    }
+                ]
+            }
+        }
+        try:
+            async with client.ApiClient() as api:
+                await client.CoreV1Api(api).patch_namespaced_config_map(
+                    name, self.namespace, patch
+                )
+        except ApiException as exc:
+            log.warning("could not set owner on context %s: %s", name, exc.status)
+
     def _build_job(self, request: EnsureJobRequest) -> client.V1Job:
         attempt = request.attempt
+        context_mounts = []
+        context_volumes = []
+        if request.context_config_map:
+            context_mounts.append(
+                client.V1VolumeMount(name="context", mount_path="/context", read_only=True)
+            )
+            context_volumes.append(
+                client.V1Volume(
+                    name="context",
+                    config_map=client.V1ConfigMapVolumeSource(
+                        name=request.context_config_map,
+                        # Readable, never writable, not executable. The package
+                        # is instruction and evidence; an attempt that could
+                        # edit it could rewrite the contract it is judged
+                        # against.
+                        default_mode=0o444,
+                    ),
+                )
+            )
         annotations = {
             ANN_TASK: attempt.task_id,
             ANN_BOARD: attempt.board_id,
@@ -139,6 +260,7 @@ class JobRunner:
             volume_mounts=[
                 client.V1VolumeMount(name="workspace", mount_path="/workspace"),
                 client.V1VolumeMount(name="tmp", mount_path="/tmp"),
+                *context_mounts,
             ],
             security_context=client.V1SecurityContext(
                 allow_privilege_escalation=False,
@@ -171,6 +293,7 @@ class JobRunner:
                     ),
                 ),
                 client.V1Volume(name="tmp", empty_dir=client.V1EmptyDirVolumeSource()),
+                *context_volumes,
             ],
         )
 
@@ -202,24 +325,31 @@ class JobRunner:
         async with client.ApiClient() as api:
             batch = client.BatchV1Api(api)
             try:
-                await batch.create_namespaced_job(self.namespace, job)
+                created = await batch.create_namespaced_job(self.namespace, job)
                 log.info("created job %s", name)
-                return name
             except ApiException as exc:
                 if exc.status != 409:
                     raise
 
-            existing = await batch.read_namespaced_job(name, self.namespace)
-            found = (existing.metadata.annotations or {}).get(ANN_HASH)
-            if found != request.attempt.handoff_hash:
-                raise ApplicationError(
-                    f"job {name} exists for handoff {found!r}, "
-                    f"expected {request.attempt.handoff_hash!r}",
-                    type="JobIdentityMismatch",
-                    non_retryable=True,
-                )
-            log.info("adopted existing job %s", name)
-            return name
+                existing = await batch.read_namespaced_job(name, self.namespace)
+                found = (existing.metadata.annotations or {}).get(ANN_HASH)
+                if found != request.attempt.handoff_hash:
+                    raise ApplicationError(
+                        f"job {name} exists for handoff {found!r}, "
+                        f"expected {request.attempt.handoff_hash!r}",
+                        type="JobIdentityMismatch",
+                        non_retryable=True,
+                    ) from exc
+                log.info("adopted existing job %s", name)
+                created = existing
+
+        # Outside the `async with`: a second client, but not a second workflow
+        # command -- an Activity's own API calls are invisible to replay, which
+        # is why the ownership step lives here rather than as a third Activity
+        # the workflow would have to sequence.
+        if request.context_config_map:
+            await self._own_context(request.context_config_map, created)
+        return name
 
     async def observe(self, name: str) -> JobState:
         async with client.ApiClient() as api:
@@ -305,6 +435,17 @@ async def ensure_job(request: EnsureJobRequest) -> str:
         )
         request = replace(request, fail_at_step=fail_at)
     return await ctx.jobs.ensure_job(request)
+
+
+@activity.defn
+async def ensure_context(request: EnsureContextRequest) -> str:
+    """Write the attempt's read-only context package into `ai-jobs`.
+
+    Separate from `ensure_job` because it must succeed *first*: the Job's pod
+    mounts this ConfigMap, and a pod whose mount does not exist stays stuck in
+    `ContainerCreating` rather than failing in a way the workflow can read.
+    """
+    return await context.current().jobs.ensure_context(request)
 
 
 @activity.defn

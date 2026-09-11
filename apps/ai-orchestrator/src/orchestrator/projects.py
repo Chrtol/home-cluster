@@ -55,6 +55,14 @@ class Project:
     checks: dict[str, list[str]] = field(default_factory=dict)
     # Job image for this project's toolchain. Phase 2 runs the dummy worker.
     image: str = ""
+    # Memini namespace this project's reviewed lessons live in. Trusted config
+    # rather than a derived value: it decides whose knowledge an attempt can be
+    # shown, so it is a privilege decision like `repository` above.
+    #
+    # Unset means no lessons are retrieved at all. Falling back to the API key's
+    # own default namespace would be the quiet failure -- a project would start
+    # reading another's lessons and nothing would say so.
+    memory_namespace: str = ""
 
     def resolve_checks(self, ids: list[str]) -> dict[str, list[str]]:
         unknown = [i for i in ids if i not in self.checks]
@@ -119,6 +127,7 @@ def load(path: str | os.PathLike[str]) -> Registry:
             default_branch=str(entry.get("default_branch") or "main"),
             checks=checks,
             image=str(entry.get("image") or ""),
+            memory_namespace=str(entry.get("memory_namespace") or ""),
         )
 
     return Registry(projects=projects)

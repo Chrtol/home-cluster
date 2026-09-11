@@ -15,6 +15,7 @@ if TYPE_CHECKING:  # pragma: no cover - import cycle only matters to type checke
     from temporalio.client import Client
 
     from ..board.kan import KanClient
+    from ..memory.memini import MeminiClient
     from ..projects import Registry
     from ..settings import Settings
     from .kubernetes import JobRunner
@@ -29,6 +30,9 @@ class Context:
     # The reconciler starts and signals task workflows, which is a client
     # operation, not a workflow one — hence a client inside an Activity.
     temporal: "Client | None" = None
+    # Read-only memory access, held by the orchestrator alone. None means
+    # lesson retrieval reports itself degraded rather than failing an attempt.
+    memini: "MeminiClient | None" = None
 
 
 _context: Context | None = None

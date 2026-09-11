@@ -29,6 +29,7 @@ from temporalio import workflow
 from temporalio.common import RetryPolicy
 
 with workflow.unsafe.imports_passed_through():
+    from ..activities import assemble as assemble_acts
     from ..activities import board as board_acts
     from ..activities import kubernetes as k8s_acts
     from ..contracts import (
@@ -90,6 +91,19 @@ PATCH_VANISHED_JOB = "vanished-job-is-not-resumable"
 # rule as above.
 PATCH_DELETE_JOB_AFTER_FINISH = "delete-job-after-finish"
 
+# Patch gate for context assembly. This adds two commands *before* `ensure_job`,
+# on a path every live TaskWorkflow has already walked -- an attempt that
+# dispatched last week has an `ensure_job` scheduled where the new code would
+# schedule `assemble_context`, which is precisely the shape of change that
+# wedges a running workflow with NonDeterministicError. Behind the gate, a
+# pre-existing run answers False and keeps building the Job it was going to
+# build; a run started after the deploy answers True and gets the package.
+#
+# `patched()` is called inside the branch rather than around it, so the marker
+# is only recorded on the path that actually needs it. Same retirement rule as
+# the gates above.
+PATCH_CONTEXT_PACKAGE = "context-package"
+
 
 @dataclass
 class TaskState:
@@ -115,6 +129,14 @@ class TaskState:
     # anyone read the verdict", which is the difference the human reading the
     # card needs. Reset per attempt, not per workflow.
     job_seen_alive: bool = False
+    # The last attempt's Job name, which is also the directory it checkpointed
+    # into on the shared workspace volume. A resumed attempt is pointed at it.
+    #
+    # It needs no companion field saying which handoff it belonged to: the Job
+    # name embeds the attempt slug, and the slug is a digest over the handoff
+    # hash, so a name that does not match the current attempt's slug is
+    # self-evidently from a revision this one must not resume.
+    previous_job: str = ""
 
 
 @workflow.defn
@@ -415,12 +437,13 @@ class TaskWorkflow:
                 await self._release(approval, grant, fenced=True, outcome="revoked")
                 return
 
-            if await self._is_stale(approval):
+            snapshot = await self._fresh_snapshot(approval)
+            if snapshot is None:
                 await self._release(approval, grant, fenced=True, outcome="stale")
                 return
 
             try:
-                result = await self._execute(approval, grant)
+                result = await self._execute(approval, grant, snapshot)
             except Exception as exc:  # noqa: BLE001
                 # An Activity that exhausted its retries is an *infrastructure*
                 # failure, not a task failure. Letting it propagate would fail
@@ -482,16 +505,23 @@ class TaskWorkflow:
         except Exception:  # noqa: BLE001
             return False
 
-    async def _is_stale(self, approval: Approval) -> bool:
+    async def _fresh_snapshot(self, approval: Approval) -> CardSnapshot | None:
         """Re-read the card and compare against what was approved.
 
         This runs after the slot is granted, not before it is requested: the
         wait for a desktop shift can be hours, and the whole point is to catch
         an edit made during that wait.
+
+        Returns the snapshot when it still matches, so the caller can assemble
+        the attempt's context from the very bytes this check validated. Fetching
+        the handoff again later would reopen the window just closed here -- an
+        edit landing between the two reads would hand the attempt a document
+        newer than the one approved. `None` means stale; the card has already
+        been commented and moved back by the time it is returned.
         """
         snapshot = await self._fetch()
         if snapshot.handoff is not None and snapshot.handoff_hash == approval.handoff_hash:
-            return False
+            return snapshot
 
         detail = snapshot.handoff_error or (
             f"handoff is now {snapshot.handoff_hash!r}, approved {approval.handoff_hash!r}"
@@ -504,9 +534,11 @@ class TaskWorkflow:
             f"was available ({detail}). Re-approve from Design review.",
         )
         await self._move(Stage.DESIGN_REVIEW)
-        return True
+        return None
 
-    async def _execute(self, approval: Approval, grant: SlotGrant) -> AttemptResult:
+    async def _execute(
+        self, approval: Approval, grant: SlotGrant, snapshot: CardSnapshot
+    ) -> AttemptResult:
         attempt = AttemptRef(
             task_id=self._state.card_id,
             board_id=self._state.board_id,
@@ -518,17 +550,24 @@ class TaskWorkflow:
         await workflow.execute_activity(k8s_acts.ensure_workspace, attempt, **_WRITE)
         await self._move(Stage.RUNNING)
 
+        context_config_map = await self._assemble_context(approval, attempt, snapshot)
+
         request = k8s_acts.EnsureJobRequest(
             attempt=attempt,
             image=_job_image(),
             base_commit=approval.base_commit,
             repository=approval.repository,
+            context_config_map=context_config_map,
         )
         # Idempotent by name: a worker that dies between creating the Job and
         # recording it recreates the same name on replay and adopts it.
         job_name = await workflow.execute_activity(k8s_acts.ensure_job, request, **_WRITE)
         self._state.active_job = job_name
         self._state.job_seen_alive = False
+        # Recorded before the attempt runs, not after: an attempt killed
+        # mid-flight never reaches the end of this method, and it is exactly the
+        # attempt the next one has to resume from.
+        self._state.previous_job = job_name
 
         while True:
             state = await workflow.execute_activity(k8s_acts.observe_job, job_name, **_SHORT)
@@ -595,6 +634,50 @@ class TaskWorkflow:
             # A design change arriving mid-attempt must be able to stop it
             # (plan §12), so events are applied here too, not only in `run`.
             await self._drain()
+
+    async def _assemble_context(
+        self, approval: Approval, attempt: AttemptRef, snapshot: CardSnapshot
+    ) -> str:
+        """Build and publish the attempt's read-only package, behind the gate.
+
+        Returns the ConfigMap name to mount, or `""` for a workflow that
+        predates the gate -- which then builds exactly the Job it always did.
+
+        The handoff comes from the snapshot the staleness check just validated,
+        so the document the attempt receives is the one the approval binds to,
+        by construction rather than by a second lookup that could disagree.
+        """
+        if not workflow.patched(PATCH_CONTEXT_PACKAGE):
+            return ""
+
+        assert snapshot.handoff is not None  # _fresh_snapshot returned it
+
+        previous = self._state.previous_job
+        # The slug is a digest over the handoff hash, so a prior Job name that
+        # does not carry this attempt's slug came from a different approved
+        # revision. Its checkpoint is on a different volume and describes work
+        # against a contract that no longer applies; resuming from it would be
+        # resuming the wrong task.
+        if previous and not previous.startswith(f"ai-{attempt.slug}-"):
+            previous = ""
+
+        package = await workflow.execute_activity(
+            assemble_acts.assemble_context,
+            assemble_acts.AssembleRequest(
+                approval=approval,
+                handoff=snapshot.handoff,
+                attempt=attempt,
+                board_name=self._state.board_name,
+                job_image=_job_image(),
+                previous_attempt=previous,
+            ),
+            **_WRITE,
+        )
+        return await workflow.execute_activity(
+            k8s_acts.ensure_context,
+            k8s_acts.EnsureContextRequest(attempt=attempt, package=package),
+            **_WRITE,
+        )
 
     async def _release(
         self, approval: Approval, grant: SlotGrant, *, fenced: bool, outcome: str

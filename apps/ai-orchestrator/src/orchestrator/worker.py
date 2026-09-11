@@ -12,12 +12,14 @@ from temporalio.service import RPCError
 from temporalio.worker import Worker
 
 from . import projects
+from .activities import assemble as assemble_acts
 from .activities import board as board_acts
 from .activities import context as activity_context
 from .activities import kubernetes as k8s_acts
 from .activities import reconcile as reconcile_acts
 from .activities.smoke import record_step
 from .board.kan import KanClient
+from .memory.memini import MeminiClient
 from .settings import Settings
 from .workflows.dispatcher import DesktopDispatcherWorkflow, DispatcherState
 from .workflows.reconcile import ReconcileWorkflow
@@ -34,7 +36,9 @@ ACTIVITIES = [
     board_acts.publish_comment,
     board_acts.list_cards_awaiting_dispatch,
     board_acts.configured_board_names,
+    assemble_acts.assemble_context,
     k8s_acts.ensure_workspace,
+    k8s_acts.ensure_context,
     k8s_acts.ensure_job,
     k8s_acts.observe_job,
     k8s_acts.stop_job,
@@ -58,6 +62,7 @@ async def build_context(settings: Settings, client: Client) -> activity_context.
             workspace_size=settings.workspace_size,
         ),
         temporal=client,
+        memini=MeminiClient(settings.memini_base_url, settings.memini_api_key),
     )
 
 
@@ -130,6 +135,12 @@ async def main() -> None:
             settings.job_fail_at_step,
             settings.job_fail_task_id or "<every card>",
         )
+
+    if not settings.memini_api_key:
+        # Not fatal -- lessons are optional and every package records its own
+        # retrieval status -- but silent would mean every attempt quietly ran
+        # with no lessons and the manifest being the only place that said so.
+        log.warning("no MEMINI_API_KEY; context packages will record lessons as degraded")
 
     if settings.kan_self_actor_id:
         log.info("kan origin marker configured: %s", settings.kan_self_actor_id)
