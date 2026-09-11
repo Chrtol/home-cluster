@@ -105,6 +105,38 @@ spec:
               # queue requests, and raising this without more memory will OOM.
               - --parallel
               - "2"
+              # THE bound on this container's memory growth. llama-server keeps a
+              # prompt cache in host RAM whose ceiling is --cache-ram, and that
+              # ceiling DEFAULTS TO 8192 MiB -- nearly double the memory limit
+              # below. A cache that only evicts at 8GiB inside a container that
+              # dies at 4300Mi never evicts: the OOM killer always wins the race.
+              # That is what OOMKilled the pod twice on 2026-09-11, and why
+              # pinning --parallel 2 changed the starting point but not the slope.
+              #
+              # 0 disables it. Prefix reuse is worth nothing to an embedder --
+              # Memini embeds each document once and stores the vector, so there
+              # is no second request with the same prefix to serve from cache.
+              # The cache was pure cost. This also disables --cache-idle-slots
+              # (the server logs "requires --cache-ram, disabling"), which was
+              # copying each idle slot's KV into that same cache.
+              #
+              # Measured 2026-09-11 on an isolated probe pod at this digest with
+              # these args, against the live pod as a concurrent control -- same
+              # node, same model, same 15 minutes, this flag the only difference
+              # (Prometheus container_memory_working_set_bytes):
+              #   --cache-ram 0  150 distinct ~500-token embeds, 0 errors:
+              #                  2781Mi -> 2784Mi   (+2.5Mi)
+              #   default 8192   lighter organic traffic:
+              #                  1649Mi -> 2595Mi   (+946Mi)
+              # The heavier-load arm is the one that stayed flat, so the growth
+              # cannot be attributed to load.
+              #
+              # Disabling it costs nothing measurable. A repeated prompt is still
+              # answered in 0.11s against 6.17s cold, because that reuse is the
+              # slot's own retained KV -- which is what Memini's duplicate embed
+              # of the same text actually hits -- and not this cache.
+              - --cache-ram
+              - "0"
             probes:
               liveness: &probe
                 enabled: true
@@ -147,14 +179,29 @@ spec:
                 # 831Mi -> 3065Mi over 2.5h of light traffic and hit the limit:
                 # the slot fix moved the starting point, not the slope.
                 #
-                # This is a STOPGAP that buys hours, not a fix. Something
-                # accumulates over time -- llama-server's prompt cache is the
-                # suspect (the log's "selected slot by LCP similarity" lines),
-                # unconfirmed. Bounding it is its own workstream.
+                # The cause is now known and bounded in the args above: the
+                # prompt cache, ceiling set by --cache-ram, which defaulted to
+                # 8192Mi. With --cache-ram 0 the growth is gone, so this limit no
+                # longer has to outrun a leak -- it only has to cover the real
+                # steady-state footprint.
                 #
-                # Do not read a flat graph as stable: the killed container sat
-                # apparently level at 1889Mi and again at 2168Mi before
-                # climbing. Judge over hours.
+                # Deliberately left at 4300Mi rather than lowered with the same
+                # commit. The bounded config has been measured over a
+                # request-dense window (150 embeds, +2.5Mi drift), not over 24
+                # hours, and the highest working set seen under it was 2784Mi
+                # with prompts near the 2048-token slot ctx. Lowering the limit
+                # on 15 minutes of evidence would repeat the mistake this
+                # workstream exists to fix -- a flat stretch is not a ceiling.
+                # Lower it once a 24h series on --cache-ram 0 exists; expect
+                # somewhere around 3500Mi.
+                #
+                # Judge that series by request count, not elapsed time. This
+                # container sat dead flat at 1161Mi for 96 minutes purely because
+                # no embed requests arrived, then stepped the moment one did.
+                # Source of record is Prometheus
+                # container_memory_working_set_bytes, not kubectl top; the two
+                # disagree and mixing them produced a bogus reading during the
+                # incident.
                 memory: 4300Mi
         pod:
           securityContext:
