@@ -32,6 +32,10 @@ from temporalio.worker import Replayer
 from temporalio.worker.workflow_sandbox import SandboxedWorkflowRunner
 from temporalio.workflow import NondeterminismError
 
+from orchestrator.workflows import dispatcher as dispatcher_module
+from orchestrator.workflows import reconcile as reconcile_module
+from orchestrator.workflows import smoke as smoke_module
+from orchestrator.workflows import task as task_module
 from orchestrator.workflows.dispatcher import DesktopDispatcherWorkflow
 from orchestrator.workflows.reconcile import ReconcileWorkflow
 from orchestrator.workflows.smoke import SmokeWorkflow
@@ -96,6 +100,17 @@ async def test_history_still_replays(path: pathlib.Path):
 # so at least one fixture has actually been through it.
 PATCHED_BRANCHES = {
     "delete-job-after-finish": "task-evidence-collected",
+    "context-package": "task-context-package-resume",
+}
+
+# Gates deliberately not proven by a history, and why.
+#
+# A waiver is a claim that the branch is covered some other way, not that it
+# does not matter. `vanished-job-is-not-resumable` has two mutation-verified
+# unit tests; capturing a history for it would cost a desktop shift and a
+# deliberately deleted Job, which buys less than it costs.
+WAIVED_PATCHES = {
+    "vanished-job-is-not-resumable": "unit-tested only; capture needs a spare shift",
 }
 
 
@@ -131,6 +146,30 @@ def test_a_patch_gate_has_a_history_that_took_it(patch_id: str, stem: str):
         f"{path.name} no longer records patch {patch_id!r}, so nothing exercises "
         f"the patched branch any more"
     )
+
+
+def test_every_patch_gate_is_proven_or_waived():
+    """A gate nobody registered is a gate nobody tests.
+
+    The test above is parametrized over `PATCHED_BRANCHES`, so a gate missing
+    from that dict generates zero test cases and reports green -- an opt-in
+    registry that fails open. This closes it by asking the source what gates
+    exist rather than trusting the registry to be complete.
+
+    Every workflow module is scanned, not just `task.py` where all three live
+    today, because the failure being prevented is precisely someone adding a
+    gate somewhere nobody thought to look.
+
+    Equality rather than a subset: a retired gate must also fail here, or its
+    stale entry keeps pointing at a fixture that no longer proves anything.
+    """
+    declared = {
+        value
+        for module in (task_module, dispatcher_module, reconcile_module, smoke_module)
+        for name, value in vars(module).items()
+        if name.startswith("PATCH_") and isinstance(value, str)
+    }
+    assert declared == set(PATCHED_BRANCHES) | set(WAIVED_PATCHES)
 
 
 @pytest.mark.parametrize("path", BROKEN, ids=lambda p: p.stem)
