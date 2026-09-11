@@ -36,6 +36,24 @@ rules:
   - apiGroups: [""]
     resources: ["persistentvolumeclaims"]
     verbs: ["get", "list", "watch", "create"]
+  - # The per-attempt context package: one immutable ConfigMap mounted read-only
+    # at /context, holding the approved handoff, the operating policy, the
+    # selected lessons and the manifest saying where each came from. The Job's
+    # namespace is default-deny with DNS only, so an attempt can fetch nothing
+    # -- everything it will ever know has to be written here before its pod is
+    # scheduled.
+    #
+    # `patch` is for metadata only: the ConfigMap has to exist before the Job
+    # that owns it, so the ownerReference is attached immediately afterwards.
+    # Immutability covers `data`, so this cannot rewrite a package in flight.
+    #
+    # Still no `secrets`, in this namespace or any other. A coding Job must
+    # never be handed a board token or a Git credential, and the memory
+    # credential in particular stays on the orchestrator: lessons are selected
+    # and copied in by the trusted layer, never fetched by the attempt.
+    apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "patch", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
