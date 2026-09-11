@@ -11,6 +11,9 @@ configMapGenerator:
   - name: qbittorrent-coredns
     files:
       - ./config/Corefile
+  - name: qbittorrent-port-watchdog
+    files:
+      - ./config/port-watchdog.sh
 # configMapGenerator:
 #   - name: qbittorrent-loki-rules
 #     files:
