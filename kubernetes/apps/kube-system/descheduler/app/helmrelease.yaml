@@ -25,6 +25,10 @@ spec:
     kind: Deployment
     deschedulerPolicyAPIVersion: descheduler/v1alpha2
     deschedulerPolicy:
+      # Feeds LowNodeUtilization real usage from metrics-server instead of requests.
+      # Without a provider here the metricsUtilization arg below is silently inert.
+      metricsProviders:
+        - source: KubernetesMetrics
       profiles:
         - name: Default
           pluginConfig:
@@ -56,6 +60,12 @@ spec:
               args:
                 nodeAffinityType:
                   - requiredDuringSchedulingIgnoredDuringExecution
+                  # Gives soft node preferences an "during execution" half: a pod that
+                  # missed its preferred node (transient capacity, a rollout surge) is
+                  # evicted once that node can take it. Nothing is evicted while no
+                  # better node exists, so a preference still degrades to running
+                  # anywhere rather than to Pending.
+                  - preferredDuringSchedulingIgnoredDuringExecution
             - name: RemovePodsViolatingNodeTaints
             - name: RemovePodsViolatingTopologySpreadConstraint
             - name: LowNodeUtilization
@@ -63,10 +73,14 @@ spec:
                 exclude:
                   - "remote"
               args:
-                # Measured against pod REQUESTS, not live usage. After the 2026-09 RAM
-                # downsize dell1 sits at 80% memory requests, so memory:70 disqualified
-                # it as a target -- both lenovos registered as over-utilized sources with
-                # nowhere to send pods, and the plugin was a no-op every cycle.
+                # Scores ACTUAL usage, not requests. Requests lie here by ~6GiB on dell1
+                # alone, which is what made it look full while running at 71%, and what
+                # left lenovo1 unnoticed at 88% CPU while its requests read 55%.
+                metricsUtilization:
+                  source: KubernetesMetrics
+                # Only one pod is evicted per over-utilized node per cycle when running
+                # off metrics, so churn is bounded; nodeFit above stops an eviction that
+                # has nowhere better to land.
                 thresholds:
                   cpu: 50
                   memory: 82
