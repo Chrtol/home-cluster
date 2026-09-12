@@ -40,6 +40,16 @@ spec:
         reloader.stakater.com/auto: "true"
     trivy:
       slow: true # flag is to use less CPU/memory for scanning though it takes more time than normal scanning
+      # The chart default 5m kills the authentik server scan: its Python venv holds tens
+      # of thousands of generated msgraph files plus a 33MB .txt, and the SECRET scanner
+      # walks all of them client-side (client/server mode only offloads vuln scanning).
+      # It died at exactly 5m00s with "semaphore acquire: context deadline exceeded" and
+      # trivy's own advice to raise the timeout. `slow` above makes that walk slower
+      # still, so the two interact. Kept under scanJobTimeout (20m).
+      #
+      # If this recurs the next levers are `--scanners vuln` to drop secret scanning, or
+      # skipFiles for the venv path -- both of which trivy suggests in the scan log.
+      timeout: 15m0s
       ignoreUnfixed: true
       mode: ClientServer
       severity: HIGH,CRITICAL
