@@ -1,0 +1,59 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/servicemonitor_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: frigate
+spec:
+  # Frigate exports natively (prometheus_client on its API thread) -- no exporter to
+  # deploy, so this lives with the app rather than under observability/exporters.
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: frigate
+      app.kubernetes.io/name: frigate
+      app.kubernetes.io/service: frigate
+  endpoints:
+    # Port 5000, NOT 8971: 5000 is unauthenticated regardless of config.yml's
+    # `auth.enabled`, so the scrape cannot break if auth is ever turned on.
+    - port: http
+      scheme: http
+      # /api/metrics, NOT /metrics. /metrics falls through nginx to the SPA and
+      # returns index.html with HTTP 200 -- the target would read healthy and
+      # produce zero series forever.
+      path: /api/metrics
+      interval: 1m
+      scrapeTimeout: 30s
+      relabelings:
+        - action: replace
+          targetLabel: instance
+          replacement: frigate
+      metricRelabelings:
+        # frigate_{cpu,mem}_usage_percent are per-PROCESS, and carry `pid` plus a
+        # `cmdline` holding the whole argv -- the two ffmpeg series alone are ~1.4 kB
+        # of label text each. ffmpeg is respawned on every camera reconnect, so `pid`
+        # mints two new series each time and they are retained forever. Together the
+        # two families were 124 of 172 series and 64 kB of the 70 kB payload.
+        #
+        # Rewrite the process-total series first: its only label is
+        # pid="frigate.full_system", which the labeldrop below would otherwise
+        # strip down to a bare, unidentifiable series.
+        - action: replace
+          sourceLabels: ["__name__", "pid"]
+          regex: "frigate_(cpu|mem)_usage_percent;frigate\\.full_system"
+          targetLabel: process
+          replacement: full_system
+        - action: replace
+          sourceLabels: ["__name__", "pid"]
+          regex: "frigate_(cpu|mem)_usage_percent;frigate\\.full_system"
+          targetLabel: type
+          replacement: total
+        # type="Other" is ~40 s6 supervisors and log shippers per family, all at 0.0%.
+        - action: drop
+          sourceLabels: ["__name__", "type"]
+          regex: "frigate_(cpu|mem)_usage_percent;Other"
+        # What survives is keyed on (name, process, type) -- per camera and per
+        # subsystem. Verified against the live payload that this leaves no two series
+        # with identical labels: a collision would fail the WHOLE scrape with
+        # "duplicate sample for timestamp", not just drop the offenders.
+        - action: labeldrop
+          regex: "cmdline|pid"

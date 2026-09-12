@@ -5,6 +5,7 @@ kind: Kustomization
 resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
+  - ./servicemonitor.yaml
 configMapGenerator:
   - name: frigate-config
     files:
