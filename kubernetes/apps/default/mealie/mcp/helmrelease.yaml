@@ -37,8 +37,11 @@ spec:
               # a non-root user, and dropping the logging.FileHandler that writes
               # mealie_mcp_server.log into WORKDIR (fatal under the
               # readOnlyRootFilesystem below; stdout is what kubectl logs reads).
+              # -1 suffix, not plain v1.0.22: that tag belongs to upstream, so the
+              # fork's rebuild of the same source needs its own. Bumping to a new
+              # upstream release means retagging as vX.Y.Z-1 here too.
               repository: ghcr.io/chrtol/mealie-mcp-server
-              tag: v1.0.22
+              tag: v1.0.22-1
             env:
               # In-cluster Service, not the public hostname. Keeps recipe traffic
               # off the VPS -> WireGuard -> OPNSense hairpin, and means the MCP
