@@ -128,8 +128,14 @@ spec:
             summary: "New media errors on {{ $labels.node }} {{ $labels.device }}"
             description: "{{ $labels.device }} on {{ $labels.node }} logged {{ $value | printf \"%.0f\" }} new uncorrectable media error(s) in 24h."
 
-        # smartctl's own exit status is a bitmask; nonzero means the exporter is up but
-        # could not cleanly read a device (open failed, SMART command failed, etc.).
+        # smartctl's own exit status is a bitmask, and only bits 0-5 (values 1-32) are
+        # faults: open failed, SMART command failed, DISK FAILING, prefail attribute below
+        # threshold. Bits 6 (64) and 7 (128) mean only "the error log / self-test log
+        # contains records" - historical, sticky once set, and not a read failure at all.
+        # `% 64` keeps just the low six bits, so a device whose remainder is 0 carries
+        # nothing but log-record bits and is dropped. nas:sdc logged a single lifetime ATA
+        # error, went to exit status 64 and paged at 04:24 for a disk that was fine;
+        # HddSectorErrors already covers the sector damage that would actually matter.
         #
         # lenovo1:sda (HP MK0240GFDKQ) permanently reads exactly 4 = bit 2 alone, "a SMART
         # command failed". Its firmware answers "SMART Error Log not supported" and "SMART
@@ -140,20 +146,22 @@ spec:
         # (smart_status PASSED, attr 5/196 raw 0, 0 reported uncorrectables).
         #
         # `unless` matches on the full label set, so ONLY the value 4 on that one device is
-        # exempt - any additional bit (8 DISK FAILING, 16 prefail below threshold, 64 error
-        # log entries) changes the value and still alerts. Drop this clause when the disk
+        # exempt - any additional fault bit (8 DISK FAILING, 16 prefail below threshold)
+        # changes the value and still alerts. 68 (4 plus a new error-log record) also still
+        # alerts: the mask cannot drop it while bit 2 is set. Drop this clause when the disk
         # is replaced; SmartctlReadFailed is otherwise 0 fleet-wide.
         - alert: SmartctlReadFailed
           expr: |
             smartctl_device_smartctl_exit_status{job="smartctl"} != 0
+              unless (smartctl_device_smartctl_exit_status{job="smartctl"} % 64) == 0
               unless smartctl_device_smartctl_exit_status{job="smartctl", node="lenovo1", device="sda"} == 4
           for: 15m
           labels:
             severity: warning
             component: smartctl
           annotations:
-            summary: "smartctl could not cleanly read {{ $labels.node }} {{ $labels.device }}"
-            description: "smartctl exit status is {{ $value }} (bitmask) for {{ $labels.device }} on {{ $labels.node }}. The exporter is up but the device read is degraded."
+            summary: "smartctl reports a device fault (exit status {{ $value }}, bitmask) on {{ $labels.node }} {{ $labels.device }}"
+            description: "smartctl exit status is {{ $value }} (bitmask) for {{ $labels.device }} on {{ $labels.node }}. A fault bit (0-5) is set: open failed, SMART command failed, DISK FAILING or a prefail attribute below threshold. Run `smartctl -a` on the device."
 
         # Per-host reachability: one host's exporter down while others still report, so
         # SMART for that machine goes dark. ProxmoxNodeDown covers the node being down
