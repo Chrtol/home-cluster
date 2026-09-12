@@ -52,30 +52,35 @@ spec:
             nodeAffinity:
               # Keep immich off dell1's Alder Lake UHD 770 and leave it to Plex, which
               # scales with concurrent transcodes. DoesNotExist rather than a hostname
-              # so the rule follows the card. See the Plex helmrelease for the full
-              # placement scheme -- this half is load-bearing for it.
+              # so the rule follows the card.
+              #
+              # This used to be half of an indirect scheme that made both lenovos
+              # infeasible for Plex so dell1 was all it had left. That scheme is GONE as
+              # of 2026-09-12 -- Plex has its own preferred nodeAffinity for the card.
+              # The rule survives on its own merit: reserving the AV1 card for Plex.
               requiredDuringSchedulingIgnoredDuringExecution:
                 nodeSelectorTerms:
                   - matchExpressions:
                       - key: gpu.intel.com/device-id.0300-4680.present
                         operator: DoesNotExist
-            podAntiAffinity:
-              # PREFERRED on purpose: immich and frigate spread across the two lenovos
-              # normally, but must be able to double up on one when dell1 is down and
-              # preempted Plex needs the other. Making this required would deadlock
-              # that fallback.
+              # The lenovo2 half of the frigate/immich spread; frigate prefers lenovo1.
+              # Replaces a weight-100 preferred podAntiAffinity against
+              # gpu.home.arpa/consumer that read better but never self-healed -- the
+              # descheduler's RemovePodsViolatingInterPodAntiAffinity has no preferred
+              # mode, so both pods sat on lenovo1 for over a week with lenovo2 empty.
+              # RemovePodsViolatingNodeAffinity does honour
+              # preferredDuringSchedulingIgnoredDuringExecution, so this one gets pulled
+              # back. Full rationale and trade-offs in the frigate HelmRelease.
+              #
+              # NOT required: 3 GPU consumers over 2 eligible nodes means any single-node
+              # outage would leave one of them Pending.
               preferredDuringSchedulingIgnoredDuringExecution:
                 - weight: 100
-                  podAffinityTerm:
-                    topologyKey: kubernetes.io/hostname
-                    # Cluster-wide: frigate lives in default, and without this the
-                    # spread would only consider GPU consumers in media.
-                    namespaceSelector: {}
-                    labelSelector:
-                      matchExpressions:
-                        - key: gpu.home.arpa/consumer
-                          operator: In
-                          values: ["true"]
+                  preference:
+                    matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values: ["lenovo2"]
         initContainers:
           # image + core INIT_POSTGRES_* come from the cnpg component; the second
           # secretRef layers immich's extras on top (USER_FLAGS -s, SUPER_USER)

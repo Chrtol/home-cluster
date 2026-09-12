@@ -128,23 +128,29 @@ spec:
               - matchExpressions:
                   - key: gpu.intel.com/device-id.0300-4680.present
                     operator: DoesNotExist
-        podAntiAffinity:
-          # PREFERRED, not required: frigate and immich spread across the two lenovos
-          # normally, but must be able to double up on one when dell1 is down and a
-          # preempted Plex needs the other. Making this required would deadlock that
-          # fallback. Co-location is why intel-device-plugin runs sharedDevNum: 2.
+          # Keeps frigate and immich on separate lenovos, and KEEPS THEM THERE. This
+          # replaces a weight-100 preferred podAntiAffinity against
+          # gpu.home.arpa/consumer, which expressed the same spread more naturally but
+          # was never enforced after scheduling: the descheduler's
+          # RemovePodsViolatingInterPodAntiAffinity takes only `namespaces` and
+          # `labelSelector` and remediates REQUIRED violations only. Both pods had sat
+          # on lenovo1 for over a week with lenovo2 empty. RemovePodsViolatingNodeAffinity
+          # does accept preferredDuringSchedulingIgnoredDuringExecution (it is in the
+          # descheduler ConfigMap's nodeAffinityType list), so node preference is the
+          # only form of this that self-heals.
+          #
+          # Trade-off, stated plainly: this says "prefer lenovo1", not "prefer away from
+          # other GPU users". It is hostname-coupled and a fourth GPU app would not be
+          # accounted for automatically. Soft, so a dead lenovo1 just means no preference
+          # and frigate doubles up with immich -- which is also the dell1-down fallback
+          # the old podAntiAffinity comment was protecting, still intact.
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
-              podAffinityTerm:
-                # Cluster-wide: immich and plex live in media, and without this the
-                # spread would only consider GPU consumers in default -- i.e. nothing.
-                namespaceSelector: {}
-                topologyKey: kubernetes.io/hostname
-                labelSelector:
-                  matchExpressions:
-                    - key: gpu.home.arpa/consumer
-                      operator: In
-                      values: ["true"]
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values: ["lenovo1"]
       # No runAsUser/runAsNonRoot: see the container securityContext above. fsGroup is
       # omitted too -- it would trigger a recursive chown across every recording file
       # on the NFS mount, and root does not need it.
