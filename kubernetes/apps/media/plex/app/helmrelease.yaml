@@ -67,9 +67,17 @@ spec:
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
             resources:
+              # 3667M reserved 3.5Gi against a 14d peak working set of 1120Mi, and that
+              # booking was what kept Plex OFF dell1: the node had 147Mi free and no
+              # amount of right-sizing elsewhere could close a 3350Mi gap.
+              #
+              # Safe because the LIMIT is untouched -- OOMKills come from the limit, not
+              # the request, so burst capacity is unchanged at 17Gi. 2Gi is still ~1.8x
+              # the observed peak, and since Plex never exceeds its request it stays in
+              # the kubelet's safest eviction class (pods over request are evicted first).
               requests:
                 cpu: 600m
-                memory: 3667M
+                memory: 2Gi
               limits:
                 gpu.intel.com/i915: 1
                 memory: 17Gi

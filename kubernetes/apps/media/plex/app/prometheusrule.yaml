@@ -58,60 +58,105 @@ spec:
             summary: "Elevated 4xx error rate for Plex"
             description: "Plex ingress is returning {{ $value | humanizePercentage }} 4xx errors. Check authentication or client requests."
 
-        # Plex Pod Health (only monitor the main Plex deployment, not CronJobs)
+        # All four rules below were DEAD until 2026-09-12 and reported health=ok the
+        # whole time. Two separate causes: kube-state-metrics exposes pod labels only on
+        # kube_pod_labels (never on the restarts/ready metrics), and the container is
+        # named "app", not "plex". Hence the group_left join, which is also what keeps
+        # plex-exporter / plex-auto-languages / the CronJobs out of these series.
         - alert: PlexPodRestarting
           expr: |
-            rate(kube_pod_container_status_restarts_total{namespace="media",label_app_kubernetes_io_name="plex"}[15m]) > 0
+            sum(
+              rate(kube_pod_container_status_restarts_total{namespace="media"}[15m])
+              * on (namespace,pod) group_left() kube_pod_labels{label_app_kubernetes_io_name="plex"}
+            ) > 0
           for: 5m
           labels:
             severity: warning
             category: plex-stability
           annotations:
             summary: "Plex pod is restarting"
-            description: "Plex pod {{ $labels.pod }} is restarting frequently. This causes service interruptions."
+            description: "Plex is restarting frequently. This causes service interruptions."
 
         - alert: PlexPodNotReady
           expr: |
-            kube_pod_status_ready{namespace="media",label_app_kubernetes_io_name="plex",condition="true"} == 0
+            max(
+              kube_pod_status_ready{namespace="media",condition="true"}
+              * on (namespace,pod) group_left() kube_pod_labels{label_app_kubernetes_io_name="plex"}
+            ) == 0
           for: 5m
           labels:
             severity: critical
             category: plex-stability
           annotations:
             summary: "Plex pod is not ready"
-            description: "Plex pod {{ $labels.pod }} is not in ready state. Service may be unavailable."
+            description: "No ready Plex pod. Service is likely unavailable."
 
-        # Plex Performance (only monitor the main Plex deployment)
+        # Absolute, not a fraction of the limit: the limit is 17Gi against a 14d peak of
+        # 1120Mi, so a 90%-of-limit rule only fires once an OOM is already imminent.
+        # 4Gi is ~3.5x the observed peak and ~24% of the limit -- early warning.
         - alert: PlexHighMemoryUsage
           expr: |
-            (
-              container_memory_working_set_bytes{namespace="media",pod=~"plex-[a-f0-9]+-.*",container="plex"}
-              /
-              container_spec_memory_limit_bytes{namespace="media",pod=~"plex-[a-f0-9]+-.*",container="plex"}
-            ) > 0.9
-          for: 10m
+            max(
+              container_memory_working_set_bytes{namespace="media",container="app"}
+              * on (namespace,pod) group_left() kube_pod_labels{label_app_kubernetes_io_name="plex"}
+            ) > 4 * 1024^3
+          for: 15m
           labels:
             severity: warning
             category: plex-performance
           annotations:
-            summary: "Plex is using high memory"
-            description: "Plex is using {{ $value | humanizePercentage }} of its memory limit. Pod may be OOMKilled."
+            summary: "Plex memory well above its normal ceiling"
+            description: "Plex working set is {{ $value | humanize1024 }}B, far above its ~1.1GiB historical peak. Limit is 17Gi, so this is early warning, not imminent OOM."
 
+        # The last-ditch one. container_spec_memory_limit_bytes does NOT exist in this
+        # Prometheus, so the limit has to come from kube-state-metrics.
+        - alert: PlexMemoryNearLimit
+          expr: |
+            max(
+              container_memory_working_set_bytes{namespace="media",container="app"}
+              * on (namespace,pod) group_left() kube_pod_labels{label_app_kubernetes_io_name="plex"}
+            )
+            / on() max(
+              kube_pod_container_resource_limits{namespace="media",container="app",resource="memory"}
+              * on (namespace,pod) group_left() kube_pod_labels{label_app_kubernetes_io_name="plex"}
+            ) > 0.85
+          for: 5m
+          labels:
+            severity: critical
+            category: plex-performance
+          annotations:
+            summary: "Plex is near its memory limit and may be OOMKilled"
+            description: "Plex is at {{ $value | humanizePercentage }} of its memory limit."
+
+        # Cores, not a quota fraction -- Plex has NO cpu limit, so container_spec_cpu_quota
+        # is absent and any ratio against it is unevaluable. 14d daily peaks were 1.4-5.0
+        # cores, so 6 means something genuinely unusual rather than a busy transcode.
         - alert: PlexHighCPUUsage
           expr: |
-            (
-              rate(container_cpu_usage_seconds_total{namespace="media",pod=~"plex-[a-f0-9]+-.*",container="plex"}[5m])
-              /
-              container_spec_cpu_quota{namespace="media",pod=~"plex-[a-f0-9]+-.*",container="plex"}
-              * container_spec_cpu_period{namespace="media",pod=~"plex-[a-f0-9]+-.*",container="plex"}
-            ) > 0.9
+            sum(
+              rate(container_cpu_usage_seconds_total{namespace="media",container="app"}[5m])
+              * on (namespace,pod) group_left() kube_pod_labels{label_app_kubernetes_io_name="plex"}
+            ) > 6
           for: 15m
           labels:
             severity: info
             category: plex-performance
           annotations:
-            summary: "Plex is experiencing high CPU usage"
-            description: "Plex CPU usage is at {{ $value | humanizePercentage }}. Heavy transcoding may be occurring."
+            summary: "Plex CPU unusually high"
+            description: "Plex is using {{ $value | printf \"%.1f\" }} cores (14d peak was 5.0). Heavy transcoding, or something is wrong."
+
+        # Guards all of the above: they hang off kube_pod_labels, so if the KSM label
+        # allowlist changes they would silently report healthy forever again.
+        - alert: PlexMetricsMissing
+          expr: |
+            absent(kube_pod_labels{namespace="media",label_app_kubernetes_io_name="plex"})
+          for: 30m
+          labels:
+            severity: warning
+            category: plex-stability
+          annotations:
+            summary: "Plex pod labels missing from kube-state-metrics"
+            description: "kube_pod_labels has no plex series, so every Plex alert is blind. Check the kube-state-metrics label allowlist."
 
     - name: plex.placement
       interval: 5m
