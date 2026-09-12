@@ -50,7 +50,7 @@ spec:
               # server keeps working when the external path is down.
               MEALIE_BASE_URL: http://mealie.default.svc.cluster.local:9000
               # The RFC 9728 resource identifier. The MCP SDK publishes this at
-              # /.well-known/oauth-protected-resource/mcp and clients compare the
+              # /.well-known/oauth-protected-resource and clients compare the
               # value against the origin they connected to, so it must be the ONE
               # public hostname -- hence a single route below, as with hass-mcp.
               MCP_SERVER_URL: https://mealie-mcp.${SECRET_DOMAIN}
@@ -88,12 +88,18 @@ spec:
               # and the two /.well-known OAuth documents proxy Authentik on a cold
               # cache, which would make this pod's readiness depend on Authentik
               # being up. This one touches nothing upstream.
+              #
+              # NO /mcp suffix. RFC 9728 appends the resource's PATH to the
+              # well-known prefix, and MCP_SERVER_URL is an origin with no path, so
+              # the route is the bare document -- confirmed by the resource_metadata
+              # URL the server itself advertises in its 401. Probing
+              # /.well-known/oauth-protected-resource/mcp 404s and never goes Ready.
               liveness:
                 enabled: true
                 custom: true
                 spec:
                   httpGet:
-                    path: &probePath /.well-known/oauth-protected-resource/mcp
+                    path: &probePath /.well-known/oauth-protected-resource
                     port: &port 8000
                   periodSeconds: 30
                   timeoutSeconds: 5
