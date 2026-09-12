@@ -6,7 +6,14 @@ metadata:
 spec:
   sourcePVC: "${VOLSYNC_PVC:=${APP}}"
   trigger:
-    schedule: "0 3 * * *"  # Daily at 3 AM
+    # All 33 sources share one schedule, so they stampede: on 2026-09-12 every one fired
+    # at 03:00Z, finished 03:02-03:09Z, and stacked restic I/O onto peak torrent seeding
+    # -- lenovo1 hit load 38.7 with 60% IO pressure. 03:00Z is the worst hour available;
+    # by 06:00Z seeding has tapered (ens18 ~17 MB/s vs 58).
+    #
+    # Only the HOUR is substitutable, deliberately: a ${VAR:=default} holding spaces is
+    # not worth trusting, and one integer is enough to spread the herd per app.
+    schedule: "0 ${VOLSYNC_SCHEDULE_HOUR:=6} * * *"
   restic:
     copyMethod: Snapshot
     storageClassName: "${VOLSYNC_STORAGECLASS:=csi-rbd-sc}"
