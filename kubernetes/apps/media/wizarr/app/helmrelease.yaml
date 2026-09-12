@@ -31,7 +31,7 @@ spec:
           app:
             image:
               repository:  ghcr.io/wizarrrr/wizarr
-              tag: v2026.7.1
+              tag: v2026.9.0
             env:
               TZ: ${SECRET_TIMEZONE}
               RATELIMIT_DEFAULT: "500 per day"
