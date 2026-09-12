@@ -57,11 +57,12 @@ kind: NetworkPolicy
 metadata:
   name: allow-desktop-inference
 spec:
-  # Attempt Jobs and validation Jobs both carry only orchestrator.ai/managed,
-  # so there is no label that distinguishes them today and this necessarily
-  # also reaches validation pods, which have no reason to call Ollama. Narrow
-  # it here once the orchestrator labels the two kinds apart.
-  podSelector: {}
+  # Attempt pods only. Validation pods run checks and have no reason to call
+  # Ollama, so they keep default-deny's DNS and nothing else. The label is set
+  # by the orchestrator on the pod template; a pod without it gets no inference.
+  podSelector:
+    matchLabels:
+      orchestrator.ai/job-kind: attempt
   policyTypes: ["Egress"]
   egress:
     - to:
