@@ -93,9 +93,12 @@ spec:
                 drop:
                   - ALL
             resources:
+              # 14d peak was 189Mi working set / 67Mi RSS across 3 pods, against a 1280M
+              # reservation. Headless Chrome can spike unpredictably, which the 2Gi limit
+              # still absorbs -- this only stops it booking 1.2Gi it never uses.
               requests:
                 cpu: 35m
-                memory: 1280M
+                memory: 384Mi
               limits:
                 memory: 2Gi
 

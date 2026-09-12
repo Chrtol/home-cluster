@@ -139,9 +139,11 @@ spec:
               # per player, so memory scales with concurrent players, not world size.
               # No CPU limit on purpose: throttling a game server's tick loop shows up
               # as rubber-banding, and the main tick is largely single-threaded.
+              # 14d peak was 626Mi working set / 593Mi RSS for the whole pod. 1Gi is ~1.7x
+              # that for this container; the 6Gi limit still covers world growth.
               requests:
                 cpu: 500m
-                memory: 1500Mi
+                memory: 1Gi
               limits:
                 memory: 6Gi
           broadcast:

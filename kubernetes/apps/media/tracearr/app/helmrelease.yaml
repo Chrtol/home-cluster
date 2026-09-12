@@ -73,8 +73,12 @@ spec:
               readOnlyRootFilesystem: true
               capabilities: {drop: ["ALL"]}
             resources:
+              # A memory limit with no request makes Kubernetes default the request TO
+              # the limit, so this was silently booking the full 1Gi. 14d peak was 430Mi
+              # working set / 338Mi RSS.
               requests:
                 cpu: 10m
+                memory: 768Mi
               limits:
                 memory: 1Gi
     defaultPodOptions:
