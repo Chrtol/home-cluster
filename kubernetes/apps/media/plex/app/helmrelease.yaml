@@ -75,45 +75,23 @@ spec:
                 memory: 17Gi
     defaultPodOptions:
       priorityClassName: media-high
-      # Marks Plex as a GPU consumer. Every workload that claims gpu.intel.com/i915
-      # carries this label; the podAntiAffinity below keys off it, so a new GPU app
-      # only has to set the label to be accounted for.
+      # Marks Plex as a GPU consumer. Plex no longer keys off this itself, but frigate
+      # and immich still spread away from it, so dropping it would draw them onto dell1.
       labels:
         gpu.home.arpa/consumer: "true"
-      # Target dell1's Alder Lake UHD 770 over the lenovos' Kaby Lake HD 630 (AV1
-      # decode, HEVC 10-bit, many more simultaneous transcodes).
+      # PREFERRED, deliberately: dell1's Alder Lake UHD 770 adds AV1 decode and 10-bit
+      # HEVC, but the lenovos' Kaby Lake HD 630 still transcodes. Degraded beats Pending,
+      # so this must stay soft.
       #
-      # Matched on the GPU device-id label rather than kubernetes.io/hostname so the
-      # rule tracks the capability -- move that card to another node and Plex follows.
+      # Being soft, it can lose -- and on 2026-09-11 it did, though not to scoring. dell1
+      # was momentarily over 100% of allocatable memory during a mass rollout (old and new
+      # pods coexist during a surge), so it was filtered out entirely and Plex landed on
+      # lenovo2. Correct at the time; the bug is that nothing ever moved it back.
       #
-      # The nodeAffinity below is PREFERRED and on its own it does NOT work: verified
-      # 2026-08-22 that Plex still landed on lenovo2 with dell1's slot free, because
-      # weight 100 (scored x2) loses to NodeResourcesFit/LeastAllocated + ImageLocality
-      # -- at the time lenovo2 was the least-allocated node in the cluster and already
-      # had the image cached. A preference can lose, and here it lost every time.
-      #
-      # Stale since b8cbed3d5 right-sized requests: dell1 is now the least-allocated node.
-      # The required podAntiAffinity is kept anyway -- scoring shifts as requests change.
-      #
-      # What actually pins Plex to dell1 is the REQUIRED podAntiAffinity: immich-server
-      # and frigate are barred from dell1 (nodeAffinity DoesNotExist on the same label)
-      # and soft-spread across the two lenovos, so both lenovos hold a GPU consumer and
-      # are infeasible for Plex. dell1 is what is left.
-      #
-      # Fallback is preserved WITHOUT a hard pin: if dell1 is down Plex goes Pending,
-      # then preemption fires because media-high (300) outranks external-facing (200).
-      # The scheduler evicts immich-server off a lenovo, Plex takes it, and immich
-      # reschedules alongside frigate on the other lenovo -- their mutual anti-affinity
-      # is preferred, not required, exactly so they can double up under pressure. That
-      # co-location is why intel-device-plugin runs sharedDevNum: 2.
-      #
-      # Ordering gotcha: this is only deterministic once BOTH lenovos hold a GPU
-      # consumer. Until frigate is deployed one lenovo is free and Plex may sit there.
-      # Deploy frigate first, restart Plex last.
-      #
-      # Nothing enforces that spread at runtime (the descheduler only remediates REQUIRED
-      # anti-affinity), so once lost it stays lost and Plex drifts off dell1 -- it did on
-      # 2026-09-11. Alerted by PlexGpuConsumerSpreadBroken.
+      # What moves it back is the descheduler running RemovePodsViolatingNodeAffinity over
+      # preferredDuringSchedulingIgnoredDuringExecution, which evicts a pod once a node
+      # matching its preference can take it. If dell1 is genuinely down there is no better
+      # node, so nothing is evicted and Plex keeps running on a lenovo.
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -123,27 +101,9 @@ spec:
                   - key: gpu.intel.com/device-id.0300-4680.present
                     operator: In
                     values: ["true"]
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - topologyKey: kubernetes.io/hostname
-              # Cluster-wide, NOT media-only. A podAffinityTerm with no namespaces and
-              # no namespaceSelector defaults to the namespace of the pod holding it,
-              # so without this the rule only ever saw immich (also in media) and
-              # frigate in default was invisible to it -- verified 2026-08-22, frigate
-              # scheduled straight onto lenovo2 alongside Plex. An EMPTY selector means
-              # all namespaces; a null one means this pod's own.
-              namespaceSelector: {}
-              labelSelector:
-                matchExpressions:
-                  - key: gpu.home.arpa/consumer
-                    operator: In
-                    values: ["true"]
-                  # Exclude Plex itself so a second Plex pod could never block its own
-                  # scheduling. Moot today (strategy is Recreate, one pod at a time) but
-                  # it would deadlock a RollingUpdate.
-                  - key: app.kubernetes.io/name
-                    operator: NotIn
-                    values: ["plex"]
+      # No podAntiAffinity against other GPU consumers: frigate and immich are already
+      # barred from this card by their own nodeAffinity, so it never had anything left
+      # to exclude once the nodeAffinity above became required.
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
