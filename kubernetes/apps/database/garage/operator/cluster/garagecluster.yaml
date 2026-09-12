@@ -11,7 +11,7 @@ metadata:
   namespace: database
 spec:
   # Pinned to match the version our existing data was written with (v2.3.0 LMDB).
-  image: dxflrs/garage:v2.3.0
+  image: dxflrs/garage:v2.4.1
   zone: homelab
 
   # Single node, one copy per object. Durability comes from TrueNAS ZFS underneath;
