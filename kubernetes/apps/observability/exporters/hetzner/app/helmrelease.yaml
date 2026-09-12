@@ -28,7 +28,7 @@ spec:
           app:
             image:
               repository: docker.io/alpine/curl
-              tag: 8.21.0
+              tag: 8.22.0
             # This image ships curl but not jq. We can't apk-add jq (non-root +
             # read-only rootfs), so we fetch jq's official static binary into
             # /tmp (the one writable path) and put it on PATH before exec'ing
