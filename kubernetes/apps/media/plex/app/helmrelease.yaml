@@ -87,6 +87,8 @@ spec:
       # and immich still spread away from it, so dropping it would draw them onto dell1.
       labels:
         gpu.home.arpa/consumer: "true"
+        # Load-balancing evictions would fight the dell1 preference below.
+        descheduler.home.arpa/no-rebalance: "true"
       # PREFERRED, deliberately: dell1's Alder Lake UHD 770 adds AV1 decode and 10-bit
       # HEVC, but the lenovos' Kaby Lake HD 630 still transcodes. Degraded beats Pending,
       # so this must stay soft.

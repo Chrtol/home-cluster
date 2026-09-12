@@ -68,6 +68,34 @@ spec:
                   - preferredDuringSchedulingIgnoredDuringExecution
             - name: RemovePodsViolatingNodeTaints
             - name: RemovePodsViolatingTopologySpreadConstraint
+          plugins:
+            balance:
+              enabled:
+                - RemovePodsViolatingTopologySpreadConstraint
+                - RemoveDuplicates
+            deschedule:
+              enabled:
+                - RemoveFailedPods
+                - RemovePodsViolatingInterPodAntiAffinity
+                - RemovePodsViolatingNodeAffinity
+                - RemovePodsViolatingNodeTaints
+        # Separate profile only so its evictor can skip pods labelled
+        # descheduler.home.arpa/no-rebalance (LowNodeUtilization has no labelSelector of
+        # its own). Those pods have a node preference: evicting them off their preferred
+        # node for load lets RemovePodsViolatingNodeAffinity pull them straight back,
+        # which bounced Plex twice on 2026-09-13.
+        - name: Utilization
+          pluginConfig:
+            - name: DefaultEvictor
+              args:
+                evictFailedBarePods: true
+                evictLocalStoragePods: true
+                evictSystemCriticalPods: true
+                nodeFit: true
+                labelSelector:
+                  matchExpressions:
+                    - key: descheduler.home.arpa/no-rebalance
+                      operator: DoesNotExist
             - name: LowNodeUtilization
               namespaces:
                 exclude:
@@ -78,9 +106,6 @@ spec:
                 # left lenovo1 unnoticed at 88% CPU while its requests read 55%.
                 metricsUtilization:
                   source: KubernetesMetrics
-                # Only one pod is evicted per over-utilized node per cycle when running
-                # off metrics, so churn is bounded; nodeFit above stops an eviction that
-                # has nowhere better to land.
                 thresholds:
                   cpu: 50
                   memory: 82
@@ -90,15 +115,7 @@ spec:
           plugins:
             balance:
               enabled:
-                - RemovePodsViolatingTopologySpreadConstraint
                 - LowNodeUtilization
-                - RemoveDuplicates
-            deschedule:
-              enabled:
-                - RemoveFailedPods
-                - RemovePodsViolatingInterPodAntiAffinity
-                - RemovePodsViolatingNodeAffinity
-                - RemovePodsViolatingNodeTaints
     service:
       enabled: true
     serviceMonitor:
