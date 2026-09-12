@@ -29,6 +29,14 @@ spec:
   values:
     controllers:
       postiz:
+        # Parked 2026-09-12: unused, and its 2.5Gi of unreclaimable anonymous memory was
+        # the largest single contributor to dell1 sitting at ~98% requested. Scaled to 0
+        # rather than removed from the parent kustomization -- both Kustomizations here
+        # are prune: true, so dropping them would delete the Ceph RBD PVC and the CNPG
+        # database with it. Suspending the Kustomization would NOT help either: that
+        # stops reconciliation and leaves the pods running.
+        # To bring it back, delete this line. postiz-temporal is parked the same way.
+        replicas: 0
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
@@ -110,9 +118,20 @@ spec:
             resources:
               requests:
                 cpu: 100m
-                memory: 1Gi
+                # Sized on RSS (2478Mi measured), not working set -- though they agree
+                # here, because only 22Mi of this is page cache. It is anonymous and
+                # unreclaimable, so a request below it is a lie the kernel cannot cover.
+                #
+                # Was 1Gi, a 2.5x understatement. That is how postiz came to schedule
+                # onto dell1 on 2026-09-12: dell1 sits at ~98% requested, so at an honest
+                # 2.5Gi it would have been over allocatable and never been a candidate.
+                # It then squeezed dell1's page cache 7.7 -> 4.5Gi and drove
+                # NodeMemoryMajorPagesFaults (mmap'd pages refaulting off sda at ~380
+                # IOPS). Nothing OOMed -- an under-request costs the NODE, not the pod.
+                memory: 2560Mi
               limits:
-                memory: 3Gi
+                # 14d peak working set was 2795Mi, only ~8% under the old 3Gi ceiling.
+                memory: 3584Mi
     defaultPodOptions:
       securityContext:
         fsGroup: 1000

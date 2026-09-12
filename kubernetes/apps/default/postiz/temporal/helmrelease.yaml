@@ -17,6 +17,10 @@ spec:
   values:
     controllers:
       postiz-temporal:
+        # Parked alongside postiz itself -- nothing else uses this Temporal. See the
+        # comment in ../app/helmrelease.yaml for why this is replicas: 0 and not a
+        # suspended Kustomization or a removed resource.
+        replicas: 0
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
