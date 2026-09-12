@@ -36,6 +36,10 @@ spec:
       builtInTrivyServer: true
       vulnerabilityScannerScanOnlyCurrentRevisions: true
       configAuditScannerScanOnlyCurrentRevisions: true
+      # SBOM reports averaged ~0.5MiB each (915 objects, ~490MiB JSON) and were rewritten
+      # ~300x/day. Every kube-apiserver held them in its watch cache and churned 4->6.5GiB,
+      # which OOM-killed kube-apiserver on lenovo1 (19.5Gi node). Nothing consumes them.
+      sbomGenerationEnabled: false
       annotations:
         reloader.stakater.com/auto: "true"
     trivy:
