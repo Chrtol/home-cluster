@@ -6,6 +6,9 @@
 #   EXT_AUTH_SERVICE (optional) - Backend service name, defaults to ${APP}
 #   EXT_AUTH_GATEWAY (optional) - Gateway name: "internal" or "external", defaults to internal
 #   EXT_AUTH_DNS_TARGET (optional) - For external apps, set to "external.${SECRET_DOMAIN}"
+#   EXT_AUTH_HTTPROUTE_NAME (optional) - Route name, defaults to ${APP}. Set it when the
+#       app already owns an HTTPRoute named ${APP} (app-template names a single route
+#       after the release) so the two do not collide.
 #   EXT_AUTH_GATUS_GROUP (optional) - Gatus group, defaults to "guarded"
 #   EXT_AUTH_GATUS_PROBE (optional) - Gatus probe body (flow-YAML). Default is a DNS
 #       guarded probe (correct for internal-gateway apps the prober can't reach).
@@ -14,7 +17,7 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: ${APP}
+  name: ${EXT_AUTH_HTTPROUTE_NAME:=${APP}}
   annotations:
     external-dns.alpha.kubernetes.io/target: "${EXT_AUTH_DNS_TARGET:=}"
     # gatus-sidecar: ext-auth apps sit behind Authentik forward-auth, and this

@@ -151,7 +151,9 @@ spec:
       # No forward auth: kan cannot present an Authentik session, and
       # `sendWebhookToUrl` sets exactly three headers, none of them
       # Authorization. The route's authentication is the HMAC signature the API
-      # verifies over the raw body.
+      # verifies over the raw body. The launcher's authenticated hostname
+      # (ai-shifts) is the ext-auth component in ks.yaml, not a second route
+      # here: a second app-template route would rename this one.
       internal:
         hostnames: ["ai-orchestrator.${SECRET_DOMAIN}"]
         parentRefs:

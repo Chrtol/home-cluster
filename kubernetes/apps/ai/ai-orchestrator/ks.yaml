@@ -16,9 +16,25 @@ spec:
     - name: temporal
       namespace: ai
   path: "./kubernetes/apps/ai/ai-orchestrator/app"
+  components:
+    # The Windows shift launcher reaches /shifts/* and /dispatcher through this
+    # Authentik-guarded hostname. The webhook route in the HelmRelease stays
+    # separate: kan cannot present a session, so that one is HMAC-only.
+    - ../../../../components/ext-auth
+    - ../../../../components/proxy-application
+    - ../../../../components/route-timeout
   postBuild:
     substitute:
       APP: *app
+      EXT_AUTH_PORT: "8080"
+      EXT_AUTH_HOST: ai-shifts
+      # app-template already named the webhook route `ai-orchestrator`
+      EXT_AUTH_HTTPROUTE_NAME: ai-orchestrator-shifts
+      ROUTE_TIMEOUT_TARGET: ai-orchestrator-shifts
+      SUBDOMAIN: ai-shifts
+      GROUP: Infrastructure
+      DISPLAY_NAME: AI shifts
+      DESCRIPTION: "Open, heartbeat and stop a desktop GPU shift for the AI orchestrator"
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
