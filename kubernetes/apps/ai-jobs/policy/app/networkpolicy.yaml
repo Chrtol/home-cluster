@@ -35,3 +35,40 @@ spec:
           port: 53
         - protocol: TCP
           port: 53
+---
+# WS14 Task 4: the one hole in the deny above — the desktop's Ollama endpoint.
+#
+# Kept as a separate policy so `default-deny` stays byte-for-byte the baseline
+# it claims to be: NetworkPolicy unions the allows of every policy that selects
+# a pod, so removing this file's second document restores the original posture
+# exactly, which is what makes "prove the deny is still enforced" a real test.
+#
+# ipBlock rather than a selector: the desktop is not in the cluster, so it has
+# no pod or namespace identity — Cilium classifies it by CIDR. The address is
+# outside ipv4NativeRoutingCIDR (10.42.0.0/16), so egress to it is masqueraded
+# to the node IP; that is why the *Windows* firewall admits the three node IPs
+# and never a pod IP. It has no bearing on this rule, which matches on the
+# destination.
+#
+# No ingress counterpart: NetworkPolicy is connection-tracked, so Ollama's
+# replies return on the flow this rule opened.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-desktop-inference
+spec:
+  # Attempt Jobs and validation Jobs both carry only orchestrator.ai/managed,
+  # so there is no label that distinguishes them today and this necessarily
+  # also reaches validation pods, which have no reason to call Ollama. Narrow
+  # it here once the orchestrator labels the two kinds apart.
+  podSelector: {}
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - ipBlock:
+            # /32: this desktop, not its subnet. Carried from cluster-secrets
+            # because the address must never be a literal in this repo.
+            cidr: "${DESKTOP_LAN_IP}/32"
+      ports:
+        - protocol: TCP
+          port: 11434
