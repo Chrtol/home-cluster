@@ -18,6 +18,12 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       namespace: media
+    - group: gateway.envoyproxy.io
+      kind: SecurityPolicy
+      namespace: ai
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: ai
     # konflate (Flux PR review) is the first authed app in flux-system; its
     # SecurityPolicy + HTTPRoute reference the outpost Service in security.
     - group: gateway.envoyproxy.io

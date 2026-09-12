@@ -56,4 +56,69 @@ spec:
     namespace: flux-system
   targetNamespace: *namespace
   timeout: 5m
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app mealie-mcp
+  namespace: &namespace default
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  components:
+    # The generated clientID is a hard start dependency: it becomes
+    # AUTHENTIK_AUDIENCE by secretKeyRef, and the server refuses to start without
+    # it. No volsync/ceph-rbd -- this app has no PVC, its only state is an
+    # in-memory JWKS cache.
+    - ../../../../components/oidc-application
+  dependsOn:
+    - name: authentik
+      namespace: security
+    - name: mealie
+      namespace: default
+  interval: 1h
+  path: ./kubernetes/apps/default/mealie/mcp
+  postBuild:
+    substitute:
+      APP: *app
+      # OIDC component variables. SUBDOMAIN must match MCP_SERVER_URL in the
+      # HelmRelease: it is the RFC 9728 resource identifier, and a client compares
+      # it against the origin it connected to.
+      GROUP: "Default"
+      SUBDOMAIN: mealie-mcp
+      DISPLAY_NAME: "Mealie MCP"
+      DESCRIPTION: "Recipes, meal plans and shopping lists via MCP"
+      # Unused by this app -- it is a resource server and never receives a
+      # callback of its own. Present because the component requires it, and it
+      # supplies the (deduped) default for the two URIs below.
+      REDIRECT_PATH: "/auth/callback"
+      # The real callback: claude.ai's, not ours. Authentik 2026.5 advertises no
+      # registration_endpoint, so the vendor cannot self-register and this URI has
+      # to be pre-registered. Split across three variables because Flux envsubst
+      # defaults cannot hold the colon in "https://" -- see the component.
+      OIDC_CLIENT_SUBDOMAIN: claude
+      OIDC_CLIENT_DOMAIN: ai
+      OIDC_CLIENT_PATH: /api/mcp/auth_callback
+      # No OIDC_INTERNAL_SUBDOMAIN: a second hostname would advertise a resource
+      # identifier that does not match MCP_SERVER_URL. Single-host on purpose.
+      #
+      # MCP clients hold a long-lived connection and cannot bounce through a
+      # browser to re-authenticate. Without a refresh token the session dies after
+      # tokenDuration (minutes=5) -- the exact failure hass-mcp hit.
+      OIDC_EXTRA_SCOPE: offline_access
+      OIDC_SECRET_NAMESPACE: default
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 5m
+  wait: false
 
