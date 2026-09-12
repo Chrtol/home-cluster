@@ -227,12 +227,16 @@ spec:
       # heavy sprint writer's node when possible, degrading to co-location rather
       # than Pending during an outage (see the private helmrelease's separation note).
       affinity:
-        podAntiAffinity:
+        nodeAffinity:
+          # Bar from dell1's Alder Lake card rather than from Plex's pod. The old
+          # required podAntiAffinity against Plex deadlocked Plex's own placement while
+          # this sat on dell1 -- see the sabnzbd helmrelease for the full reasoning.
           requiredDuringSchedulingIgnoredDuringExecution:
-            - topologyKey: kubernetes.io/hostname
-              labelSelector:
-                matchLabels:
-                  app.kubernetes.io/name: plex
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: gpu.intel.com/device-id.0300-4680.present
+                    operator: DoesNotExist
+        podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
               podAffinityTerm:

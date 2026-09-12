@@ -163,21 +163,30 @@ spec:
               limits:
                 memory: 6141M
     defaultPodOptions:
-      # Bulk NFS writer -- keep off Plex's node. See the qbittorrent-private
-      # helmrelease for the full reasoning (single-TCP-connection NFS mounts put
-      # Plex's reads behind bulk writes). Moving only qBittorrent would leave Plex
-      # contending with this instead.
+      # Bulk NFS writer -- keep off the card Plex wants. Original reasoning is in the
+      # qbittorrent-private helmrelease (single-TCP-connection NFS mounts put Plex's
+      # reads behind bulk writes); this is the one instance still separated, since it
+      # is the actual writer and qbittorrent-private is now read-mostly.
+      #
       # preferred (never required) against qbittorrent-private keeps this off the
       # heavy sprint writer's node when possible -- lenovo1 sat at 70% CPU hosting
       # both -- but degrades to co-location rather than Pending during an outage
       # (3 nodes, 4 separation-wanting writers make a required chain unsatisfiable).
       affinity:
-        podAntiAffinity:
+        nodeAffinity:
+          # Bar this bulk NFS writer from dell1's Alder Lake card, same mechanism frigate
+          # and immich use. This REPLACED a required podAntiAffinity against Plex, which
+          # deadlocked: sitting on dell1, sabnzbd's own rule made dell1 infeasible for
+          # Plex, while sabnzbd only had reason to leave once Plex arrived. The
+          # descheduler's nodeFit reported "does not fit on any other node" forever and
+          # no amount of freeing memory changed it (2026-09-12). Naming the node instead
+          # of Plex keeps the intent and removes the cycle.
           requiredDuringSchedulingIgnoredDuringExecution:
-            - topologyKey: kubernetes.io/hostname
-              labelSelector:
-                matchLabels:
-                  app.kubernetes.io/name: plex
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: gpu.intel.com/device-id.0300-4680.present
+                    operator: DoesNotExist
+        podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
               podAffinityTerm:

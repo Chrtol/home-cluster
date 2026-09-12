@@ -115,10 +115,14 @@ spec:
         nodeAffinity:
           # Bar Frigate from dell1's Alder Lake UHD 770 and leave it to Plex. Matched
           # on the GPU device-id label rather than a hostname so the rule follows the
-          # card if it moves. This is the second half of the placement scheme: with
-          # both immich-server and frigate pinned off dell1 and spread across the two
-          # lenovos, both lenovos hold a GPU consumer and are infeasible for Plex's
-          # required anti-affinity, leaving dell1 as the only node Plex can take.
+          # card if it moves.
+          #
+          # This used to be half of an indirect scheme: frigate + immich pinned off dell1
+          # and spread across the lenovos made both lenovos infeasible for Plex's required
+          # anti-affinity, leaving dell1 as the only node it could take. That scheme is
+          # GONE as of 2026-09-12 -- Plex now just has a preferred nodeAffinity for the
+          # card and the descheduler enforces it. This rule survives on its own merit:
+          # keeping the AV1 card free for Plex.
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - matchExpressions:
