@@ -32,16 +32,20 @@ spec:
             severity: warning
         # A failed test exports 0 for every measurement, so the averages below
         # divide by the number of passed tests (sum of speedtest_up) to keep
-        # failures out. Plan is 1250/500 Mbps.
+        # failures out, and need at least 3 of them so one test is not an average.
+        # Plan is 1250/500 Mbps.
         - alert: SpeedtestSlowInternetDownload
           annotations:
             description: Internet download speed is averaging {{ humanize $value }} Mbps over the last 4h of passed tests.
             summary: SpeedTest slow internet download.
           expr: |
-            sum_over_time(speedtest_download_bits_per_second{job=~".*speedtest-exporter.*"}[4h])
-              / sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h])
-              / 1e6
-              < 500
+            (
+              sum_over_time(speedtest_download_bits_per_second{job=~".*speedtest-exporter.*"}[4h])
+                / sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h])
+                / 1e6
+                < 500
+            )
+            and sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h]) >= 3
           for: 0m
           labels:
             severity: warning
@@ -50,10 +54,13 @@ spec:
             description: Internet upload speed is averaging {{ humanize $value }} Mbps over the last 4h of passed tests.
             summary: SpeedTest slow internet upload.
           expr: |
-            sum_over_time(speedtest_upload_bits_per_second{job=~".*speedtest-exporter.*"}[4h])
-              / sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h])
-              / 1e6
-              < 250
+            (
+              sum_over_time(speedtest_upload_bits_per_second{job=~".*speedtest-exporter.*"}[4h])
+                / sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h])
+                / 1e6
+                < 250
+            )
+            and sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h]) >= 3
           for: 0m
           labels:
             severity: warning
@@ -62,9 +69,12 @@ spec:
             description: Internet ping latency is averaging {{ humanize $value }} ms over the last 4h of passed tests.
             summary: SpeedTest high ping latency.
           expr: |
-            sum_over_time(speedtest_ping_latency_milliseconds{job=~".*speedtest-exporter.*"}[4h])
-              / sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h])
-              > 15
+            (
+              sum_over_time(speedtest_ping_latency_milliseconds{job=~".*speedtest-exporter.*"}[4h])
+                / sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h])
+                > 15
+            )
+            and sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h]) >= 3
           for: 0m
           labels:
             severity: warning
@@ -73,9 +83,12 @@ spec:
             description: Internet jitter latency is averaging {{ humanize $value }} ms over the last 4h of passed tests.
             summary: SpeedTest high jitter latency.
           expr: |
-            sum_over_time(speedtest_jitter_latency_milliseconds{job=~".*speedtest-exporter.*"}[4h])
-              / sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h])
-              > 30
+            (
+              sum_over_time(speedtest_jitter_latency_milliseconds{job=~".*speedtest-exporter.*"}[4h])
+                / sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h])
+                > 30
+            )
+            and sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h]) >= 3
           for: 0m
           labels:
             severity: warning

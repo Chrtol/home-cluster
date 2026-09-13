@@ -35,6 +35,20 @@ spec:
                 memory: 64Mi
               limits:
                 memory: 205M
+    defaultPodOptions:
+      affinity:
+        podAntiAffinity:
+          # Keep the measurement off the heaviest upload (qbittorrent-private) and
+          # download (sabnzbd) nodes. Required so the descheduler's
+          # RemovePodsViolatingInterPodAntiAffinity moves it if one of them lands here later.
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values: [qbittorrent-private, sabnzbd]
+              namespaces: [media]
+              topologyKey: kubernetes.io/hostname
     persistence:
       retry-wrapper:
         type: configMap
