@@ -45,7 +45,7 @@ spec:
               - secretRef:
                   name: tracearr-secret
             probes:
-              liveness: &probes
+              liveness:
                 enabled: true
                 custom: true
                 spec:
@@ -56,7 +56,26 @@ spec:
                   periodSeconds: 10
                   timeoutSeconds: 5
                   failureThreshold: 3
-              readiness: *probes
+              # /health returns HTTP 200 even when startup fails in maintenance mode.
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - node
+                      - -e
+                      - >-
+                        fetch('http://127.0.0.1:3000/health', {signal: AbortSignal.timeout(4000)})
+                        .then(async response => {
+                          const health = await response.json();
+                          process.exit(response.ok && health.status === 'ok' && health.mode === 'ready' ? 0 : 1);
+                        })
+                        .catch(() => process.exit(1));
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
               startup:
                 enabled: true
                 custom: true
