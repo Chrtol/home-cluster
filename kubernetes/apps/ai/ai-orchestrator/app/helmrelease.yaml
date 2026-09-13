@@ -39,7 +39,7 @@ spec:
             # Tag only, no digest: app-template's image map has no digest field.
             image: &image
               repository: ghcr.io/chrtol/ai-orchestrator
-              tag: main-20260913215912 # {"$imagepolicy": "flux-system:ai-orchestrator:tag"}
+              tag: main-20260913223505 # {"$imagepolicy": "flux-system:ai-orchestrator:tag"}
             env: &env
               # readOnlyRootFilesystem below means every import would otherwise
               # attempt a __pycache__ write and silently fail.
@@ -55,7 +55,7 @@ spec:
               # Phase 2's coding Job is the dummy worker, which ships in this
               # same image. Spelled out rather than aliased to `&image`: that
               # anchor is a repository/tag map, and this needs one string.
-              JOB_IMAGE: ghcr.io/chrtol/ai-orchestrator:main-20260913215912@sha256:8bcd2840f8ed2b702b39d1c0848bde2895524f670add394226efbef5782c3b5e # {"$imagepolicy": "flux-system:ai-orchestrator"}
+              JOB_IMAGE: ghcr.io/chrtol/ai-orchestrator:main-20260913223505@sha256:17923edad7861d2c4ed96085b7c15e2810b8fb0ce0bccc77547f3c1bc8ecd2c0 # {"$imagepolicy": "flux-system:ai-orchestrator"}
               # Attempt and validation pods pull JOB_IMAGE with this secret, which
               # components/ghcr-pull creates in ai-jobs. Ignored by images older
               # than the change that reads it.
