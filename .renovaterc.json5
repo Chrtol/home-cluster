@@ -92,6 +92,22 @@
       allowedVersions: '<0.26.0',
     },
     {
+      // v0.22.0 (chart 1.22.0) CRD source returns ZERO endpoints as soon as
+      // --annotation-filter excludes any single DNSEndpoint (the informer transform
+      // returns nil for it). The Cloudflare instance filters out the internal
+      // mosquitto DNSEndpoint, so policy=sync deleted deadman + mc. v0.22.0 also
+      // drops the external-dns.alpha.kubernetes.io/ annotation prefix (38 target
+      // annotations here). Lift only after the CRD bug is fixed and annotations migrated.
+      description: 'Cap external-dns chart to <1.22.0 (CRD source annotation-filter bug + GA annotation prefix)',
+      matchDatasources: [
+        'helm',
+      ],
+      matchPackageNames: [
+        'external-dns',
+      ],
+      allowedVersions: '<1.22.0',
+    },
+    {
       // The app image (ghcr.io/kanbn/kan) and its migration image
       // (ghcr.io/kanbn/kan-migrate) are built from the same source repo and MUST
       // move in lockstep — a version skew reintroduces schema drift (app newer than
