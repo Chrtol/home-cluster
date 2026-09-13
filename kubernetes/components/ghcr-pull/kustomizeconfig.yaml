@@ -1,0 +1,11 @@
+---
+# A Component is expanded before its parent's `namespace:` transformer runs, so it
+# cannot read the namespace it lands in. Teaching that transformer to also write
+# spec.targetNamespace gives the child Kustomization below the parent's namespace.
+# It applies to every Flux Kustomization in the including namespace; that is inert
+# only while each of them already targets its own namespace.
+namespace:
+  - kind: Kustomization
+    group: kustomize.toolkit.fluxcd.io
+    path: spec/targetNamespace
+    create: true

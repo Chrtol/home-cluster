@@ -9,6 +9,8 @@ metadata:
 spec:
   image: ghcr.io/chrtol/reptile-tracker-backend
   interval: 1m
+  secretRef:
+    name: ghcr-pull
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
@@ -18,6 +20,8 @@ metadata:
 spec:
   image: ghcr.io/chrtol/reptile-tracker-frontend
   interval: 1m
+  secretRef:
+    name: ghcr-pull
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImagePolicy

@@ -45,6 +45,7 @@ Conventions that apply to every component:
 | `s3-bucket/cors` | PutBucketCors Job (browser-upload apps) | opt-in add-on; set `CORS_SUBDOMAIN` |
 | `repos/app-template` | app-template OCIRepository | `chartRef` |
 | `common` | namespace + cluster secrets | used by namespace kustomizations |
+| `ghcr-pull` | GHCR pull secret, one per namespace | used by namespace kustomizations; reference `ghcr-pull` |
 
 ---
 
@@ -344,6 +345,32 @@ Two distinct cases, with opposite fixes:
 
 To find affected routes, grep the Envoy access logs for `response_timeout` and
 group by `route_name`.
+
+## `ghcr-pull`
+
+Read-only GHCR pull secret `ghcr-pull` (`kubernetes.io/dockerconfigjson`) from
+1Password item `ghcr`, field `GHCR_PULL_TOKEN` (a classic PAT, `read:packages`).
+Like `common`, it is included by **namespace** kustomizations, never by an app's
+`ks.yaml`: one secret per namespace with one owner, however many apps use it.
+
+```yaml
+# kubernetes/apps/<ns>/kustomization.yaml
+components:
+  - ../../components/common
+  - ../../components/ghcr-pull
+```
+
+It renders a child Flux Kustomization `ghcr-pull` (dependsOn `onepassword-store`)
+that creates the ExternalSecret, rather than the ExternalSecret itself, so
+`cluster-apps` never applies a CRD kind that a cold cluster does not have yet. Its
+`kustomizeconfig.yaml` makes the namespace transformer also set
+`spec.targetNamespace` on every Flux Kustomization in the including namespace; that is
+inert while each already targets its own namespace. Check with a `kustomize build`
+of the namespace before and after.
+
+Consumers reference the fixed name: `defaultPodOptions.imagePullSecrets: [{name:
+ghcr-pull}]` in app-template, `spec.secretRef.name: ghcr-pull` on an
+`ImageRepository` (which must live in `flux-system`).
 
 ## Troubleshooting
 

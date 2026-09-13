@@ -9,6 +9,8 @@ metadata:
 spec:
   image: ghcr.io/chrtol/ai-orchestrator
   interval: 1m
+  secretRef:
+    name: ghcr-pull
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImagePolicy

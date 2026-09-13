@@ -5,6 +5,7 @@ kind: Kustomization
 namespace: ai
 components:
   - ../../components/common
+  - ../../components/ghcr-pull
 resources:
   - ./nas/ks.yaml
   - ./temporal/ks.yaml

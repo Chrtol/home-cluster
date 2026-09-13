@@ -24,6 +24,9 @@ spec:
       name: ${APP}-dragonfly-values
   values:
     defaultPodOptions:
+      # From components/ghcr-pull, included by the namespace kustomization.
+      imagePullSecrets:
+        - name: ghcr-pull
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000

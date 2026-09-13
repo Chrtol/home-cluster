@@ -1,0 +1,11 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+# Included from a NAMESPACE kustomization.yaml (kubernetes/apps/<ns>/), not from an
+# app's ks.yaml: one pull secret per namespace with a single owner, however many
+# apps in that namespace reference it.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ./ks.yaml
+configurations:
+  - ./kustomizeconfig.yaml
