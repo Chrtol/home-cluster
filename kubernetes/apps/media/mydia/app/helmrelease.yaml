@@ -24,6 +24,8 @@ spec:
   values:
     controllers:
       mydia:
+        # Paused while evaluating Mydia; background media analysis saturates storage traffic.
+        replicas: 0
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
