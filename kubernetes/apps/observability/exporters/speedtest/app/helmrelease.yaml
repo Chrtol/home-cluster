@@ -16,19 +16,52 @@ spec:
         strategy: RollingUpdate
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          # speedtest-go publishes release binaries but no image
+          fetch-speedtest-go:
+            image:
+              repository: docker.io/alpine/curl
+              tag: 8.22.0
+            env:
+              # renovate: datasource=github-releases depName=showwin/speedtest-go
+              SPEEDTEST_GO_VERSION: v1.8.3
+            command:
+              - /bin/sh
+              - -c
+              - |
+                set -eu
+                base="https://github.com/showwin/speedtest-go/releases/download/$${SPEEDTEST_GO_VERSION}"
+                tarball="speedtest-go_$${SPEEDTEST_GO_VERSION#v}_Linux_x86_64.tar.gz"
+                cd /tmp
+                curl -sSfL --retry 3 -o "$${tarball}" "$${base}/$${tarball}"
+                curl -sSfL --retry 3 -o checksums.txt "$${base}/checksums.txt"
+                grep -F "  $${tarball}" checksums.txt | sha256sum -c -
+                tar -xzf "$${tarball}" -C /opt/speedtest-go speedtest-go
+            securityContext: &securityContext
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
         containers:
           app:
             image:
-              repository: ghcr.io/miguelndecarvalho/speedtest-exporter
-              tag: v3.5.4
+              repository: python
+              tag: 3.14-alpine
+            command: [python, -u, /app/exporter.py]
             env:
               TZ: ${SECRET_TIMEZONE}
-              # resources/speedtest wraps the Ookla CLI with retries; it must come first on PATH
-              PATH: /opt/speedtest-retry:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+              HOME: /tmp
               SPEEDTEST_RETRY_ATTEMPTS: "3"
               SPEEDTEST_RETRY_DELAY_SECONDS: "10"
-              # 3 attempts + 2 delays fit inside this; keep it below the scrapeTimeout
+              # every attempt plus the delays must fit inside the scrapeTimeout below
               SPEEDTEST_TIMEOUT: "110"
+            probes:
+              liveness:
+                enabled: true
+                type: TCP
+              readiness:
+                enabled: true
+                type: TCP
+            securityContext: *securityContext
             resources:
               requests:
                 cpu: 15m
@@ -36,6 +69,11 @@ spec:
               limits:
                 memory: 205M
     defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile: { type: RuntimeDefault }
       affinity:
         podAntiAffinity:
           # Keep the measurement off the heaviest upload (qbittorrent-private) and
@@ -50,12 +88,20 @@ spec:
               namespaces: [media]
               topologyKey: kubernetes.io/hostname
     persistence:
-      retry-wrapper:
+      script:
         type: configMap
-        name: speedtest-exporter-retry
-        defaultMode: 0555
+        name: speedtest-exporter-script
         globalMounts:
-          - path: /opt/speedtest-retry
+          - path: /app
+            readOnly: true
+      speedtest-go:
+        type: emptyDir
+        globalMounts:
+          - path: /opt/speedtest-go
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
     service:
       app:
         ports:

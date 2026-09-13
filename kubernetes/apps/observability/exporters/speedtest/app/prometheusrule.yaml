@@ -23,7 +23,7 @@ spec:
             severity: critical
         - alert: SpeedtestFailed
           annotations:
-            description: The last hourly speedtest failed after all retries. The exporter log shows the Ookla CLI error.
+            description: The last hourly speedtest failed after all retries. The exporter log shows the speedtest-go error for each attempt.
             summary: Speedtest failed.
           expr: |
             last_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[65m]) == 0

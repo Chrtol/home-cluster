@@ -10,12 +10,8 @@ configMapGenerator:
   - name: speedtest-dashboard
     files:
       - speedtest-dashboard.json
-  - name: speedtest-exporter-retry
+  - name: speedtest-exporter-script
     files:
-      - resources/speedtest
-    options:
-      annotations:
-        # the script's shell ${VARS} must reach the container, not Flux envsubst
-        kustomize.toolkit.fluxcd.io/substitute: disabled
+      - resources/exporter.py
 generatorOptions:
   disableNameSuffixHash: true
