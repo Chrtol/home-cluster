@@ -230,7 +230,7 @@ Set callback variables in the consuming Flux Kustomization's
 `spec.postBuild.substitute` map. The existing component handles this directly;
 no additional component or Authentik UI edit is needed. This Mealie MCP example
 sets the primary callback to Claude's hosted connector and the extra callback
-to the local `mcp-remote` bridge used by Codex Desktop:
+to native Codex with a fixed local port:
 
 ```yaml
 spec:
@@ -241,7 +241,7 @@ spec:
       OIDC_CLIENT_SUBDOMAIN: claude
       OIDC_CLIENT_DOMAIN: ai
       OIDC_CLIENT_PATH: /api/mcp/auth_callback
-      OIDC_EXTRA_REDIRECT_URI: http://127.0.0.1:3334/oauth/callback
+      OIDC_EXTRA_REDIRECT_URI: http://127.0.0.1:3334/callback/GM9JxlC1cKVy
 ```
 
 Keep the app's existing component reference and other required substitutions.
@@ -260,10 +260,28 @@ from domain variables. URI values are exact callbacks, not regexes. When neither
 full URI nor client host overrides are set, the primary and extra callbacks
 both default to `https://${SUBDOMAIN}.${SECRET_DOMAIN}${REDIRECT_PATH}`.
 
-Adding a callback does not change the provider's `confidential` client type:
-the OAuth client still needs its client ID and secret. Mealie's desktop bridge
-supplies those existing credentials and listens on the host, port and path
-shown above. Clients that need refresh tokens should also set
+Authentik matches these URIs strictly, including the port. Codex prints a
+portless loopback registration URL but inserts a listener port into the actual
+authorization request. To use the exact URI above, merge these settings into
+the existing OAuth table in the client host's Codex configuration, preserving
+its `client_id`:
+
+```toml
+[mcp_servers.mealie.oauth]
+callback_url = "http://127.0.0.1:3334/callback/GM9JxlC1cKVy"
+callback_port = 3334
+```
+
+Set both values: a port inside `callback_url` does not select the listener port.
+The callback suffix shown is specific to the Mealie MCP endpoint; use the suffix
+Codex generates for another endpoint. A changed server URL can change it.
+
+This fixes redirect matching only. Adding a callback does not change the
+provider's `confidential` client type: it still requires a client secret at the
+token endpoint. Native Codex has no documented pre-registered client-secret
+setting, so its authentication remains blocked until client compatibility is
+resolved. Do not treat this callback example as a complete working native
+OAuth setup. Clients that need refresh tokens should also set
 `OIDC_EXTRA_SCOPE: offline_access` and request that scope during login; Mealie
 MCP already does so.
 
