@@ -130,6 +130,10 @@ spec:
               limits:
                 memory: 512Mi
     defaultPodOptions:
+      # From components/ghcr-pull, included by the namespace kustomization. The
+      # package is public (built from a public fork); wired anyway (DECISIONS H81).
+      imagePullSecrets:
+        - name: ghcr-pull
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000

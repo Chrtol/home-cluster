@@ -56,6 +56,10 @@ spec:
               # same image. Spelled out rather than aliased to `&image`: that
               # anchor is a repository/tag map, and this needs one string.
               JOB_IMAGE: ghcr.io/chrtol/ai-orchestrator:main-20260912222700@sha256:d77807d0157188cf7790fbca358e3a7c29dccc243935d6b62c489026c2fc1f1e # {"$imagepolicy": "flux-system:ai-orchestrator"}
+              # Attempt and validation pods pull JOB_IMAGE with this secret, which
+              # components/ghcr-pull creates in ai-jobs. Ignored by images older
+              # than the change that reads it.
+              JOB_IMAGE_PULL_SECRET: ghcr-pull
               RECONCILE_INTERVAL_SECONDS: "300"
               # Context assembly reads reviewed lessons from here. Internal
               # service name: this is the orchestrator talking to Memini
@@ -176,6 +180,10 @@ spec:
           - path: /config
             readOnly: true
     defaultPodOptions:
+      # From components/ghcr-pull, included by the namespace kustomization. Pods
+      # only: the attempt and validation Jobs set their own in the orchestrator.
+      imagePullSecrets:
+        - name: ghcr-pull
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
