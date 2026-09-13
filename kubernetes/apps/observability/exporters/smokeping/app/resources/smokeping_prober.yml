@@ -1,0 +1,13 @@
+---
+# protocol must be udp: Linux unprivileged ICMP sockets (ping_group_range).
+# protocol: icmp needs raw sockets and, without them, the prober stays up
+# while sending nothing (only smokeping_prober_errors_total increments).
+targets:
+  - hosts:
+      - 10.0.30.1         # OPNsense: LAN baseline
+      - 1.1.1.1           # Cloudflare
+      - 8.8.8.8           # Google
+      - ${VPS_PUBLIC_IP}  # VPS: the external ingress path
+    interval: 1s
+    network: ip4
+    protocol: udp

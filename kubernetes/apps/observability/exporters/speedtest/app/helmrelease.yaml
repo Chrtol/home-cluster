@@ -14,6 +14,8 @@ spec:
     controllers:
       speedtest-exporter:
         strategy: RollingUpdate
+        annotations:
+          reloader.stakater.com/auto: "true"
         containers:
           app:
             image:
@@ -21,12 +23,25 @@ spec:
               tag: v3.5.4
             env:
               TZ: ${SECRET_TIMEZONE}
+              # resources/speedtest wraps the Ookla CLI with retries; it must come first on PATH
+              PATH: /opt/speedtest-retry:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+              SPEEDTEST_RETRY_ATTEMPTS: "3"
+              SPEEDTEST_RETRY_DELAY_SECONDS: "10"
+              # 3 attempts + 2 delays fit inside this; keep it below the scrapeTimeout
+              SPEEDTEST_TIMEOUT: "110"
             resources:
               requests:
                 cpu: 15m
                 memory: 64Mi
               limits:
                 memory: 205M
+    persistence:
+      retry-wrapper:
+        type: configMap
+        name: speedtest-exporter-retry
+        defaultMode: 0555
+        globalMounts:
+          - path: /opt/speedtest-retry
     service:
       app:
         ports:
@@ -40,8 +55,11 @@ spec:
             scheme: http
             path: /metrics
             interval: 60m
-            scrapeTimeout: 1m
+            scrapeTimeout: 2m
             relabelings:
               - action: replace
                 targetLabel: instance
                 replacement: speedtest-exporter
+              # singleton: without this every reschedule starts a new series
+              - action: labeldrop
+                regex: pod

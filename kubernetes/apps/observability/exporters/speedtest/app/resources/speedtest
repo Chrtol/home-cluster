@@ -1,0 +1,22 @@
+#!/bin/sh
+# Shadows the Ookla CLI on PATH so the exporter (which never retries) gets
+# another attempt when a run fails, e.g. Ookla's config API answering 503.
+# stdout is buffered per attempt so the exporter only parses the final one;
+# stderr passes straight through to the container log.
+real=/usr/local/bin/speedtest
+attempts=${SPEEDTEST_RETRY_ATTEMPTS:-3}
+delay=${SPEEDTEST_RETRY_DELAY_SECONDS:-10}
+
+i=1
+while :; do
+  out=$("$real" "$@")
+  rc=$?
+  if [ "$rc" -eq 0 ] || [ "$i" -ge "$attempts" ]; then
+    [ -n "$out" ] && printf '%s\n' "$out"
+    [ "$rc" -ne 0 ] && echo "speedtest-retry: attempt $i/$attempts failed (exit $rc), giving up" >&2
+    exit "$rc"
+  fi
+  echo "speedtest-retry: attempt $i/$attempts failed (exit $rc), retrying in ${delay}s" >&2
+  i=$((i + 1))
+  sleep "$delay"
+done

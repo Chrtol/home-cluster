@@ -1,0 +1,23 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: smokeping-exporter
+  labels:
+    app.kubernetes.io/instance: smokeping-exporter
+    app.kubernetes.io/name: smokeping-exporter
+spec:
+  groups:
+    - name: smokeping-exporter
+      rules:
+        # The prober keeps serving /metrics when it cannot send (e.g. raw ICMP
+        # without privileges), so target health alone would not notice.
+        - alert: SmokepingProberNotPinging
+          annotations:
+            description: Smokeping Prober has sent no pings for 10 minutes; latency and packet loss history has a gap.
+            summary: Smokeping Prober is not pinging.
+          expr: |
+            (sum(rate(smokeping_requests_total{job=~".*smokeping-exporter.*"}[5m])) or vector(0)) == 0
+          for: 10m
+          labels:
+            severity: warning

@@ -10,51 +10,71 @@ spec:
   groups:
     - name: speedtest-exporter
       rules:
+        # Scraped hourly and each sample is only visible for 5m, so instant
+        # comparisons flap; every rule looks back over a window instead.
         - alert: SpeedtestExporterAbsent
           annotations:
-            description: Speedtest Exporter has disappeared from Prometheus target discovery.
+            description: Prometheus has not scraped the Speedtest Exporter successfully for 80 minutes.
             summary: Speedtest Exporter is down.
           expr: |
-            absent(up{job=~".*speedtest-exporter.*"} == 1)
-          for: 75m
+            absent_over_time((up{job=~".*speedtest-exporter.*"} == 1)[80m:1m])
+          for: 0m
           labels:
             severity: critical
+        - alert: SpeedtestFailed
+          annotations:
+            description: The last hourly speedtest failed after all retries. The exporter log shows the Ookla CLI error.
+            summary: Speedtest failed.
+          expr: |
+            last_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[65m]) == 0
+          for: 0m
+          labels:
+            severity: warning
+        # A failed test exports 0 for every measurement, so the averages below
+        # divide by the number of passed tests (sum of speedtest_up) to keep
+        # failures out. Plan is 1250/500 Mbps.
         - alert: SpeedtestSlowInternetDownload
           annotations:
-            description: Internet download speed is averaging {{ humanize $value }} Mbps.
+            description: Internet download speed is averaging {{ humanize $value }} Mbps over the last 4h of passed tests.
             summary: SpeedTest slow internet download.
           expr: |
-            avg_over_time(speedtest_download_bits_per_second{job=~".*speedtest-exporter.*"}[4h])
-              < 400
+            sum_over_time(speedtest_download_bits_per_second{job=~".*speedtest-exporter.*"}[4h])
+              / sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h])
+              / 1e6
+              < 500
           for: 0m
           labels:
             severity: warning
         - alert: SpeedtestSlowInternetUpload
           annotations:
-            description: Internet upload speed is averaging {{ humanize $value }} Mbps.
+            description: Internet upload speed is averaging {{ humanize $value }} Mbps over the last 4h of passed tests.
             summary: SpeedTest slow internet upload.
           expr: |
-            avg_over_time(speedtest_upload_bits_per_second{job=~".*speedtest-exporter.*"}[4h])
-              < 400
+            sum_over_time(speedtest_upload_bits_per_second{job=~".*speedtest-exporter.*"}[4h])
+              / sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h])
+              / 1e6
+              < 250
           for: 0m
           labels:
             severity: warning
         - alert: SpeedtestHighPingLatency
           annotations:
-            description: Internet ping latency is averaging {{ humanize $value }} ms.
+            description: Internet ping latency is averaging {{ humanize $value }} ms over the last 4h of passed tests.
             summary: SpeedTest high ping latency.
           expr: |
-            avg_over_time(speedtest_ping_latency_milliseconds{job=~".*speedtest-exporter.*"}[4h])
+            sum_over_time(speedtest_ping_latency_milliseconds{job=~".*speedtest-exporter.*"}[4h])
+              / sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h])
               > 15
           for: 0m
           labels:
             severity: warning
         - alert: SpeedtestHighJitterLatency
           annotations:
-            description: Internet jitter latency is averaging {{ humanize $value }} ms.
+            description: Internet jitter latency is averaging {{ humanize $value }} ms over the last 4h of passed tests.
             summary: SpeedTest high jitter latency.
           expr: |
-            avg_over_time(speedtest_jitter_latency_milliseconds{job=~".*speedtest-exporter.*"}[4h])
+            sum_over_time(speedtest_jitter_latency_milliseconds{job=~".*speedtest-exporter.*"}[4h])
+              / sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h])
               > 30
           for: 0m
           labels:
