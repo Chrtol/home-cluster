@@ -206,18 +206,66 @@ Creates an Authentik OIDC provider + application via blueprint, a
 Required: `APP`, `SUBDOMAIN`, `GROUP` (Authentik UI category), `DESCRIPTION`,
 `REDIRECT_PATH`. Optional: `DISPLAY_NAME` (defaults `${APP}`), `ICON_URL`,
 `OIDC_SECRET_NAMESPACE` (defaults `security`; set to the app namespace for
-direct secret access), `OIDC_INTERNAL_SUBDOMAIN` (defaults `${SUBDOMAIN}`;
-registers a **second** redirect URI at
-`https://${OIDC_INTERNAL_SUBDOMAIN}.${SECRET_DOMAIN}${REDIRECT_PATH}`).
+direct secret access). Callback settings:
+
+| Variable | Purpose and default |
+| --- | --- |
+| `OIDC_REDIRECT_URI` | Full primary callback URI, including scheme and any port. When unset or empty, assemble the HTTPS URI from the three client settings below. |
+| `OIDC_CLIENT_SUBDOMAIN` / `OIDC_CLIENT_DOMAIN` / `OIDC_CLIENT_PATH` | Primary callback parts; default to `SUBDOMAIN` / `SECRET_DOMAIN` / `REDIRECT_PATH`. A full `OIDC_REDIRECT_URI` takes precedence. |
+| `OIDC_INTERNAL_SUBDOMAIN` | Application-host callback at `https://${OIDC_INTERNAL_SUBDOMAIN}.${SECRET_DOMAIN}${REDIRECT_PATH}`; defaults to `SUBDOMAIN`. |
+| `OIDC_EXTRA_REDIRECT_URI` | Another full callback URI, independent of the primary host, scheme and port. When unset or empty, repeat the resolved primary URI. |
+
+`SUBDOMAIN` controls the application launch URL. It does not need to match the
+OAuth client's callback hostname.
 
 Set `OIDC_INTERNAL_SUBDOMAIN` when the app is reachable on a host that differs
 from `SUBDOMAIN` — e.g. exposed on both gateways where the internal route uses a
 different hostname (`files.*` external vs `filebrowser.*` internal) and the app
 derives its OIDC callback from the request origin (Filebrowser Quantum does), so
 the internal host must be a registered redirect URI or login fails with
-`redirect_uri` mismatch. Left at its default it duplicates the primary URI, which
-Authentik dedupes (`redirect_uris` is a strict set) — so single-host apps are
-unaffected.
+`redirect_uri` mismatch. Left at its default it duplicates the primary URI,
+adding no new allowed callback destination.
+
+Set callback variables in the consuming Flux Kustomization's
+`spec.postBuild.substitute` map. The existing component handles this directly;
+no additional component or Authentik UI edit is needed. This Mealie MCP example
+sets the primary callback to Claude's hosted connector and the extra callback
+to the local `mcp-remote` bridge used by Codex Desktop:
+
+```yaml
+spec:
+  postBuild:
+    substitute:
+      SUBDOMAIN: mealie-mcp
+      REDIRECT_PATH: /auth/callback
+      OIDC_CLIENT_SUBDOMAIN: claude
+      OIDC_CLIENT_DOMAIN: ai
+      OIDC_CLIENT_PATH: /api/mcp/auth_callback
+      OIDC_EXTRA_REDIRECT_URI: http://127.0.0.1:3334/oauth/callback
+```
+
+Keep the app's existing component reference and other required substitutions.
+The split client settings avoid a literal domain in Git and now populate the
+**first** redirect URI. They can instead be overridden with a fully resolved
+`OIDC_REDIRECT_URI`, supplied directly or through `substituteFrom`. The primary
+and extra URI variables are independent; neither rewrites the other callback.
+The existing application-host callback is also retained.
+
+Flux supports nested defaults in component templates, but does not recursively
+expand placeholders inside the value supplied for a substitution variable.
+Supply resolved values for `OIDC_REDIRECT_URI` and `OIDC_EXTRA_REDIRECT_URI`;
+do not put `${SECRET_DOMAIN}` or other unresolved placeholders inside those
+values. Use the split host variables when the component should assemble a URI
+from domain variables. URI values are exact callbacks, not regexes. When neither
+full URI nor client host overrides are set, the primary and extra callbacks
+both default to `https://${SUBDOMAIN}.${SECRET_DOMAIN}${REDIRECT_PATH}`.
+
+Adding a callback does not change the provider's `confidential` client type:
+the OAuth client still needs its client ID and secret. Mealie's desktop bridge
+supplies those existing credentials and listens on the host, port and path
+shown above. Clients that need refresh tokens should also set
+`OIDC_EXTRA_SCOPE: offline_access` and request that scope during login; Mealie
+MCP already does so.
 
 Do NOT try to add a `groups` claim or an inherited admin group via component
 variables: the wrenix chart's static `scopes`/`groups` lists can't take

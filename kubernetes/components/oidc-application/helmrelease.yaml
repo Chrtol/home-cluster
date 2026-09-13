@@ -15,20 +15,20 @@
 #                        accepts the stock "authentik default OAuth Mapping: OpenID
 #                        '<x>'" scope words - see the note on the scopes list below.
 #                      OIDC_SECRET_NAMESPACE (defaults to security - set to app namespace for direct secret access)
+#                      OIDC_REDIRECT_URI - the full primary callback URI, independent
+#                        of SUBDOMAIN (which still controls the application launch URL).
 #                      OIDC_CLIENT_SUBDOMAIN / OIDC_CLIENT_DOMAIN / OIDC_CLIENT_PATH
-#                        register a THIRD redirect URI on a host we do not own, for
-#                        when the OAuth client is a third party rather than the app
-#                        itself (an MCP server: the client is claude.ai). Set all
-#                        three together, e.g. claude + ai + /api/mcp/auth_callback.
-#                        Each defaults to the primary URI's own part, so leaving them
-#                        unset renders a duplicate that Authentik dedupes.
+#                        build the primary HTTPS callback when OIDC_REDIRECT_URI is
+#                        unset. Default to SUBDOMAIN / SECRET_DOMAIN / REDIRECT_PATH.
+#                        Existing third-party clients can keep these split variables.
+#                      OIDC_EXTRA_REDIRECT_URI - an additional full callback URI.
+#                        Defaults to the primary URI, adding no new allowed target.
 #                      OIDC_INTERNAL_SUBDOMAIN (defaults to SUBDOMAIN) - registers a
 #                        SECOND redirect URI at
 #                        https://${OIDC_INTERNAL_SUBDOMAIN}.${SECRET_DOMAIN}${REDIRECT_PATH}.
 #                        Set it when the app is reachable on a host different from
 #                        SUBDOMAIN (e.g. files.* external vs filebrowser.* internal).
-#                        Default duplicates the primary URI -> Authentik dedupes it,
-#                        so single-host apps are unaffected.
+#                        Default repeats the application's own callback URL.
 # REDIRECT_PATH: The callback path for OIDC (e.g., /accounts/oidc/authentik/login/callback/)
 # Creates blueprint-managed resources with naming convention:
 #   - Provider: bp-${APP}-oidc
@@ -77,41 +77,15 @@ spec:
           clientType: "confidential"
           # clientID and clientSecret are auto-generated and stored in ${APP}-oidc-authentik-application secret
           redirectURL:
-          # Primary hostname (SUBDOMAIN). Also the launch URL.
-          - "https://${SUBDOMAIN}.${SECRET_DOMAIN}${REDIRECT_PATH}"
-          # Second redirect URI for apps reachable on a DIFFERENT host than
-          # SUBDOMAIN -- e.g. exposed on both gateways where the internal route
-          # uses a different hostname (files.* external vs filebrowser.* internal).
-          # Filebrowser derives its OIDC callback from the request origin, so
-          # without the internal host registered, internal logins fail with
-          # redirect_uri mismatch. Set OIDC_INTERNAL_SUBDOMAIN to that other host's
-          # subdomain to register it. Defaults to SUBDOMAIN, making this an exact
-          # duplicate of the line above -> Authentik dedupes it (redirect_uris is a
-          # set), so apps that don't set it are completely unaffected.
+          # The OAuth client's callback may differ from the application's launch
+          # URL. A full URI takes precedence over the existing split host settings.
+          - "${OIDC_REDIRECT_URI:=https://${OIDC_CLIENT_SUBDOMAIN:=${SUBDOMAIN}}.${OIDC_CLIENT_DOMAIN:=${SECRET_DOMAIN}}${OIDC_CLIENT_PATH:=${REDIRECT_PATH}}}"
+          # Preserve the callback for applications with a separate internal host.
+          # Unset, this remains the application's own callback URL.
           - "https://${OIDC_INTERNAL_SUBDOMAIN:=${SUBDOMAIN}}.${SECRET_DOMAIN}${REDIRECT_PATH}"
-          # Third redirect URI for a callback on a host we do NOT own. The two
-          # above can only ever produce https://<something>.${SECRET_DOMAIN}<path>,
-          # which is right when the app itself is the OAuth client. It is wrong for
-          # an MCP resource server: there the client is the AI vendor, and the
-          # callback lands on THEIR origin -- claude.ai/api/mcp/auth_callback.
-          # Authentik 2026.5 exposes no registration_endpoint (verified against the
-          # live OIDC discovery document), so there is no dynamic client
-          # registration to fall back on; the vendor's URI has to be pre-registered
-          # here or the connector cannot complete authorization at all.
-          #
-          # Split into subdomain/domain/path rather than one URL variable for two
-          # reasons. Flux envsubst defaults cannot carry the colon in "https://"
-          # (see OIDC_EXTRA_SCOPE), and each default here nests exactly ONE
-          # variable -- the same shape as OIDC_INTERNAL_SUBDOMAIN above, which is
-          # proven in production. A default of "${SUBDOMAIN}.${SECRET_DOMAIN}"
-          # would nest two, which is untested against drone/envsubst's parser.
-          # Hence claude.ai is spelled OIDC_CLIENT_SUBDOMAIN=claude + _DOMAIN=ai.
-          #
-          # Unset, all three default to the primary URI, so this line renders an
-          # exact duplicate and Authentik dedupes it (redirect_uris is a set) --
-          # the same no-op trick OIDC_INTERNAL_SUBDOMAIN and OIDC_EXTRA_SCOPE use.
-          # Every existing app is therefore unaffected.
-          - "https://${OIDC_CLIENT_SUBDOMAIN:=${SUBDOMAIN}}.${OIDC_CLIENT_DOMAIN:=${SECRET_DOMAIN}}${OIDC_CLIENT_PATH:=${REDIRECT_PATH}}"
+          # Optional full callback URI, including its scheme and any explicit port.
+          # Unset, repeat the primary URI rather than allow an empty callback.
+          - "${OIDC_EXTRA_REDIRECT_URI:=${OIDC_REDIRECT_URI:=https://${OIDC_CLIENT_SUBDOMAIN:=${SUBDOMAIN}}.${OIDC_CLIENT_DOMAIN:=${SECRET_DOMAIN}}${OIDC_CLIENT_PATH:=${REDIRECT_PATH}}}}"
           tokenDuration: "minutes=5"
           # NAME of a CertificateKeyPair inside Authentik, not a k8s secret reference.
           # The old value ("namespace_security.secret_authentik-cert-tls.tls") matched

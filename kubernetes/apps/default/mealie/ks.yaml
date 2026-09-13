@@ -91,16 +91,20 @@ spec:
       DISPLAY_NAME: "Mealie MCP"
       DESCRIPTION: "Recipes, meal plans and shopping lists via MCP"
       # Unused by this app -- it is a resource server and never receives a
-      # callback of its own. Present because the component requires it, and it
-      # supplies the (deduped) default for the two URIs below.
+      # callback of its own. Retained for the component's application-host entry.
       REDIRECT_PATH: "/auth/callback"
-      # The real callback: claude.ai's, not ours. Authentik 2026.5 advertises no
+      # Primary callback: the OAuth client's, independent of SUBDOMAIN above.
+      # Authentik 2026.5 advertises no
       # registration_endpoint, so the vendor cannot self-register and this URI has
-      # to be pre-registered. Split across three variables because Flux envsubst
-      # defaults cannot hold the colon in "https://" -- see the component.
+      # to be pre-registered. Keep the existing split variables for this callback.
       OIDC_CLIENT_SUBDOMAIN: claude
       OIDC_CLIENT_DOMAIN: ai
       OIDC_CLIENT_PATH: /api/mcp/auth_callback
+      # OIDC_REDIRECT_URI can override these parts with a fully resolved URI.
+      # Keep the split parts here to avoid embedding a literal domain in Git.
+      # Codex uses mcp-remote to authenticate with this confidential client.
+      # Keep its callback host, port and path aligned with the desktop config.
+      OIDC_EXTRA_REDIRECT_URI: http://127.0.0.1:3334/oauth/callback
       # No OIDC_INTERNAL_SUBDOMAIN: a second hostname would advertise a resource
       # identifier that does not match MCP_SERVER_URL. Single-host on purpose.
       #
@@ -121,4 +125,3 @@ spec:
   targetNamespace: *namespace
   timeout: 5m
   wait: false
-
