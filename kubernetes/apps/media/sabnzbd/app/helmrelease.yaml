@@ -163,6 +163,11 @@ spec:
               limits:
                 memory: 6141M
     defaultPodOptions:
+      labels:
+        # Starting a download pushes its node past LowNodeUtilization's CPU target, and
+        # eviction wipes the emptyDir 'incomplete' dir with the job's admin data, so the
+        # job silently vanishes and Sonarr/Radarr grab it again.
+        descheduler.home.arpa/no-rebalance: "true"
       # Bulk NFS writer -- keep off the card Plex wants. Original reasoning is in the
       # qbittorrent-private helmrelease (single-TCP-connection NFS mounts put Plex's
       # reads behind bulk writes); this is the one instance still separated, since it

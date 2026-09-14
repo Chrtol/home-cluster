@@ -81,9 +81,11 @@ spec:
                 - RemovePodsViolatingNodeTaints
         # Separate profile only so its evictor can skip pods labelled
         # descheduler.home.arpa/no-rebalance (LowNodeUtilization has no labelSelector of
-        # its own). Those pods have a node preference: evicting them off their preferred
-        # node for load lets RemovePodsViolatingNodeAffinity pull them straight back,
-        # which bounced Plex twice on 2026-09-13.
+        # its own). Two kinds of pod carry it. Node-preferring ones: evicting them off
+        # their preferred node for load lets RemovePodsViolatingNodeAffinity pull them
+        # straight back, which bounced Plex twice on 2026-09-13. And ones whose work
+        # lives in an emptyDir: sabnzbd lost in-flight downloads to three evictions
+        # 2026-09-13/14, each triggered by the CPU of the download itself.
         - name: Utilization
           pluginConfig:
             - name: DefaultEvictor
