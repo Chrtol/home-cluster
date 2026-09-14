@@ -20,14 +20,13 @@ projects:
     # Phase 2 runs the dummy worker from the orchestrator's own image. Phase 4
     # replaces this with a per-project image carrying OpenCode and the toolchain.
     image: ""
-    # Which Memini namespace this project's reviewed lessons come from. A
-    # privilege decision like `repository` above: it decides whose knowledge an
-    # attempt on this board can be shown.
+    # `memory_namespace` is deliberately unset: until lessons are read through
+    # the forge (Phase 4), any `reviewed`-tagged Memini row would be admitted
+    # on the writer's own say-so. Unset means no lessons are retrieved and every
+    # context package says so; it never falls back to the API key's default
+    # namespace, which would silently read another project's lessons.
     #
-    # Leaving it unset does NOT mean "use the default" — it means no lessons are
-    # retrieved at all, and every package says so. Falling back to the API key's
-    # own default namespace would be the quiet failure: this board would start
-    # reading another project's lessons and nothing would report it.
-    memory_namespace: home-cluster
-    checks:
-      unit: ["python", "-m", "pytest", "-q"]
+    # No checks yet: `unit` (pytest) is retired — this repo has no Python tests
+    # — and the real ids `flux-build` and `yaml-lint` cannot pass until the
+    # workspace holds a checkout (Phase 2). Cards keep `acceptance_checks: []`.
+    checks: {}
