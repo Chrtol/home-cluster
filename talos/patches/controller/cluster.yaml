@@ -5,6 +5,10 @@ cluster:
       # https://kubernetes.io/docs/tasks/extend-kubernetes/configure-aggregation-layer/
       enable-aggregator-routing: true
       feature-gates: MutatingAdmissionPolicy=true
+      # HTTP/2 clients never leave the apiserver they first connected to. After lenovo1
+      # was OOM-killed its watches piled onto lenovo2 (42 vs 1788) and stayed there.
+      # A 1-in-1000 GOAWAY makes clients reconnect and spread back out.
+      goaway-chance: "0.001"
       runtime-config: admissionregistration.k8s.io/v1beta1=true
   controllerManager:
     extraArgs:
