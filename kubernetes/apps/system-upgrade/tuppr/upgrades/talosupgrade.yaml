@@ -11,7 +11,11 @@ spec:
   policy:
     rebootMode: powercycle
   healthChecks:
-    - apiVersion: volsync.backube/v1alpha1
-      kind: ReplicationSource
+    # Hold each node's reboot while any kopiur backup is queued or copying, so a
+    # powercycle can't kill a mover mid-snapshot. A Snapshot too new to have a phase
+    # counts as queued. Checked across every namespace.
+    - apiVersion: kopiur.home-operations.com/v1alpha1
+      kind: Snapshot
+      description: no kopiur backup is pending or running
       expr: |-
-        status.conditions.filter(c, c.type == "Synchronizing").all(c, c.status == "False")
+        has(object.status) && has(object.status.phase) && !(object.status.phase in ["Pending", "Running"])
