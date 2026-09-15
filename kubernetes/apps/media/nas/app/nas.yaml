@@ -135,3 +135,36 @@ spec:
   resources:
     requests:
       storage: 1Ti
+---
+# kopia repository for the `nas` ClusterRepository -- kopiur mounts this claim's root
+# at the repository path in every mover Job it runs in this namespace. Rooted at
+# backup/kopia, not backup/, because kopiur has no subPath.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nas-kopia-media
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes: ["ReadWriteMany"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: ["nfsvers=4.2", "nconnect=16", "hard", "noatime"]
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: nas-kopia-media
+    volumeAttributes:
+      server: nas.${SECRET_DOMAIN}
+      share: /mnt/truenas/cf-nas/backup/kopia
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nas-kopia
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: ""
+  volumeName: nas-kopia-media
+  resources:
+    requests:
+      storage: 1Ti
