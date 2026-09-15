@@ -30,7 +30,7 @@ spec:
               # releases ship binaries. Pinned by digest so a rebuild of `main`
               # can't roll in silently; Renovate bumps the digest.
               repository: ghcr.io/yata-dash/yata-dash
-              tag: main@sha256:fde8a2c0a0fe13a96782fbde6917f98a764de16e642a3b2ec86ddd49466270d2
+              tag: main@sha256:b6e097cfd6c7a0e1c04be995624ac1f7c30bcdb6e17cc59185f041ca262f535e
             command:
               - sh
               - -c
