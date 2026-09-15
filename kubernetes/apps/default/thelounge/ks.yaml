@@ -13,7 +13,7 @@ spec:
   path: ./kubernetes/apps/default/thelounge/app
   components:
     - ../../../../components/ceph-rbd
-    - ../../../../components/volsync
+    - ../../../../components/kopiur
   postBuild:
     substitute:
       APP: *app

@@ -32,7 +32,8 @@ Conventions that apply to every component:
 | `cnpg` | Postgres init + client label | `valuesFrom` in HelmRelease |
 | `dragonfly` | Dragonfly client label | `valuesFrom` in HelmRelease |
 | `cnpg-tls` | Mirror CNPG CA for TLS verification (dormant) | mount `cnpg-ca` secret |
-| `volsync` | Restic backup of the app PVC | none |
+| `kopiur` | Kopia backup of the app PVC to the `nas` ClusterRepository | namespace needs a `nas-kopia` PVC and must be in the repository's `allowedNamespaces` |
+| `volsync` | Restic backup of the app PVC (being replaced by `kopiur`) | none |
 | `ceph-rbd` | RWO PVC on Ceph RBD | reference the PVC |
 | `cephfs` | PVC on CephFS | reference the PVC |
 | `gatus/external` | HTTP uptime check | none |
@@ -168,9 +169,31 @@ adoption are the libpq-family apps (grafana, authentik, mealie, *arrs). CNPG's
 CA renews in place (current CA expires 2026-07-31); confirm the mirror +
 Reloader survive that rotation before promoting this component.
 
+## `kopiur`
+
+Kopia backup of the app's PVC into the shared `nas` ClusterRepository
+(`kopiur-system`, filesystem repository on the NAS at `backup/kopia`). Creates a
+SnapshotPolicy (7d/4w/3m retention, zstd) and a SnapshotSchedule (`H 6 * * *`: a
+stable per-app minute in the 06:00Z hour, first snapshot immediately on creation).
+No per-app Secret — the repository password is projected in for each run. The
+repository caps concurrent movers at 2, so schedules never need hand-staggering.
+
+Prerequisites per namespace: a `nas-kopia` PVC (in `apps/<ns>/nas/app/nas.yaml`)
+and the namespace listed in the ClusterRepository's `allowedNamespaces`.
+
+| Variable | Default |
+|---|---|
+| `KOPIUR_PVC` | `${APP}` |
+| `KOPIUR_SNAPSHOTCLASS` | `csi-rbd-sc` |
+| `KOPIUR_CACHE_CAPACITY` | `1Gi` |
+
+To exclude paths, patch `spec.files.ignoreRules` on the SnapshotPolicy from the
+app's ks. An explicit list replaces kopiur's five default OS-artifact excludes, so
+restate them.
+
 ## `volsync`
 
-Restic backup for the app's PVC. Creates ExternalSecret `${APP}-volsync`
+Being replaced by `kopiur`. Restic backup for the app's PVC. Creates ExternalSecret `${APP}-volsync`
 (restic repo + password from the `restic` 1Password item) and a
 ReplicationSource (daily 03:00 snapshot, 7d/4w/3m retention).
 

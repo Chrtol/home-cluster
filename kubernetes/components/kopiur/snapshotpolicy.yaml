@@ -1,0 +1,33 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: ${APP}
+spec:
+  repository:
+    kind: ClusterRepository
+    name: nas
+  # The repository password Secret lives only in kopiur-system; the operator copies it
+  # into this namespace for the length of each run.
+  credentialProjection:
+    enabled: true
+  copyMethod: Snapshot
+  volumeSnapshotClassName: "${KOPIUR_SNAPSHOTCLASS:=csi-rbd-sc}"
+  sources:
+    - pvc:
+        name: "${KOPIUR_PVC:=${APP}}"
+      # Read-write so the repository's mover fsGroup can make the app's files
+      # readable. Only the staged snapshot is mounted, never the live volume.
+      readOnly: false
+  compression:
+    compressor: zstd
+  retention:
+    keepDaily: 7
+    keepWeekly: 4
+    keepMonthly: 3
+  mover:
+    cache:
+      mode: Persistent
+      capacity: "${KOPIUR_CACHE_CAPACITY:=1Gi}"
+      storageClassName: csi-rbd-sc

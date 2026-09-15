@@ -1,0 +1,17 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: ${APP}
+spec:
+  policyRef:
+    name: ${APP}
+  schedule:
+    # H is a stable per-schedule minute, so apps spread across the hour without anyone
+    # picking times, and the repository's concurrency cap queues whatever overlaps.
+    # 06:00Z because seeding has tapered by then.
+    cron: "H 6 * * *"
+    # A newly migrated app takes its first snapshot straight away instead of waiting
+    # up to a day; the concurrency cap still applies.
+    runOnCreate: true

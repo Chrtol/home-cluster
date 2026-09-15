@@ -50,3 +50,10 @@ spec:
     podSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
+      # Apps own their files as other UIDs (thelounge: 568, 0700 dirs), so a mover
+      # running as 1000 can't read them. The kopiur component mounts the staged
+      # snapshot read-write, which lets the kubelet chgrp it to 1000 -- on the
+      # throwaway stage only. Always, because OnRootMismatch skips the walk when just
+      # the root already carries the group. The NFS repository ignores fsGroup.
+      fsGroup: 1000
+      fsGroupChangePolicy: Always
