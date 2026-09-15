@@ -27,7 +27,7 @@ spec:
     replicas: 1
     # LMDB is mmap'd and is NOT safe to copy while running -- a filesystem-level
     # copy of a live meta dir can restore corrupt. Garage writes its own consistent
-    # snapshots into <metadata_dir>/snapshots on this interval, and volsync backs the
+    # snapshots into <metadata_dir>/snapshots on this interval, and kopiur backs the
     # whole metadata PVC up nightly, so the offsite copy always contains a restorable
     # point-in-time DB. Metadata is <1Gi of the 5Gi PVC, so the snapshots fit.
     metadataAutoSnapshotInterval: 6h
