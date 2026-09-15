@@ -56,6 +56,10 @@ spec:
         # permanently. Replaced by KubeMemoryRequestsNearCapacity in
         # ./prometheusrule.yaml, which alerts on approaching *unschedulable*.
         KubeMemoryOvercommit: true
+        # Per-method failure ratio that includes gRPC streams, so a LeaseKeepAlive
+        # reconnect reads as 100% failed. Replaced by EtcdHighFailedUnaryRequests in
+        # ./prometheusrule.yaml.
+        etcdHighNumberOfFailedGRPCRequests: true
       rules:
         kubeApiserverAvailability: false
         kubeApiserverBurnrate: false

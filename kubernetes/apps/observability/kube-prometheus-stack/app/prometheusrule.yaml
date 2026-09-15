@@ -26,3 +26,56 @@ spec:
           for: 30m
           labels:
             severity: warning
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: etcd-grpc.rules
+spec:
+  groups:
+    - name: etcd-grpc.rules
+      rules:
+        # Replace the built-in etcdHighNumberOfFailedGRPCRequests, disabled in the
+        # HelmRelease. It computed failures per gRPC method, including streams: a
+        # LeaseKeepAlive stream only ever ends as Unavailable when its client reconnects,
+        # so that method read 0% or 100% and paged critical with <1% of calls failing
+        # (>5% for 544 minutes over 8 days to 2026-09-15). Low-volume unary methods did
+        # the same off a single failure (LeaseGrant hit 10.7%). Scoped to unary calls
+        # and aggregated per member, the worst 8-day value was 0.93%.
+        - alert: EtcdHighFailedUnaryRequests
+          annotations:
+            summary: etcd member is failing unary gRPC requests.
+            description: >-
+              {{ $value | humanize }}% of unary gRPC requests failed on etcd member
+              {{ $labels.instance }} over the last 5 minutes.
+          expr: |
+            100 * sum by (job, instance) (
+              rate(grpc_server_handled_total{job=~".*etcd.*", grpc_type="unary", grpc_code=~"Unknown|FailedPrecondition|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded"}[5m])
+            )
+              /
+            sum by (job, instance) (
+              rate(grpc_server_handled_total{job=~".*etcd.*", grpc_type="unary"}[5m])
+            )
+              > 1
+          for: 10m
+          labels:
+            severity: warning
+        - alert: EtcdHighFailedUnaryRequests
+          annotations:
+            summary: etcd member is failing unary gRPC requests.
+            description: >-
+              {{ $value | humanize }}% of unary gRPC requests failed on etcd member
+              {{ $labels.instance }} over the last 5 minutes.
+          expr: |
+            100 * sum by (job, instance) (
+              rate(grpc_server_handled_total{job=~".*etcd.*", grpc_type="unary", grpc_code=~"Unknown|FailedPrecondition|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded"}[5m])
+            )
+              /
+            sum by (job, instance) (
+              rate(grpc_server_handled_total{job=~".*etcd.*", grpc_type="unary"}[5m])
+            )
+              > 5
+          for: 5m
+          labels:
+            severity: critical
