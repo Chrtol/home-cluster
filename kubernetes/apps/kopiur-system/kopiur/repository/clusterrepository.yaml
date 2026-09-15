@@ -7,6 +7,8 @@ metadata:
 spec:
   allowedNamespaces:
     list:
+      # The managed Maintenance CR lives here, and the webhook gates it like any consumer.
+      - kopiur-system
       - ai
       - database
       - default
