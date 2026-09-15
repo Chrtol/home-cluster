@@ -12,10 +12,13 @@ spec:
   dependsOn:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
+    - name: kopiur-repository
+      namespace: kopiur-system
   interval: 1h
   path: ./kubernetes/apps/media/sonarr/app
   components:
     - ../../../../components/cnpg
+    - ../../../../components/kopiur
     - ../../../../components/ext-auth
     # Interactive search fans out to every Prowlarr indexer; a measured episode
     # search took 26s, past Envoy's 15s default, so the WebUI showed "Unable to

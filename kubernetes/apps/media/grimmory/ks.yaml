@@ -14,21 +14,17 @@ spec:
       namespace: ceph-csi-rbd
     - name: mariadb-operator-instance
       namespace: database
-    - name: volsync
-      namespace: volsync-system
+    - name: kopiur-repository
+      namespace: kopiur-system
   interval: 1h
   path: ./kubernetes/apps/media/grimmory/app
   components:
     - ../../../../components/ceph-rbd
-    - ../../../../components/volsync
+    - ../../../../components/kopiur
   postBuild:
     substitute:
       CEPH_RBD_CAPACITY: 1Gi
       APP: *app
-      # VOLSYNC_REPO_NAME is gone on purpose: it was set to "grimmory" ahead of this
-      # rename so restic history would survive it. Now that APP is grimmory the
-      # component default produces the same /repository/grimmory path, and the
-      # existing snapshots carry straight over.
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

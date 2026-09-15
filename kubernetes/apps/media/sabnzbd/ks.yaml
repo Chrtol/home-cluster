@@ -12,9 +12,12 @@ spec:
   components:
     - ../../../../components/ceph-rbd
     - ../../../../components/ext-auth
+    - ../../../../components/kopiur
   dependsOn:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
+    - name: kopiur-repository
+      namespace: kopiur-system
   interval: 1h
   path: ./kubernetes/apps/media/sabnzbd/app
   postBuild:

@@ -154,7 +154,7 @@ spec:
             port: 5432
     persistence:
       # Claim comes from the ceph-rbd component (CEPH_RBD_CLAIM_NAME) and is the PVC
-      # the volsync component snapshots.
+      # the kopiur component snapshots.
       data:
         existingClaim: tracearr-timescale
         advancedMounts:

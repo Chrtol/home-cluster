@@ -25,17 +25,17 @@ spec:
       APP: *app
       CEPH_RBD_CAPACITY: 2Gi
       GATUS_SUBDOMAIN: audiobooks
-      VOLSYNC_CACHE_CAPACITY: 3Gi
+      KOPIUR_CACHE_CAPACITY: 3Gi
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
   components:
     - ../../../../components/ceph-rbd
-    - ../../../../components/volsync
+    - ../../../../components/kopiur
   dependsOn:
     - name: gatus
       namespace: observability
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
-    - name: volsync
-      namespace: volsync-system
+    - name: kopiur-repository
+      namespace: kopiur-system

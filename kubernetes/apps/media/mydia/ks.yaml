@@ -12,14 +12,14 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/media/mydia/app
   dependsOn:
-    - name: volsync
-      namespace: volsync-system
+    - name: kopiur-repository
+      namespace: kopiur-system
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
   components:
     - ../../../../components/cnpg
     - ../../../../components/ceph-rbd
-    - ../../../../components/volsync
+    - ../../../../components/kopiur
   postBuild:
     substitute:
       APP: *app

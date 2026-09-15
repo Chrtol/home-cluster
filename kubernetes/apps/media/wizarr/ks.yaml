@@ -13,7 +13,11 @@ spec:
   dependsOn:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
+    - name: kopiur-repository
+      namespace: kopiur-system
   path: kubernetes/apps/media/wizarr/app
+  components:
+    - ../../../../components/kopiur
   prune: true
   sourceRef:
     kind: GitRepository

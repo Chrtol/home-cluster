@@ -12,13 +12,13 @@ spec:
   dependsOn:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
-    - name: volsync
-      namespace: volsync-system
+    - name: kopiur-repository
+      namespace: kopiur-system
   interval: 1h
   path: ./kubernetes/apps/media/yata/app
   components:
     - ../../../../components/ceph-rbd
-    - ../../../../components/volsync
+    - ../../../../components/kopiur
     # Yata's own login is opt-in (Settings -> General -> Account) and OFF on a
     # fresh install, so the instance would serve every tracker API key and
     # session cookie it holds to anyone who reached the port until that manual

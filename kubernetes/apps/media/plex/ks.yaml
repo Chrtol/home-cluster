@@ -14,8 +14,28 @@ spec:
       namespace: kube-system
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
+    - name: kopiur-repository
+      namespace: kopiur-system
   interval: 1h
   path: ./kubernetes/apps/media/plex/app
+  components:
+    - ../../../../components/kopiur
+  # Media/ holds video preview and chapter thumbnails: ~3 GiB and 53k of the volume's
+  # ~63k files, all regenerable, so leaving it out keeps the per-run scan small. An
+  # explicit ignoreRules replaces kopiur's OS-artifact defaults; only /lost+found can
+  # exist on this ext4 volume, and restating $RECYCLE.BIN would be mangled by postBuild
+  # envsubst. Targeted by kind because patches run before APP is substituted.
+  patches:
+    - target:
+        group: kopiur.home-operations.com
+        kind: SnapshotPolicy
+      patch: |-
+        - op: add
+          path: /spec/files
+          value:
+            ignoreRules:
+              - /lost+found
+              - "/Library/Application Support/Plex Media Server/Media/"
   postBuild:
     substitute:
       APP: *app

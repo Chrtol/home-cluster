@@ -12,10 +12,13 @@ spec:
   dependsOn:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
+    - name: kopiur-repository
+      namespace: kopiur-system
   interval: 1h
   path: ./kubernetes/apps/media/prowlarr/app
   components:
     - ../../../../components/cnpg
+    - ../../../../components/kopiur
     - ../../../../components/ext-auth
     # Its own UI search queries every indexer at once — the slowest one sets the
     # response time, same fan-out as sonarr's.

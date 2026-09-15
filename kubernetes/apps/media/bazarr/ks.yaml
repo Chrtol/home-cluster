@@ -12,10 +12,13 @@ spec:
   dependsOn:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
+    - name: kopiur-repository
+      namespace: kopiur-system
   interval: 1h
   path: ./kubernetes/apps/media/bazarr/app
   components:
     - ../../../../components/cnpg
+    - ../../../../components/kopiur
     - ../../../../components/ext-auth
     - ../../../../components/proxy-application
     # Subtitle provider search fans out the same way — see sonarr's ks.yaml.

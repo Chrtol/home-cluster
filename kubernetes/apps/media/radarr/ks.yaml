@@ -12,9 +12,12 @@ spec:
   dependsOn:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
+    - name: kopiur-repository
+      namespace: kopiur-system
   path: ./kubernetes/apps/media/radarr/app
   components:
     - ../../../../components/cnpg
+    - ../../../../components/kopiur
     - ../../../../components/ext-auth
     # Same interactive-search fan-out as sonarr — see its ks.yaml.
     - ../../../../components/route-timeout

@@ -13,8 +13,12 @@ spec:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
     - name: plex
+    - name: kopiur-repository
+      namespace: kopiur-system
   interval: 1h
   path: ./kubernetes/apps/media/tautulli/app
+  components:
+    - ../../../../components/kopiur
   postBuild:
     substitute:
       APP: *app

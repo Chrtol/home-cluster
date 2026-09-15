@@ -14,11 +14,11 @@ spec:
       namespace: external-secrets
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
-    - name: volsync
-      namespace: volsync-system
+    - name: kopiur-repository
+      namespace: kopiur-system
   components:
     - ../../../../components/ceph-rbd
-    - ../../../../components/volsync
+    - ../../../../components/kopiur
   path: ./kubernetes/apps/media/recommendarr/app
   prune: true
   sourceRef:

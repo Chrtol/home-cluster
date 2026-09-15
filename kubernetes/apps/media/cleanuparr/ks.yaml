@@ -12,7 +12,11 @@ spec:
   dependsOn:
     - name: radarr
     - name: sonarr
+    - name: kopiur-repository
+      namespace: kopiur-system
   path: ./kubernetes/apps/media/cleanuparr/app
+  components:
+    - ../../../../components/kopiur
   prune: true
   sourceRef:
     kind: GitRepository

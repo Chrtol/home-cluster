@@ -12,8 +12,12 @@ spec:
   dependsOn:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
+    - name: kopiur-repository
+      namespace: kopiur-system
   interval: 1h
   path: ./kubernetes/apps/media/qbittorrent/public/app
+  components:
+    - ../../../../../components/kopiur
   postBuild:
     substitute:
       APP: *app
@@ -43,8 +47,12 @@ spec:
   dependsOn:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
+    - name: kopiur-repository
+      namespace: kopiur-system
   interval: 1h
   path: ./kubernetes/apps/media/qbittorrent/private/app
+  components:
+    - ../../../../../components/kopiur
   postBuild:
     substitute:
       APP: *app

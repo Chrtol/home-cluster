@@ -18,18 +18,18 @@ spec:
   #              TimescaleDB (TSL continuous aggregates + compression), which the shared
   #              postgres17 cluster cannot serve, so this app is deliberately the one
   #              exception to the cnpg component. See ai-activity/tracearr-timescaledb/.
-  # volsync   -> restic backup of that PVC, on its own retention independent of the
+  # kopiur    -> kopia backup of that PVC, on its own retention independent of the
   #              CNPG cluster's 7d barman policy.
   components:
     - ../../../../components/ceph-rbd
     - ../../../../components/dragonfly
-    - ../../../../components/volsync
+    - ../../../../components/kopiur
   postBuild:
     substitute:
       APP: *app
       CEPH_RBD_CLAIM_NAME: tracearr-timescale
       CEPH_RBD_CAPACITY: 20Gi
-      VOLSYNC_PVC: tracearr-timescale
+      KOPIUR_PVC: tracearr-timescale
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

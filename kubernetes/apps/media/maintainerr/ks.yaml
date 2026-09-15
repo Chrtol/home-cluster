@@ -12,13 +12,13 @@ spec:
   dependsOn:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
-    - name: volsync
-      namespace: volsync-system
+    - name: kopiur-repository
+      namespace: kopiur-system
   interval: 1h
   path: ./kubernetes/apps/media/maintainerr/app
   components:
     - ../../../../components/ceph-rbd
-    - ../../../../components/volsync
+    - ../../../../components/kopiur
     # Maintainerr ships no authentication of any kind (there is no auth module in
     # the source, and no env var configures one), so access control has to happen
     # in front of it: ext-auth owns the HTTPRoute + Authentik forward-auth
