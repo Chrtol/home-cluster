@@ -156,6 +156,14 @@ spec:
       external:
         annotations:
           external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+          # The server has nothing at / (404) and /mcp is 401 without a token, so
+          # Gatus's default bare-host probe reads as down. Same document the pod
+          # probes use, for the same reason.
+          gatus.home-operations.com/endpoint: |
+            group: external
+            path: /.well-known/oauth-protected-resource
+            conditions:
+              - "[STATUS] == 200"
         hostnames: ["mealie-mcp.${SECRET_DOMAIN}"]
         parentRefs:
           - name: external
