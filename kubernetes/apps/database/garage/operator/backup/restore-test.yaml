@@ -1,0 +1,99 @@
+# TEMPORARY kopiur restore test for Garage metadata -- remove this file and its
+# kustomization entry once the verify Job has passed. Restores the latest garage-operated
+# snapshot into a scratch claim. The live LMDB changes with every S3 write, so the Job
+# compares only Garage's own auto-snapshots under snapshots/, which are written once and
+# never modified, against the same files on the live metadata volume.
+# Shell variables are written $$var: this Kustomization runs postBuild envsubst.
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: garage-operated-restore-test
+spec:
+  credentialProjection:
+    enabled: true
+  source:
+    fromPolicy:
+      name: garage-operated
+      offset: 0
+      sourcePath: /pvc/metadata-garage-operated-storage-0-0
+  target:
+    populator: {}
+  policy:
+    onMissingSnapshot: Fail
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: garage-operated-restore-test
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: csi-rbd-sc
+  resources:
+    requests:
+      storage: 5Gi
+  dataSourceRef:
+    apiGroup: kopiur.home-operations.com
+    kind: Restore
+    name: garage-operated-restore-test
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: garage-operated-restore-test-verify
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      # The live metadata claim is ReadWriteOnce and attached to Garage's node, so the
+      # Job must run alongside the Garage pod to mount it (read-only) at all.
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  statefulset.kubernetes.io/pod-name: garage-operated-storage-0-0
+      containers:
+        - name: verify
+          image: busybox:1.38
+          command:
+            - sh
+            - -c
+            - |
+              cd /restore
+              echo "restored top level:"; ls -la
+              [ -d snapshots ] || { echo "FAIL: no snapshots/ in restore"; exit 1; }
+              match=0; differ=0; notlive=0
+              for f in $$(find snapshots -type f | sort); do
+                if [ -f "/live/$$f" ]; then
+                  a=$$(sha256sum "$$f" | cut -d' ' -f1)
+                  b=$$(sha256sum "/live/$$f" | cut -d' ' -f1)
+                  if [ "$$a" = "$$b" ]; then match=$$((match+1)); echo "MATCH $$f $$a"
+                  else differ=$$((differ+1)); echo "DIFF  $$f"; fi
+                else
+                  notlive=$$((notlive+1)); echo "GONE-FROM-LIVE $$f"
+                fi
+              done
+              echo "match=$$match differ=$$differ gone_from_live=$$notlive"
+              [ "$$match" -gt 0 ] && [ "$$differ" -eq 0 ]
+          volumeMounts:
+            - name: restore
+              mountPath: /restore
+              readOnly: true
+            - name: live
+              mountPath: /live
+              readOnly: true
+      volumes:
+        - name: restore
+          persistentVolumeClaim:
+            claimName: garage-operated-restore-test
+        - name: live
+          persistentVolumeClaim:
+            claimName: metadata-garage-operated-storage-0-0
+            readOnly: true
