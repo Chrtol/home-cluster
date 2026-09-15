@@ -10,6 +10,7 @@ resources:
   - ./grafana.yaml
   - ./dragonfly-operator.yaml
   - ./volsync.yaml
+  - ./kopiur.yaml
   - ./loki.yaml
   - ./alloy.yaml
   - ./opnsense-exporter.yaml

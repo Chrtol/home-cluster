@@ -1,0 +1,50 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/clusterrepository_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: ClusterRepository
+metadata:
+  name: nas
+spec:
+  allowedNamespaces:
+    list:
+      - ai
+      - database
+      - default
+      - games
+      - media
+  backend:
+    filesystem:
+      path: /repository
+      volume:
+        # Must exist in every namespace a mover runs in: each allowed namespace, plus
+        # kopiur-system for the bootstrap and maintenance Jobs.
+        pvc:
+          name: nas-kopia
+  encryption:
+    passwordSecretRef:
+      name: kopiur-repository-secret
+      namespace: kopiur-system
+      key: KOPIA_PASSWORD
+  concurrency:
+    # All nightly backups used to start in the same minute and pile onto one node,
+    # enough to make etcd drop requests. Runs over the cap wait before their Job exists.
+    maxConcurrentJobs: 2
+  credentialProjection:
+    allowed: true
+  maintenance:
+    schedule:
+      quick:
+        cron: "H * * * *"
+      # Clear of the 06:00Z backups. Full maintenance rewrites pack files.
+      full:
+        cron: "H 1 * * *"
+  moverDefaults:
+    # kopia writes repository files 0600. Under the share's POSIX ACL a file created
+    # by any other UID gets an effective mask of ---, locking out maintenance, so every
+    # mover writes as 1000 -- the NAS `kubernetes` user that owns backup/kopia.
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+    podSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000

@@ -1,0 +1,37 @@
+# kopia repository for the `nas` ClusterRepository. See the media namespace's nas.yaml
+# for the nconnect-per-node reasoning.
+#
+# kopiur mounts the claim's ROOT at the repository path (there is no subPath), so the
+# share is rooted at backup/kopia rather than reusing nas-backup, which is rooted at
+# backup/ alongside the restic repos. The repository's bootstrap and maintenance Jobs
+# run in this namespace; backup movers mount the same-named claim in their own.
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nas-kopia-kopiur-system
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes: ["ReadWriteMany"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: ["nfsvers=4.2", "nconnect=16", "hard", "noatime"]
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: nas-kopia-kopiur-system
+    volumeAttributes:
+      server: nas.${SECRET_DOMAIN}
+      share: /mnt/truenas/cf-nas/backup/kopia
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nas-kopia
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: ""
+  volumeName: nas-kopia-kopiur-system
+  resources:
+    requests:
+      storage: 1Ti
