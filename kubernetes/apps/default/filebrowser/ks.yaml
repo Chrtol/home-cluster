@@ -17,12 +17,12 @@ spec:
   #                     fast block storage; Quantum speed-tests cacheDir and fatals if slow)
   # oidc-application -> Authentik OIDC provider/app/group; creds land in
   #                     filebrowser-oidc-authentik-application, consumed via env override
-  # volsync          -> Restic backup of the config PVC (holds the only persistent state)
+  # kopiur           -> Kopia backup of the config PVC (holds the only persistent state)
   # gatus/external   -> external uptime check
   components:
     - ../../../../components/ceph-rbd
     - ../../../../components/oidc-application
-    - ../../../../components/volsync
+    - ../../../../components/kopiur
   dependsOn:
     - name: authentik
       namespace: security

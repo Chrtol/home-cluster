@@ -12,8 +12,8 @@ spec:
   dependsOn:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
-    - name: volsync
-      namespace: volsync-system
+    - name: kopiur-repository
+      namespace: kopiur-system
     # Frigate publishes camera/detection state over MQTT; without it the Home
     # Assistant integration has nothing to bind entities to.
     - name: mosquitto
@@ -32,7 +32,7 @@ spec:
   path: ./kubernetes/apps/default/frigate/app
   components:
     - ../../../../components/ceph-rbd
-    - ../../../../components/volsync
+    - ../../../../components/kopiur
     # Frigate's own auth is disabled (see config.yml) because the HTTPRoute only
     # ever targets port 5000, which Frigate never authenticates on any setting.
     # ext-auth owns the route + Authentik forward-auth SecurityPolicy;

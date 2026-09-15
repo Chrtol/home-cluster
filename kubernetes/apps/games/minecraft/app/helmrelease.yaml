@@ -74,7 +74,7 @@ spec:
               # Enforce the allowlist, but do NOT set ALLOW_LIST_USERS. That variable
               # GENERATES allowlist.json, which would fight (and on restart silently
               # overwrite) the in-game `/allowlist add` edits made by an operator.
-              # allowlist.json is runtime state on the PVC; volsync is its only copy.
+              # allowlist.json is runtime state on the PVC; the kopia backup is its only copy.
               ALLOW_LIST: "true"
               # MUST be explicitly true, not merely omitted. Despite the name, this
               # gates whether the server answers unconnected RakNet pings at all --
@@ -163,7 +163,7 @@ spec:
               limits:
                 memory: 512Mi
     defaultPodOptions:
-      # Give BDS room to flush the world on SIGTERM. With volsync-only backups the
+      # Give BDS room to flush the world on SIGTERM. With snapshot-only backups the
       # clean shutdown save is what keeps a snapshot from catching a torn world.
       terminationGracePeriodSeconds: 60
       affinity:

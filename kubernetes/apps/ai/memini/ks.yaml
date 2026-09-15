@@ -10,14 +10,14 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   components:
-    - ../../../../components/volsync
+    - ../../../../components/kopiur
   dependsOn:
     # LiteLLM must exist before Memini writes anything: a memory stored while
     # the embedder is unreachable is kept but vectorless, so it is findable by
     # text and invisible to semantic recall until a backfill repairs it.
     - name: litellm
       namespace: ai
-    # supplies the nas-backup claim the VolSync mover mounts in this namespace
+    # supplies the nas-kopia claim the kopiur mover mounts in this namespace
     - name: nas
       namespace: ai
   interval: 1h
@@ -26,7 +26,7 @@ spec:
     substitute:
       APP: *app
       # the PVC this app declares itself, not a chart-generated name
-      VOLSYNC_PVC: *app
+      KOPIUR_PVC: *app
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

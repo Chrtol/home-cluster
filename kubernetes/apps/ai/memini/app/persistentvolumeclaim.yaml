@@ -5,7 +5,7 @@
 # rename this claim and silently provision an empty store; and a claim this app
 # owns is not removed by a chart change or a release rename.
 #
-# VolSync backs it up nightly -- see VOLSYNC_PVC in ks.yaml.
+# kopiur backs it up nightly -- see KOPIUR_PVC in ks.yaml.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

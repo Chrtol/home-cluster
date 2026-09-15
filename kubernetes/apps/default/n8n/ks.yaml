@@ -20,13 +20,13 @@ spec:
     namespace: flux-system
   wait: false
   dependsOn:
-    - name: volsync
-      namespace: volsync-system
+    - name: kopiur-repository
+      namespace: kopiur-system
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
   components:
     - ../../../../components/ceph-rbd
-    - ../../../../components/volsync
+    - ../../../../components/kopiur
   postBuild:
     substitute:
       APP: *app

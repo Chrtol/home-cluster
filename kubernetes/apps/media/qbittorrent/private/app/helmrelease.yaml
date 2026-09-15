@@ -392,7 +392,7 @@ spec:
                 subPath: dyn-ip.sh
                 readOnly: true
       # Durable home for the rotating session cookie + last-reported-IP state, on
-      # the (VolSync-backed) config PVC. subPath 'dyn-ip' keeps it clear of qBit's
+      # the (kopia-backed) config PVC. subPath 'dyn-ip' keeps it clear of qBit's
       # own /config tree. Only the dyn-ip container mounts it.
       dyn-ip-state:
         existingClaim: qbittorrent-private

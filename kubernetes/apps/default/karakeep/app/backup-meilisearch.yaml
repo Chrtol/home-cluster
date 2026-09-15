@@ -1,0 +1,65 @@
+# karakeep's second PVC. components/kopiur names its objects ${APP}, which karakeep's own
+# PVC already uses, so this pair is hand-written -- keep it in step with
+# kubernetes/components/kopiur.
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: karakeep-meilisearch
+spec:
+  repository:
+    kind: ClusterRepository
+    name: nas
+  credentialProjection:
+    enabled: true
+  copyMethod: Snapshot
+  volumeSnapshotClassName: csi-rbd-sc
+  sources:
+    - pvc:
+        name: karakeep-meilisearch
+      readOnly: false
+  compression:
+    compressor: zstd
+  retention:
+    keepDaily: 7
+    keepWeekly: 4
+    keepMonthly: 3
+  mover:
+    cache:
+      mode: Persistent
+      capacity: 1Gi
+      storageClassName: csi-rbd-sc
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: karakeep-meilisearch
+spec:
+  policyRef:
+    name: karakeep-meilisearch
+  schedule:
+    cron: "H 6 * * *"
+    runOnCreate: true
+---
+# Restic credentials for the pre-kopiur repository at backup/karakeep-meilisearch. Nothing
+# backs up with them any more; kept so that history stays restorable until it is retired.
+# yaml-language-server: $schema=https://crd.movishell.pl/external-secrets.io/externalsecret_v1.json
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: karakeep-meilisearch-restic-secret
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: onepassword
+  target:
+    name: karakeep-meilisearch-restic-secret
+    creationPolicy: Owner
+    template:
+      engineVersion: v2
+      data:
+        RESTIC_REPOSITORY: "/repository/karakeep-meilisearch"
+        RESTIC_PASSWORD: "{{ .RESTIC_PASSWORD }}"
+  dataFrom:
+    - extract:
+        key: restic

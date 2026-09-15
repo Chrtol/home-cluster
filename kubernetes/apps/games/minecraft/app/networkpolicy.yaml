@@ -6,7 +6,7 @@
 # left to draw a boundary.
 #
 # SCOPED TO THE GAME PODS, not the whole namespace, on purpose: a namespace-wide
-# default-deny would also catch the VolSync mover pods, whose egress to the restic
+# default-deny would also catch the kopiur mover pods, whose egress to the NAS
 # repository is RFC1918 -- exactly what the egress rule below blocks. That would
 # break backups silently, since a mover failure doesn't surface as a pod crash.
 apiVersion: networking.k8s.io/v1

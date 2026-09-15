@@ -6,4 +6,4 @@ resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
   - ./pvc.yaml
-  - ./volsync-meilisearch.yaml
+  - ./backup-meilisearch.yaml

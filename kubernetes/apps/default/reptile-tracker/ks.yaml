@@ -14,8 +14,8 @@ spec:
       namespace: database
     - name: authentik
       namespace: security
-    - name: volsync
-      namespace: volsync-system
+    - name: kopiur-repository
+      namespace: kopiur-system
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
   path: ./kubernetes/apps/default/reptile-tracker/app
@@ -23,7 +23,7 @@ spec:
     - ../../../../components/cnpg
     - ../../../../components/dragonfly
     - ../../../../components/ceph-rbd
-    - ../../../../components/volsync
+    - ../../../../components/kopiur
   prune: true
   sourceRef:
     kind: GitRepository

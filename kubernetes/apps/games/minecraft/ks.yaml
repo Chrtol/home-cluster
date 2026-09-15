@@ -16,15 +16,15 @@ spec:
   # ceph-rbd -> RWO PVC holding the world AND the runtime-mutable allowlist.json /
   #             permissions.json, plus the broadcaster's Xbox token cache. All of it
   #             is state that is deliberately NOT in git (see helmrelease notes).
-  # volsync  -> Restic backup of that PVC; the world is the only thing worth keeping.
+  # kopiur   -> Kopia backup of that PVC; the world is the only thing worth keeping.
   components:
     - ../../../../components/ceph-rbd
-    - ../../../../components/volsync
+    - ../../../../components/kopiur
   dependsOn:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
-    # volsync's mover mounts the namespace's nas-backup claim; without this the
-    # first backup silently sits Pending forever.
+    # kopiur's mover mounts the namespace's nas-kopia claim; without this the
+    # first backup sits Pending.
     - name: nas
       namespace: games
   prune: true
