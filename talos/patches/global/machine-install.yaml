@@ -1,0 +1,8 @@
+machine:
+  install:
+    # Pinned to Talos' own default. talhelper emits `true` unprompted, which switches
+    # GRUB from building the kernel cmdline on the host to taking it from the UKI.
+    # These nodes boot GRUB (secureBoot: false), so that is a live boot-path change.
+    # Kept false here so the multi-document network migration can be applied on its
+    # own; flipping it is a separate, deliberate change.
+    grubUseUKICmdline: false
