@@ -41,9 +41,41 @@ spec:
   maxHistory: 3
   values:
     container_runtime: containerd
+    config:
+      # Replaces the chart default, so its auto_registration block is restated.
+      # $${VAR} survives Flux substitution; CrowdSec expands it from the pod env.
+      config.yaml.local: |
+        api:
+          server:
+            auto_registration:
+              enabled: true
+              token: "$${REGISTRATION_TOKEN}"
+              allowed_ranges:
+                - "127.0.0.1/32"
+                - "192.168.0.0/16"
+                - "10.0.0.0/8"
+                - "172.16.0.0/12"
+        db_config:
+          type: postgresql
+          user: crowdsec
+          password: "$${DB_PASSWORD}"
+          db_name: crowdsec
+          host: "$${DB_HOST}"
+          port: 5432
+          sslmode: require
     lapi:
       ingress:
         enabled: false
+      deployAnnotations:
+        reloader.stakater.com/auto: "true"
+      podLabels:
+        db.home.arpa/postgres: "true"
+      extraInitContainers:
+        - name: init-db
+          image: ghcr.io/home-operations/postgres-init:18.6.0@sha256:b6d3af974df781c673d37e49bdddfa14a6f5be28b18d2cb7713f0449bea4057b
+          envFrom:
+            - secretRef:
+                name: crowdsec-initdb-secret
       env:
         - name: TZ
           value: ${SECRET_TIMEZONE}
@@ -54,25 +86,42 @@ spec:
             secretKeyRef:
               name: crowdsec-secret
               key: enroll-key
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: crowdsec-initdb-secret
+              key: INIT_POSTGRES_HOST
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: crowdsec-initdb-secret
+              key: INIT_POSTGRES_PASS
+        # The start script registers each BOUNCER_KEY_<name> as bouncer <name>
+        - name: BOUNCER_KEY_envoy_bouncer
+          valueFrom:
+            secretKeyRef:
+              name: crowdsec-secret
+              key: envoy-bouncer-key
+        - name: BOUNCER_KEY_opnsense
+          valueFrom:
+            secretKeyRef:
+              name: crowdsec-secret
+              key: opnsense-bouncer-key
       dashboard:
         enabled: false
       metrics:
         enabled: true
         serviceMonitor:
           enabled: true
+      # All state lives in Postgres; with the config volume off the chart keeps the
+      # CAPI and cscli credentials in Secrets it creates from pre-upgrade Jobs.
       persistentVolume:
         data:
-          enabled: true
-          accessModes:
-            - ReadWriteOnce
-          storageClassName: "csi-rbd-sc"
-          size: 1Gi
+          enabled: false
         config:
-          enabled: true
-          accessModes:
-            - ReadWriteOnce
-          storageClassName: "csi-rbd-sc"
-          size: 100Mi
+          enabled: false
+      storeCAPICredentialsInSecret: true
+      storeLAPICscliCredentialsInSecret: true
       resources:
         requests:
           cpu: 15m
@@ -80,21 +129,6 @@ spec:
         limits:
           memory: 512M
     agent:
-      # Agent disabled - no Envoy parser available
-      # Decisions come from CrowdSec Central API and VPS Traefik
+      # Disabled: no Envoy parser, so this LAPI only serves the CrowdSec Central
+      # blocklist to the Envoy and OPNsense bouncers. The VPS runs its own CrowdSec.
       enabled: false
-    reflector:
-      enabled: true
-      env:
-        - name: OPNSENSE_URL
-          value: "https://opnsense.${SECRET_DOMAIN}"
-        - name: OPNSENSE_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: crowdsec-secret
-              key: opnsense-api-key
-        - name: OPNSENSE_API_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: crowdsec-secret
-              key: opnsense-api-secret

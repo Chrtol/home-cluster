@@ -16,10 +16,18 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  # components:
+  dependsOn:
+    - name: cloudnative-pg-cluster-v17
+      namespace: database
+    - name: external-secrets
+      namespace: external-secrets
+  components:
+    - ../../../../components/cnpg
   postBuild:
     substitute:
       APP: *app
+      DB_OP_ITEM: crowdsec
+      DB_PASS_FIELD: CROWDSEC_CLUSTER_POSTGRES_PASS
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
