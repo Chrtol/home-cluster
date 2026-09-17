@@ -111,9 +111,12 @@
       - --name
       - "{{ crowdsec_console_name }}"
       - "{{ crowdsec_enroll_key }}"
+  # cscli logs the enrollment state to stderr, not stdout
   when:
     - crowdsec_enroll_key | length > 0
-    - "'is enrolled' not in crowdsec_console_status.stdout"
+    - "'is enrolled' not in (crowdsec_console_status.stdout + crowdsec_console_status.stderr)"
+  register: crowdsec_enroll
+  changed_when: "'already enrolled' not in (crowdsec_enroll.stdout + crowdsec_enroll.stderr)"
   no_log: true
   notify: restart crowdsec
 
