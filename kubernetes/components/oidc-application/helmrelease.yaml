@@ -21,8 +21,15 @@
 #                        build the primary HTTPS callback when OIDC_REDIRECT_URI is
 #                        unset. Default to SUBDOMAIN / SECRET_DOMAIN / REDIRECT_PATH.
 #                        Existing third-party clients can keep these split variables.
-#                      OIDC_EXTRA_REDIRECT_URI - an additional full callback URI.
-#                        Defaults to the primary URI, adding no new allowed target.
+#                      OIDC_EXTRA_SUBDOMAIN / OIDC_EXTRA_DOMAIN / OIDC_EXTRA_PATH build
+#                        a THIRD callback, each defaulting to the primary's part, so an
+#                        app needing only a second path sets OIDC_EXTRA_PATH alone
+#                        (ocis: /oidc-silent-redirect.html). Unset, the entry repeats
+#                        the primary URI and Authentik dedupes it.
+#                      OIDC_EXTRA_REDIRECT_URI - that third callback as one literal URI,
+#                        for a scheme or port the parts cannot express. It must be fully
+#                        literal: envsubst is single-pass, so a ${SECRET_DOMAIN} inside
+#                        this value is NOT expanded and reaches Authentik as text.
 #                      OIDC_INTERNAL_SUBDOMAIN (defaults to SUBDOMAIN) - registers a
 #                        SECOND redirect URI at
 #                        https://${OIDC_INTERNAL_SUBDOMAIN}.${SECRET_DOMAIN}${REDIRECT_PATH}.
@@ -88,9 +95,14 @@ spec:
           # Preserve the callback for applications with a separate internal host.
           # Unset, this remains the application's own callback URL.
           - "https://${OIDC_INTERNAL_SUBDOMAIN:=${SUBDOMAIN}}.${SECRET_DOMAIN}${REDIRECT_PATH}"
-          # Optional full callback URI, including its scheme and any explicit port.
-          # Unset, repeat the primary URI rather than allow an empty callback.
-          - "${OIDC_EXTRA_REDIRECT_URI:=${OIDC_REDIRECT_URI:=https://${OIDC_CLIENT_SUBDOMAIN:=${SUBDOMAIN}}.${OIDC_CLIENT_DOMAIN:=${SECRET_DOMAIN}}${OIDC_CLIENT_PATH:=${REDIRECT_PATH}}}}"
+          # A third callback, assembled from bare tokens the same way the primary one
+          # is. It is NOT a place to pass a whole URI containing ${SECRET_DOMAIN}:
+          # envsubst makes a single pass over the manifest and never re-scans what it
+          # substituted, so the inner variable would reach Authentik verbatim and
+          # match nothing. Unset, every part falls back to the primary callback, so
+          # the entry duplicates it and Authentik dedupes -- inert, like
+          # OIDC_INTERNAL_SUBDOMAIN.
+          - "${OIDC_EXTRA_REDIRECT_URI:=https://${OIDC_EXTRA_SUBDOMAIN:=${SUBDOMAIN}}.${OIDC_EXTRA_DOMAIN:=${SECRET_DOMAIN}}${OIDC_EXTRA_PATH:=${REDIRECT_PATH}}}"
           # access_token_validity. Five minutes is right for browser apps: they re-auth
           # invisibly against the Authentik session cookie, so the user never sees it.
           # An MCP client cannot -- it holds a long-lived connection with no way to bounce

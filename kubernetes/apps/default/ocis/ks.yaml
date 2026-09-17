@@ -46,7 +46,10 @@ spec:
       # silent_redirect_uri is /oidc-silent-redirect.html. Both must be registered or
       # login succeeds and then token renewal silently fails.
       REDIRECT_PATH: /oidc-callback.html
-      OIDC_EXTRA_REDIRECT_URI: https://drive.${SECRET_DOMAIN}/oidc-silent-redirect.html
+      # Only the path differs from the primary callback, so the host parts default
+      # through. Passing a whole URI here instead would smuggle an unexpanded
+      # ${SECRET_DOMAIN} into Authentik -- envsubst never re-scans its own output.
+      OIDC_EXTRA_PATH: /oidc-silent-redirect.html
       # Secret lands in this namespace so the HelmRelease can secretKeyRef the
       # generated clientID directly.
       OIDC_SECRET_NAMESPACE: *namespace
