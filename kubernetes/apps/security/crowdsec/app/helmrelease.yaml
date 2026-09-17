@@ -122,6 +122,12 @@ spec:
             secretKeyRef:
               name: crowdsec-secret
               key: opnsense-bouncer-key
+      # OPNsense's firewall bouncer connects here directly (http://<ip>:8080);
+      # a fixed LAN IP keeps the router's DNS out of the path.
+      service:
+        type: LoadBalancer
+        annotations:
+          lbipam.cilium.io/ips: 10.0.30.33
       dashboard:
         enabled: false
       metrics:
