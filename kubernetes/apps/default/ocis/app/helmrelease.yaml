@@ -51,6 +51,9 @@ spec:
               OCIS_EXCLUDE_RUN_SERVICES: idp
               OCIS_OIDC_ISSUER: https://sso.${SECRET_DOMAIN}/application/o/ocis/
               PROXY_OIDC_REWRITE_WELLKNOWN: "true"
+              # Without this the built-in CSP allows connect-src 'self' only, and the
+              # browser refuses to fetch the discovery document from Authentik.
+              PROXY_CSP_CONFIG_FILE_LOCATION: /etc/ocis/csp.yaml
               WEB_OIDC_SCOPE: openid profile email
               WEB_OIDC_CLIENT_ID:
                 valueFrom:
@@ -174,6 +177,17 @@ spec:
                 subPath: config
               - path: /var/lib/ocis
                 subPath: data
+      # Mounted as a single file on top of the PVC's config subPath, so it sits
+      # beside the generated ocis.yaml without hiding it.
+      csp:
+        type: configMap
+        name: ocis-csp
+        advancedMounts:
+          ocis:
+            app:
+              - path: /etc/ocis/csp.yaml
+                subPath: csp.yaml
+                readOnly: true
       tmp:
         type: emptyDir
         globalMounts:

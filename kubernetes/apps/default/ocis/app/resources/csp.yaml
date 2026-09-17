@@ -1,0 +1,54 @@
+---
+# ocis' built-in Content-Security-Policy allows connect-src 'self' only, so the web
+# app is blocked from fetching its own OIDC discovery document the moment the IdP
+# lives on another origin -- login dies with "Network Error" from oidc-client and no
+# server-side trace, because the browser never sends the request.
+#
+# Upstream ships this file per deployment for exactly that reason; this is their
+# external-IdP example with the Keycloak origin swapped for Authentik. Any future
+# origin the web app must reach (an OnlyOffice/Collabora WOPI host, say) has to be
+# added to connect-src and frame-src here too.
+#
+# script-src deliberately has no 'unsafe-eval', matching upstream. A library does
+# attempt an eval and the console logs a CSP violation for it, but that is present in
+# upstream's own config and does not block login -- so it is not worth weakening the
+# policy over.
+directives:
+  child-src:
+    - "'self'"
+  connect-src:
+    - "'self'"
+    - "blob:"
+    - "https://raw.githubusercontent.com/owncloud/awesome-ocis/"
+    - "https://marketplace.owncloud.com/"
+    - "https://sso.${SECRET_DOMAIN}/"
+  default-src:
+    - "'none'"
+  font-src:
+    - "'self'"
+    - "data:"
+  frame-ancestors:
+    - "'none'"
+  frame-src:
+    - "'self'"
+    - "blob:"
+    - "https://embed.diagrams.net/"
+  img-src:
+    - "'self'"
+    - "data:"
+    - "blob:"
+    - "https://raw.githubusercontent.com/owncloud/awesome-ocis/"
+    - "https://marketplace.owncloud.com/"
+  manifest-src:
+    - "'self'"
+  media-src:
+    - "'self'"
+  object-src:
+    - "'self'"
+    - "blob:"
+  script-src:
+    - "'self'"
+    - "'unsafe-inline'"
+  style-src:
+    - "'self'"
+    - "'unsafe-inline'"
