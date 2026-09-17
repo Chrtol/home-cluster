@@ -50,6 +50,10 @@ spec:
     - ../../../../components/dragonfly
     - ../../../../components/ceph-rbd
     - ../../../../components/oidc-application
+    # Parked at replicas: 0, but the PVC still holds the pre-parking state this
+    # app was scaled down rather than deleted to preserve. copyMethod: Snapshot
+    # reads a staged VolumeSnapshot, so no running pod is required.
+    - ../../../../components/kopiur
   dependsOn:
     - name: postiz-temporal
       namespace: default
@@ -59,6 +63,8 @@ spec:
       namespace: database
     - name: authentik
       namespace: security
+    - name: kopiur-repository
+      namespace: kopiur-system
   path: "./kubernetes/apps/default/postiz/app"
   postBuild:
     substitute:
