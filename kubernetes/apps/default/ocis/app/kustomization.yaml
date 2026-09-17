@@ -8,7 +8,7 @@ configMapGenerator:
   - name: ocis-config
     files:
       - ./resources/csp.yaml
-      - ./resources/proxy.yaml
+      - ./resources/role-assignment.yaml
 generatorOptions:
   # Stable name so the HelmRelease can reference it; Reloader handles the restart on
   # content change instead of a name-suffix roll.

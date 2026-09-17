@@ -1,0 +1,33 @@
+---
+# Merged into /etc/ocis/ocis.yaml by an init container, NOT mounted as a config file
+# of its own. `ocis server` runs every service in one process and parses only the
+# global ocis.yaml -- the per-service /etc/ocis/proxy.yaml that the documentation
+# implies is read only when the proxy runs standalone. A file mounted there is
+# silently ignored, the proxy keeps the `default` driver, and everyone logs in as an
+# ordinary user with nothing in the logs to say why.
+#
+# role_mapping is the reason this has to be a file at all: it is the one proxy
+# setting with no environment variable.
+proxy:
+  role_assignment:
+    driver: oidc
+    oidc_role_mapper:
+      # Authentik's stock `profile` scope mapping already returns group display names
+      # in a `groups` claim, so no extra scope or blueprint patch is needed.
+      role_claim: groups
+      # ORDER IS PRIVILEGE ORDER. ocis assigns exactly one role and stops at the first
+      # entry matching any of the user's groups, so admin must precede user -- being in
+      # both groups otherwise demotes you.
+      #
+      # Every group that can reach ocis needs an entry. An unmatched user is rejected
+      # outright ("no role in claim maps to an ocis role"), not defaulted, so adding an
+      # OIDC_ACCESS_GROUP to the ks without adding it here locks that group out. These
+      # two are exactly what the oidc-application component binds for access.
+      #
+      # claim_value is compiled as an anchored regex, so metacharacters would need
+      # escaping.
+      role_mapping:
+        - role_name: admin
+          claim_value: "authentik Admins"
+        - role_name: user
+          claim_value: "bp-ocis-users"

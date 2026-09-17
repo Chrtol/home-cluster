@@ -18,21 +18,58 @@ spec:
           # start -- without this a regenerated Authentik client leaves ocis holding
           # the old ID until someone notices the login is broken.
           reloader.stakater.com/auto: "true"
-        containers:
-          app:
-            image:
+        initContainers:
+          # `ocis init` writes /etc/ocis/ocis.yaml with 16 generated values -- five
+          # UUIDs (system/admin user, graph application, storage mount, service
+          # account) and eleven secrets (JWT, transfer, machine-auth, WOPI, the IDM
+          # service passwords...). Guarded on the file rather than upstream's
+          # `ocis init || true`, which also swallows a genuine init failure and leaves
+          # the pod to fail later and less clearly.
+          init-config:
+            image: &image
               repository: docker.io/owncloud/ocis
               tag: 8.2.0@sha256:1b9e3945890f2cb57283d15d3937a2d8180036db003bec4cc499bf95a2c82446
-            # `ocis init` writes /etc/ocis/ocis.yaml with 16 generated values -- five
-            # UUIDs (system/admin user, graph application, storage mount, service
-            # account) and eleven secrets (JWT, transfer, machine-auth, WOPI, the IDM
-            # service passwords...). It re-reads and PRESERVES an existing file, so it
-            # is idempotent; on an already-initialised volume it exits non-zero, hence
-            # `|| true`. Upstream ships this exact incantation.
             command:
               - /bin/sh
               - -c
-              - ocis init || true; exec ocis server
+              - "[ -f /etc/ocis/ocis.yaml ] || ocis init"
+            securityContext: &hardened
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+          # The role mapping has to live inside ocis.yaml: `ocis server` parses only
+          # the global config, so a per-service proxy.yaml is never read. Deep-merging
+          # keeps the generated secrets and is a no-op when the values already match,
+          # and `ocis init` above skips an initialised volume, so the block survives
+          # every restart.
+          merge-role-config:
+            image:
+              repository: ghcr.io/mikefarah/yq
+              tag: 4.53.6@sha256:cfc4eee658595834ef304eadb0c3ea721f3b7cb6404ad8b7cb909cc5b5145b23
+            args:
+              - -i
+              - '. *= load("/config-fragment/role-assignment.yaml")'
+              - /etc/ocis/ocis.yaml
+            securityContext: *hardened
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
+        containers:
+          app:
+            image: *image
+            # No command: the image's entrypoint is /usr/bin/ocis with `server` as its
+            # default argument, and init now happens above.
             env:
               TZ: ${SECRET_TIMEZONE}
               # Single canonical host. Every OIDC redirect, WOPI callback and asset
@@ -110,12 +147,7 @@ spec:
                   periodSeconds: 5
                   timeoutSeconds: 5
                   failureThreshold: 60
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities:
-                drop:
-                  - ALL
+            securityContext: *hardened
             resources:
               requests:
                 cpu: 100m
@@ -169,28 +201,35 @@ spec:
         existingClaim: *app
         advancedMounts:
           ocis:
-            app:
-              # ocis.yaml holds the transfer secret and the storage mount ID. Lose
-              # this subPath and the data in the other one is unreadable, so both
-              # live on one volume and ride the same kopiur snapshot.
+            # ocis.yaml holds the transfer secret and the storage mount ID. Lose
+            # this subPath and the data in the other one is unreadable, so both
+            # live on one volume and ride the same kopiur snapshot.
+            init-config: &volume-mounts
               - path: /etc/ocis
                 subPath: config
               - path: /var/lib/ocis
                 subPath: data
-      # Mounted as single files on top of the PVC's config subPath, so they sit
-      # beside the generated ocis.yaml without hiding it. proxy.yaml is read because
-      # each service loads <config dir>/<service name>.yaml.
+            # Writes ocis.yaml in place, so this one is not read-only.
+            merge-role-config:
+              - path: /etc/ocis
+                subPath: config
+            app: *volume-mounts
       config-files:
         type: configMap
         name: ocis-config
         advancedMounts:
           ocis:
+            # csp.yaml IS read as a config file, mounted over the PVC's config
+            # subPath so it sits beside the generated ocis.yaml without hiding it.
             app:
               - path: /etc/ocis/csp.yaml
                 subPath: csp.yaml
                 readOnly: true
-              - path: /etc/ocis/proxy.yaml
-                subPath: proxy.yaml
+            # role-assignment.yaml is merged INTO ocis.yaml instead, so it is staged
+            # outside /etc/ocis -- dropping it in there would just be an unread file.
+            merge-role-config:
+              - path: /config-fragment/role-assignment.yaml
+                subPath: role-assignment.yaml
                 readOnly: true
       tmp:
         type: emptyDir
