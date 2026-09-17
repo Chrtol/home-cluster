@@ -30,6 +30,7 @@
     crowdsec_bouncer_api_key: "{{ lookup('env', 'CROWDSEC_BOUNCER_API_KEY') }}"
     crowdsec_lapi_host: "{{ lookup('env', 'CROWDSEC_LAPI_HOST') | default('127.0.0.1:8080') }}"
     crowdsec_log_level: "{{ lookup('env', 'CROWDSEC_LOG_LEVEL') | default('INFO') }}"
+    crowdsec_enroll_key: "{{ lookup('env', 'CROWDSEC_ENROLL_KEY') | default('', true) }}"
 
     # Minecraft Bedrock UDP passthrough. Presence of the IP is the toggle.
     minecraft_lb_ip: "{{ lookup('env', 'VPS_MINECRAFT_LB_IP') | default('', true) }}"
@@ -78,7 +79,7 @@
       debug:
         msg: |
           Applying VPS configuration...
-          Features: Traefik, Trivy Scanner
+          Features: Traefik, CrowdSec, Trivy Scanner
           Authentik: {{ 'Enabled' if authentik_enabled else 'Disabled' }}
           CrowdSec: {{ 'Enabled' if crowdsec_enabled else 'Disabled' }}
           Metrics: {{ 'Enabled' if enable_metrics else 'Disabled' }}
@@ -87,6 +88,12 @@
     - name: Ensure traefik is deployed
       include_role:
         name: traefik
+
+    # After traefik, so the access log directory exists before CrowdSec tails it.
+    - name: Ensure crowdsec is configured
+      include_role:
+        name: crowdsec
+      when: crowdsec_enabled
 
     - name: Ensure trivy scanner is deployed
       include_role:
@@ -104,7 +111,7 @@
       changed_when: false
       ignore_errors: true
 
-    - name: Remove old logs directory (now using OpenTelemetry)
+    - name: Remove old logs directory (access log now lives in /var/log/traefik)
       file:
         path: /opt/traefik/logs
         state: absent

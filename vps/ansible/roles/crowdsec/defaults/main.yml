@@ -1,0 +1,16 @@
+---
+# Collections on top of what the installer set up (linux, sshd, base-http-scenarios...)
+crowdsec_collections:
+  - crowdsecurity/linux
+  - crowdsecurity/sshd
+  - crowdsecurity/traefik
+
+# Traefik writes its access log here (see the traefik role)
+crowdsec_traefik_access_log: /var/log/traefik/access.log
+
+crowdsec_papi_url: https://papi.api.crowdsec.net/
+
+# Console enrollment runs only when the instance is not enrolled yet.
+# The key comes from 1Password; an empty key skips enrollment.
+crowdsec_console_name: vps1
+crowdsec_enroll_key: ""

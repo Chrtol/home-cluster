@@ -24,6 +24,7 @@
   command: cscli bouncers add vps-traefik-main
   register: bouncer_creation
   when: not bouncer_exists
+  no_log: true
 
 - name: Report bouncer creation
   debug:
@@ -39,6 +40,7 @@
     - bouncer_creation.changed
     - bouncer_creation.stdout | regex_search('([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})')
   ignore_errors: true
+  no_log: true
 
 - name: Extract API key from bouncer creation output (pattern 2 - base64)
   set_fact:
@@ -49,6 +51,7 @@
     - (crowdsec_bouncer_key is not defined or crowdsec_bouncer_key == "" or crowdsec_bouncer_key == None)
     - bouncer_creation.stdout | regex_search('([A-Za-z0-9+/]{20,}[=]*)')
   ignore_errors: true
+  no_log: true
 
 - name: Extract API key from bouncer creation output (pattern 3 - after colon)
   set_fact:
@@ -59,12 +62,12 @@
     - (crowdsec_bouncer_key is not defined or crowdsec_bouncer_key == "" or crowdsec_bouncer_key == None)
     - "':' in bouncer_creation.stdout"
   ignore_errors: true
+  no_log: true
 
 - name: Verify API key was extracted
   fail:
     msg: |
       Failed to extract CrowdSec bouncer API key from output.
-      Output was: {{ bouncer_creation.stdout }}
 
       Please manually create the bouncer and add the key to 1Password:
       1. SSH to VPS and run: sudo cscli bouncers add vps-traefik-main
@@ -122,6 +125,7 @@
       become: true
       command: cscli bouncers add vps-traefik-main
       register: bouncer_recreation
+      no_log: true
 
     - name: Report bouncer recreation
       debug:
@@ -132,6 +136,7 @@
         crowdsec_bouncer_key: "{{ bouncer_recreation.stdout | regex_search('([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})') | default('', true) }}"
       when: bouncer_recreation.stdout | regex_search('([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})')
       ignore_errors: true
+      no_log: true
 
     - name: Extract API key from recreation (pattern 2 - base64)
       set_fact:
@@ -140,6 +145,7 @@
         - (crowdsec_bouncer_key is not defined or crowdsec_bouncer_key == "" or crowdsec_bouncer_key == None)
         - bouncer_recreation.stdout | regex_search('([A-Za-z0-9+/]{20,}[=]*)')
       ignore_errors: true
+      no_log: true
 
     - name: Extract API key from recreation (pattern 3 - after colon)
       set_fact:
@@ -148,12 +154,12 @@
         - (crowdsec_bouncer_key is not defined or crowdsec_bouncer_key == "" or crowdsec_bouncer_key == None)
         - "':' in bouncer_recreation.stdout"
       ignore_errors: true
+      no_log: true
 
     - name: Verify recreated API key was extracted
       fail:
         msg: |
           Failed to extract recreated CrowdSec bouncer API key from output.
-          Output was: {{ bouncer_recreation.stdout }}
 
           Please manually create the bouncer and add the key to 1Password:
           1. SSH to VPS and run: sudo cscli bouncers add vps-traefik-main
@@ -212,6 +218,7 @@
     - traefik_crowdsec_api_key is defined
     - traefik_crowdsec_api_key != ""
     - traefik_crowdsec_api_key != None
+  no_log: true
 
 - name: Report bouncer authentication status
   debug:

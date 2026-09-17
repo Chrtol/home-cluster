@@ -77,6 +77,24 @@
   loop:
     - "{{ traefik_dir }}"
     - "{{ traefik_config_dir }}"
+    - "{{ traefik_access_log_dir }}"
+
+# copytruncate: Traefik keeps the file open and only reopens it on USR1, which
+# logrotate can't send into the container.
+- name: Rotate the Traefik access log
+  ansible.builtin.copy:
+    dest: /etc/logrotate.d/traefik
+    mode: "0644"
+    content: |
+      {{ traefik_access_log_dir }}/access.log {
+        daily
+        rotate 7
+        compress
+        delaycompress
+        missingok
+        notifempty
+        copytruncate
+      }
 
 # Manage CrowdSec bouncer for Traefik protection
 - name: Setup CrowdSec bouncer

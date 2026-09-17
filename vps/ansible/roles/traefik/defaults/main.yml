@@ -19,6 +19,7 @@ traefik_authentik_skip_verify: "false"
 
 # Logging
 traefik_log_level: "INFO"
+traefik_access_log_dir: /var/log/traefik
 
 # Performance tuning
 traefik_max_idle_conns_per_host: 25

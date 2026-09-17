@@ -9,6 +9,9 @@ services:
       - {{ traefik_dir }}/config/traefik.yml:/etc/traefik/traefik.yml:ro
       - {{ traefik_dir }}/config/dynamic.yml:/etc/traefik/dynamic.yml:ro
 
+      # Access log, read by CrowdSec on the host
+      - {{ traefik_access_log_dir }}:{{ traefik_access_log_dir }}
+
       # Mount existing SSL certificates (read-only)
       - {{ proxy_ssl_cert_path }}:{{ proxy_ssl_cert_path }}:ro
       - {{ proxy_ssl_key_path }}:{{ proxy_ssl_key_path }}:ro

@@ -70,7 +70,14 @@ log:
   level: {{ traefik_log_level | default('INFO') }}
   # No filePath means output to stdout
 
-# Access logging disabled - using OpenTelemetry tracing for observability instead
+# Access log for CrowdSec (acquisition type: traefik). Tracing still goes to OTEL.
+accessLog:
+  filePath: {{ traefik_access_log_dir }}/access.log
+  format: json
+  fields:
+    headers:
+      names:
+        User-Agent: keep
 
 # Health Check
 ping:
