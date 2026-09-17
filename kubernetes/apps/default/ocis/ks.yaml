@@ -33,7 +33,10 @@ spec:
       # online if this fills.
       CEPH_RBD_CAPACITY: 50Gi
       GROUP: "Default"
-      SUBDOMAIN: files
+      # Not files.* -- that hostname is filebrowser's external route, and two routes
+      # claiming one host on the same gateway are resolved by creation timestamp, so
+      # the older one silently wins.
+      SUBDOMAIN: drive
       DESCRIPTION: Files, sharing and sync
       # ownCloud Web runs the code exchange in the browser, so it cannot hold a
       # client secret. Upstream's reference realm registers `web` as a public client;
@@ -43,7 +46,7 @@ spec:
       # silent_redirect_uri is /oidc-silent-redirect.html. Both must be registered or
       # login succeeds and then token renewal silently fails.
       REDIRECT_PATH: /oidc-callback.html
-      OIDC_EXTRA_REDIRECT_URI: https://files.${SECRET_DOMAIN}/oidc-silent-redirect.html
+      OIDC_EXTRA_REDIRECT_URI: https://drive.${SECRET_DOMAIN}/oidc-silent-redirect.html
       # Secret lands in this namespace so the HelmRelease can secretKeyRef the
       # generated clientID directly.
       OIDC_SECRET_NAMESPACE: *namespace

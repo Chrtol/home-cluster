@@ -39,7 +39,7 @@ spec:
               # URL is built from this, so ocis cannot be reached on a second
               # hostname -- same constraint as karakeep's NEXTAUTH_URL, which is why
               # there is no internal route below.
-              OCIS_URL: https://files.${SECRET_DOMAIN}
+              OCIS_URL: https://drive.${SECRET_DOMAIN}
               OCIS_LOG_LEVEL: info
               OCIS_LOG_COLOR: "false"
               # Envoy terminates TLS; ocis serves plaintext behind it.
@@ -151,7 +151,7 @@ spec:
             group: external
             conditions:
               - "[STATUS] < 400"
-        hostnames: ["files.${SECRET_DOMAIN}"]
+        hostnames: ["drive.${SECRET_DOMAIN}"]
         parentRefs:
           - name: external
             namespace: network
