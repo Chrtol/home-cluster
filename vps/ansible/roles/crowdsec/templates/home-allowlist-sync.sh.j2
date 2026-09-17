@@ -63,10 +63,14 @@ command -v wg >/dev/null 2>&1 || skip "wireguard-tools is not installed; nothing
 if [[ -n $WG_IFACE ]]; then
     iface=$WG_IFACE
 else
-    read -r -a ifaces <<<"$(wg show interfaces 2>/dev/null || true)"
-    ((${#ifaces[@]} == 1)) ||
-        skip "expected exactly one WireGuard interface, found ${#ifaces[@]}; set crowdsec_home_allowlist_wg_interface"
-    iface=${ifaces[0]}
+    # Counted with wc rather than a bash array, because an array-length expansion
+    # opens with the same two characters as a Jinja comment and Ansible refuses to
+    # render the file.
+    ifaces=$(wg show interfaces 2>/dev/null || true)
+    iface_count=$(wc -w <<<"$ifaces")
+    ((iface_count == 1)) ||
+        skip "expected exactly one WireGuard interface, found $iface_count; set crowdsec_home_allowlist_wg_interface"
+    iface=${ifaces%% *}
 fi
 
 endpoints=$(wg show "$iface" endpoints 2>/dev/null || true)
