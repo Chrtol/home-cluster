@@ -111,6 +111,12 @@ spec:
       # browser to re-authenticate. Without a refresh token the session dies after
       # tokenDuration (minutes=5) -- the exact failure hass-mcp hit.
       OIDC_EXTRA_SCOPE: offline_access
+      # The scope alone was not enough for hass-mcp: that server pins its requested
+      # scopes to openid and never asks for offline_access, so Authentik issues no
+      # refresh token however willing it is. Whether this server does the same is
+      # unverified -- it is a different codebase -- but a 12h access token fixes the
+      # symptom either way, and is harmless if a refresh token does arrive.
+      OIDC_TOKEN_DURATION: "hours=12"
       OIDC_SECRET_NAMESPACE: default
     substituteFrom:
       - name: cluster-secrets

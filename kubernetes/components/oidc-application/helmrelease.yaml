@@ -91,7 +91,14 @@ spec:
           # Optional full callback URI, including its scheme and any explicit port.
           # Unset, repeat the primary URI rather than allow an empty callback.
           - "${OIDC_EXTRA_REDIRECT_URI:=${OIDC_REDIRECT_URI:=https://${OIDC_CLIENT_SUBDOMAIN:=${SUBDOMAIN}}.${OIDC_CLIENT_DOMAIN:=${SECRET_DOMAIN}}${OIDC_CLIENT_PATH:=${REDIRECT_PATH}}}}"
-          tokenDuration: "minutes=5"
+          # access_token_validity. Five minutes is right for browser apps: they re-auth
+          # invisibly against the Authentik session cookie, so the user never sees it.
+          # An MCP client cannot -- it holds a long-lived connection with no way to bounce
+          # through a browser -- so for those this is the ONLY lever. Adding offline_access
+          # does not help: ha-mcp pins required_scopes to ["openid"] and raises on anything
+          # else, and publishes no scopes_supported, so no layer ever requests a refresh
+          # token however willing Authentik is to issue one.
+          tokenDuration: "${OIDC_TOKEN_DURATION:=minutes=5}"
           # NAME of a CertificateKeyPair inside Authentik, not a k8s secret reference.
           # The old value ("namespace_security.secret_authentik-cert-tls.tls") matched
           # nothing, the chart's !Find resolved to None, and Authentik silently fell back

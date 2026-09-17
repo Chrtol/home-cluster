@@ -97,6 +97,12 @@ spec:
       # to re-authenticate, so they need a refresh token. Without this the session
       # dies after access_token_validity (minutes=5) with "requires re-authorization".
       OIDC_EXTRA_SCOPE: offline_access
+      # Kept, but it is NOT what fixes the dropped sessions -- ha-mcp never requests the
+      # scope, so Authentik issues no refresh token. This does: one browser login lasts a
+      # working day instead of five minutes. The cost is a 12h window on a leaked bearer,
+      # and since every ha-mcp user shares one admin HOMEASSISTANT_TOKEN, that window is
+      # full control of the house.
+      OIDC_TOKEN_DURATION: "hours=12"
       OIDC_SECRET_NAMESPACE: default
     substituteFrom:
       - name: cluster-secrets
