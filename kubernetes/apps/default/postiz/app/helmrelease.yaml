@@ -35,7 +35,8 @@ spec:
         # are prune: true, so dropping them would delete the Ceph RBD PVC and the CNPG
         # database with it. Suspending the Kustomization would NOT help either: that
         # stops reconciliation and leaves the pods running.
-        # To bring it back, delete this line. postiz-temporal is parked the same way.
+        # To bring it back, delete this line and the gatus opt-out annotations on both
+        # routes below. postiz-temporal is parked the same way.
         replicas: 0
         annotations:
           reloader.stakater.com/auto: "true"
@@ -145,6 +146,9 @@ spec:
       external:
         annotations:
           external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+          # Parked (replicas: 0): gatus-sidecar probes every HTTPRoute regardless of
+          # replicas, so the backendless route 503s and fires GatusEndpointDown.
+          gatus.home-operations.com/enabled: "false"
         hostnames: ["post.${SECRET_DOMAIN}"]
         parentRefs:
           - name: external
@@ -155,6 +159,9 @@ spec:
               - identifier: app
                 port: *port
       internal:
+        annotations:
+          # Parked: see the external route.
+          gatus.home-operations.com/enabled: "false"
         hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
         parentRefs:
           - name: internal
