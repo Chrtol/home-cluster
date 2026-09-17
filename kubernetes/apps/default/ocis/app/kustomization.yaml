@@ -5,9 +5,10 @@ kind: Kustomization
 resources:
   - ./helmrelease.yaml
 configMapGenerator:
-  - name: ocis-csp
+  - name: ocis-config
     files:
       - ./resources/csp.yaml
+      - ./resources/proxy.yaml
 generatorOptions:
   # Stable name so the HelmRelease can reference it; Reloader handles the restart on
   # content change instead of a name-suffix roll.

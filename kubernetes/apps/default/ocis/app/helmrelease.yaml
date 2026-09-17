@@ -66,13 +66,13 @@ spec:
               PROXY_USER_OIDC_CLAIM: preferred_username
               PROXY_USER_CS3_CLAIM: username
               GRAPH_USERNAME_MATCH: "none"
-              # Everyone who gets past Authentik's policy bindings lands as an
-              # ordinary user. Promoting an admin is a one-time step after the first
-              # login -- mapping an Authentik group to the admin role needs
-              # PROXY_ROLE_ASSIGNMENT_DRIVER=oidc plus a role_mapping, and that
-              # mapping can only be expressed in a config file, not an env var.
-              PROXY_ROLE_ASSIGNMENT_DRIVER: default
-              GRAPH_ASSIGN_DEFAULT_USER_ROLE: "true"
+              # Roles come from Authentik group membership -- see resources/proxy.yaml.
+              # PROXY_ROLE_ASSIGNMENT_DRIVER is intentionally NOT set here: env is
+              # decoded after that file, so setting it would override the file.
+              #
+              # False so the OIDC mapping is the only thing that assigns a role;
+              # otherwise a default role is handed out before the claim is consulted.
+              GRAPH_ASSIGN_DEFAULT_USER_ROLE: "false"
               # Blobs and metadata both on the PVC. `s3ng` would put blobs in Garage,
               # but then a restore pairs a PVC snapshot with a bucket captured at a
               # different moment.
@@ -177,16 +177,20 @@ spec:
                 subPath: config
               - path: /var/lib/ocis
                 subPath: data
-      # Mounted as a single file on top of the PVC's config subPath, so it sits
-      # beside the generated ocis.yaml without hiding it.
-      csp:
+      # Mounted as single files on top of the PVC's config subPath, so they sit
+      # beside the generated ocis.yaml without hiding it. proxy.yaml is read because
+      # each service loads <config dir>/<service name>.yaml.
+      config-files:
         type: configMap
-        name: ocis-csp
+        name: ocis-config
         advancedMounts:
           ocis:
             app:
               - path: /etc/ocis/csp.yaml
                 subPath: csp.yaml
+                readOnly: true
+              - path: /etc/ocis/proxy.yaml
+                subPath: proxy.yaml
                 readOnly: true
       tmp:
         type: emptyDir
