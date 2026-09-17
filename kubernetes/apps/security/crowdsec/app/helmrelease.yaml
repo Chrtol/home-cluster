@@ -76,6 +76,21 @@ spec:
           envFrom:
             - secretRef:
                 name: crowdsec-initdb-secret
+        # The chart's start script only stages /etc/crowdsec; without the data PVC
+        # the hub data files (GeoLite, allowlists) must be copied in. Keep the tag
+        # in step with the LAPI image the chart version ships.
+        - name: stage-data
+          image: crowdsecurity/crowdsec:v1.8.1
+          command: ["sh", "-c", "cp -a /staging/var/lib/crowdsec/data/. /data/"]
+          volumeMounts:
+            - name: crowdsec-data
+              mountPath: /data
+      extraVolumes:
+        - name: crowdsec-data
+          emptyDir: {}
+      extraVolumeMounts:
+        - name: crowdsec-data
+          mountPath: /var/lib/crowdsec/data
       env:
         - name: TZ
           value: ${SECRET_TIMEZONE}
