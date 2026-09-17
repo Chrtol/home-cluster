@@ -1,0 +1,12 @@
+# Managed by Ansible (vps/ansible/roles/crowdsec)
+[Unit]
+Description=Periodically sync the home network's public IP into a CrowdSec allowlist
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec={{ crowdsec_home_allowlist_interval }}
+AccuracySec=10s
+Unit=crowdsec-home-allowlist.service
+
+[Install]
+WantedBy=timers.target

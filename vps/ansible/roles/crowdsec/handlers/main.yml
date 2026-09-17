@@ -3,3 +3,9 @@
   systemd:
     name: crowdsec
     state: restarted
+
+- name: restart crowdsec home allowlist timer
+  systemd:
+    name: crowdsec-home-allowlist.timer
+    state: restarted
+    daemon_reload: true

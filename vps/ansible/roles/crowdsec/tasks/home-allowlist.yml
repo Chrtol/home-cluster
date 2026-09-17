@@ -1,0 +1,93 @@
+---
+# Keep the home network's (dynamic) public IP in a CrowdSec allowlist.
+#
+# Without this, ordinary self-hosted traffic through Traefik -- a dashboard that
+# opens dozens of asset requests, a browser extension that probes a URL on every
+# navigation -- reads as scanning to the base HTTP scenarios, and the firewall
+# bouncer then DROPs the home IP at the packet level. That takes out every
+# service on this host at once, including the WireGuard tunnel the cluster is
+# reached through, so the allowlist is load-bearing rather than a convenience.
+
+- name: Home allowlist -- check for centralized allowlist support
+  ansible.builtin.command: cscli allowlists list
+  register: crowdsec_allowlist_support
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Home allowlist -- fail early on a CrowdSec too old for allowlists
+  ansible.builtin.fail:
+    msg: >-
+      This CrowdSec has no `cscli allowlists` command, which was added in 1.6.8.
+      Upgrade CrowdSec, or set crowdsec_home_allowlist_enabled to false.
+  when: crowdsec_allowlist_support.rc != 0
+
+- name: Home allowlist -- verify wireguard-tools is available
+  ansible.builtin.command: which wg
+  register: crowdsec_wg_path
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Home allowlist -- fail early when the tunnel cannot be read
+  ansible.builtin.fail:
+    msg: >-
+      crowdsec_home_allowlist_enabled is true but `wg` is not on PATH, so the
+      home IP cannot be derived from the WireGuard peer endpoint. Install
+      wireguard-tools, or set crowdsec_home_allowlist_enabled to false.
+  when: crowdsec_wg_path.rc != 0
+
+- name: Home allowlist -- create the allowlist
+  ansible.builtin.command:
+    argv:
+      - cscli
+      - allowlists
+      - create
+      - "{{ crowdsec_home_allowlist_name }}"
+      - --description
+      - "Home network public IP, synced from the WireGuard peer endpoint"
+  register: crowdsec_allowlist_create
+  changed_when: crowdsec_allowlist_create.rc == 0
+  # Re-running is the normal case; only a genuine failure should stop the play.
+  failed_when:
+    - crowdsec_allowlist_create.rc != 0
+    - "'already exists' not in (crowdsec_allowlist_create.stdout + crowdsec_allowlist_create.stderr)"
+
+- name: Home allowlist -- install the sync script
+  ansible.builtin.template:
+    src: home-allowlist-sync.sh.j2
+    dest: "{{ crowdsec_home_allowlist_script }}"
+    owner: root
+    group: root
+    mode: "0750"
+  notify: restart crowdsec home allowlist timer
+
+- name: Home allowlist -- install the systemd units
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/etc/systemd/system/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - crowdsec-home-allowlist.service
+    - crowdsec-home-allowlist.timer
+  notify: restart crowdsec home allowlist timer
+
+- name: Home allowlist -- enable the timer
+  ansible.builtin.systemd:
+    name: crowdsec-home-allowlist.timer
+    state: started
+    enabled: true
+    daemon_reload: true
+
+# Runs the sync once now so a deploy leaves the allowlist correct immediately,
+# rather than up to one timer interval later.
+- name: Home allowlist -- sync now
+  ansible.builtin.command: "{{ crowdsec_home_allowlist_script }}"
+  register: crowdsec_allowlist_sync
+  changed_when: "'allowlisted' in crowdsec_allowlist_sync.stdout"
+
+- name: Home allowlist -- report
+  ansible.builtin.debug:
+    msg: "{{ crowdsec_allowlist_sync.stdout_lines | default(['no change']) }}"

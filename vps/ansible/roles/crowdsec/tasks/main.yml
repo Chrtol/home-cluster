@@ -125,3 +125,9 @@
     name: crowdsec
     state: started
     enabled: true
+
+# Runs last: the allowlist is written through the LAPI, which needs the service
+# up, and `cscli allowlists` only exists from 1.6.8 onwards.
+- name: Manage the home network allowlist
+  ansible.builtin.include_tasks: home-allowlist.yml
+  when: crowdsec_home_allowlist_enabled | bool

@@ -1,0 +1,10 @@
+# Managed by Ansible (vps/ansible/roles/crowdsec)
+[Unit]
+Description=Sync the home network's public IP into a CrowdSec allowlist
+Documentation=https://docs.crowdsec.net/docs/next/cscli/cscli_allowlists/
+After=crowdsec.service
+Wants=crowdsec.service
+
+[Service]
+Type=oneshot
+ExecStart={{ crowdsec_home_allowlist_script }}

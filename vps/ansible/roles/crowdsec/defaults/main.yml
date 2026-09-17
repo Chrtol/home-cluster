@@ -14,3 +14,31 @@ crowdsec_papi_url: https://papi.api.crowdsec.net/
 # The key comes from 1Password; an empty key skips enrollment.
 crowdsec_console_name: vps1
 crowdsec_enroll_key: ""
+
+# Home network allowlist
+#
+# The operator's public IP is dynamic, so it is read from the WireGuard peer
+# endpoint on every run rather than pinned here -- see tasks/home-allowlist.yml.
+crowdsec_home_allowlist_enabled: true
+crowdsec_home_allowlist_name: home
+
+# Empty = autodetect, which requires exactly one WireGuard interface with
+# exactly one peer. Set these when the tunnel carries more than the home link;
+# allowlisting the wrong peer would hand a stranger a free pass, so an ambiguous
+# tunnel makes the sync do nothing rather than guess.
+crowdsec_home_allowlist_wg_interface: ""
+crowdsec_home_allowlist_wg_peer: ""
+
+crowdsec_home_allowlist_script: /usr/local/bin/crowdsec-home-allowlist-sync
+
+# How often the peer endpoint is re-read. Runs that find nothing to do exit
+# without touching cscli, so this is cheap enough to keep tight -- it bounds how
+# long a ban can survive after the home IP changes, and how long the gap lasts if
+# a renewal is ever interrupted between its remove and its add.
+crowdsec_home_allowlist_interval: 2min
+
+# The entry outlives a short tunnel outage but expires on its own if the sync
+# stops running, so an address the ISP has since reassigned does not stay
+# allowlisted indefinitely. Renewed once it is within a day of expiring.
+crowdsec_home_allowlist_expiration: 168h
+crowdsec_home_allowlist_renew_before_seconds: 86400
