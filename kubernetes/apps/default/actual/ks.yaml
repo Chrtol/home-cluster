@@ -12,6 +12,7 @@ spec:
       app.kubernetes.io/name: *app
   components:
     - ../../../../components/ceph-rbd
+    - ../../../../components/kopiur
   postBuild:
     substitute:
       CEPH_RBD_CAPACITY: 2Gi
@@ -32,3 +33,5 @@ spec:
   dependsOn:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
+    - name: kopiur-repository
+      namespace: kopiur-system

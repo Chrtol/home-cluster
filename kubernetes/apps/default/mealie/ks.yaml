@@ -14,6 +14,10 @@ spec:
   path: "./kubernetes/apps/default/mealie/app"
   components:
     - ../../../../components/cnpg
+    - ../../../../components/kopiur
+  dependsOn:
+    - name: kopiur-repository
+      namespace: kopiur-system
   prune: true
   sourceRef:
     kind: GitRepository

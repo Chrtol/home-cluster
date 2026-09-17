@@ -12,10 +12,13 @@ spec:
   dependsOn:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
+    - name: kopiur-repository
+      namespace: kopiur-system
   interval: 1h
   path: ./kubernetes/apps/media/qui/app
   components:
     - ../../../../components/ceph-rbd
+    - ../../../../components/kopiur
   postBuild:
     substitute:
       APP: *app

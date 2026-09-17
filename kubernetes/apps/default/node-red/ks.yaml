@@ -9,8 +9,12 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
+  dependsOn:
+    - name: kopiur-repository
+      namespace: kopiur-system
   components:
     - ../../../../components/ceph-rbd
+    - ../../../../components/kopiur
     - ../../../../components/oidc-application
   path: ./kubernetes/apps/default/node-red/app
   prune: true

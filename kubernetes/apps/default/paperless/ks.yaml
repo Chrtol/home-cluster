@@ -14,10 +14,13 @@ spec:
       namespace: database
     - name: dragonfly-cluster
       namespace: database
+    - name: kopiur-repository
+      namespace: kopiur-system
   components:
     - ../../../../components/cnpg
     - ../../../../components/dragonfly
     - ../../../../components/ceph-rbd
+    - ../../../../components/kopiur
     - ../../../../components/oidc-application
   path: ./kubernetes/apps/default/paperless/app
   prune: true

@@ -11,6 +11,10 @@ spec:
       app.kubernetes.io/name: *app
   components:
     - ../../../../components/ceph-rbd
+    - ../../../../components/kopiur
+  dependsOn:
+    - name: kopiur-repository
+      namespace: kopiur-system
   interval: 1h
   path: ./kubernetes/apps/media/autobrr/app
   postBuild:
