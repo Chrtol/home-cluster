@@ -127,6 +127,24 @@
       },
     },
     {
+      // ironcalc-caddy carries the WASM frontend and ironcalc-server the Rocket API;
+      // both are built from one Dockerfile in the same source repo and always publish
+      // the same tag. Bumping one alone would put a frontend and an /api contract from
+      // different commits in the same pod.
+      description: 'IronCalc Group (caddy + server images in lockstep)',
+      groupName: 'IronCalc',
+      matchDatasources: [
+        'docker',
+      ],
+      matchPackageNames: [
+        'ghcr.io/ironcalc/ironcalc-caddy',
+        'ghcr.io/ironcalc/ironcalc-server',
+      ],
+      group: {
+        commitMessageTopic: '{{{groupName}}} group',
+      },
+    },
+    {
       description: 'Cert-Manager Group',
       groupName: 'Cert-Manager',
       matchDatasources: [

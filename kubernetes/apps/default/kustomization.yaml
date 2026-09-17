@@ -36,3 +36,4 @@ resources:
   - ./filebrowser/ks.yaml
   - ./thelounge/ks.yaml
   - ./frigate/ks.yaml
+  - ./ironcalc/ks.yaml

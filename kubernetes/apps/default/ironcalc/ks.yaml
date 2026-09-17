@@ -1,0 +1,57 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app ironcalc
+  namespace: &namespace default
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  dependsOn:
+    - name: ceph-csi-rbd
+      namespace: ceph-csi-rbd
+    - name: kopiur-repository
+      namespace: kopiur-system
+  interval: 1h
+  path: ./kubernetes/apps/default/ironcalc/app
+  components:
+    - ../../../../components/ceph-rbd
+    - ../../../../components/kopiur
+    # IronCalc ships no authentication of any kind: GET /api/list hands back every
+    # shared workbook hash in the database and GET /api/model/<hash> serves any of
+    # them, with no session or token checked anywhere in the server. ext-auth owns
+    # the HTTPRoute + Authentik forward-auth SecurityPolicy so the hostname is
+    # guarded from the first request; proxy-application registers the provider.
+    - ../../../../components/ext-auth
+    - ../../../../components/proxy-application
+  postBuild:
+    substitute:
+      APP: *app
+      # Only SHARED workbooks reach this volume. Everyday sheets live base64-encoded
+      # in the browser's localStorage (frontend/src/components/storage.ts, capped at
+      # 50), so they are per-browser and outside both this PVC and its backups --
+      # clearing site data loses them. "Share" is what commits a sheet to the server.
+      # Shared .ic blobs are small and the upload cap is 20MB, so this holds plenty.
+      CEPH_RBD_CAPACITY: 2Gi
+      # Caddy's port, not the Rocket API's -- Caddy fronts both and /api is internal
+      # to the pod.
+      EXT_AUTH_PORT: "2080"
+      # proxy-application: default bindings only (bp-ironcalc-users + authentik
+      # Admins).
+      GROUP: "Default"
+      SUBDOMAIN: *app
+      DESCRIPTION: Spreadsheet editor
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 5m
+  wait: false

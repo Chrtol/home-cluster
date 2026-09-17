@@ -1,0 +1,22 @@
+# Replaces the Caddyfile baked into ironcalc-caddy, which points at `server:8000`
+# -- a docker-compose service name. Both containers share a pod here, so the API
+# is on loopback; without this override every /api/* call dies on DNS lookup.
+:2080 {
+	log {
+		output stdout
+		level INFO
+	}
+
+	@api path /api/*
+	handle @api {
+		reverse_proxy 127.0.0.1:8000
+	}
+
+	handle {
+		root * /srv
+		# The frontend routes client-side (/?model=<hash> share links), so every
+		# unmatched path has to fall back to the SPA entrypoint rather than 404.
+		try_files {path} /index.html
+		file_server
+	}
+}

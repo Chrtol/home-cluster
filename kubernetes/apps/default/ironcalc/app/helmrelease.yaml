@@ -1,0 +1,181 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app ironcalc
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  interval: 1h
+  values:
+    controllers:
+      ironcalc:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          # Nothing in the server creates the schema: `IronCalcDB::init()` makes a
+          # missing .sqlite file, but init_db.sql is never executed, so a bare PVC
+          # yields a server that 500s on every /api/share ("no such table: models").
+          # The image ships a pre-seeded 8KB DB next to the binary -- copy it once.
+          # `-n` makes this a no-op on every restart after the first, so real data is
+          # never clobbered.
+          seed-db:
+            image: &server-image
+              repository: ghcr.io/ironcalc/ironcalc-server
+              tag: 0.8.3@sha256:697d8410d010373dcb2870f29471869682737c39ef5f0e6bff3389915f57fdce
+            command:
+              - sh
+              - -c
+              - cp -n /app/ironcalc.sqlite /data/ironcalc.sqlite
+            securityContext: &hardened
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+            resources:
+              requests:
+                cpu: 10m
+                memory: 16Mi
+              limits:
+                memory: 64Mi
+        containers:
+          # Named `app` so it sorts first and owns the service port. Serves the WASM
+          # frontend out of /srv and proxies /api/* to the Rocket server on loopback.
+          app:
+            image:
+              repository: ghcr.io/ironcalc/ironcalc-caddy
+              tag: 0.8.3@sha256:25575bd83742ca62634082e72573f2509692d56738af9014afd1a4cf9edcfe1f
+            env:
+              TZ: ${SECRET_TIMEZONE}
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: &port 2080
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: *port
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+            securityContext: *hardened
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
+          server:
+            image: *server-image
+            env:
+              TZ: ${SECRET_TIMEZONE}
+              ROCKET_ADDRESS: 0.0.0.0
+              ROCKET_PORT: &api-port 8000
+              # Rocket.toml points the pool at a bare "ironcalc.sqlite", resolved
+              # against the workdir /app -- inside the image layer, so every restart
+              # would lose every shared sheet. Rocket's figment Env provider parses
+              # this TOML table and overrides the file, moving the DB onto the PVC.
+              ROCKET_DATABASES: '{ironcalc={url="/data/ironcalc.sqlite"}}'
+            probes:
+              # Rocket mounts no route at `/` (the FileServer is only mounted when
+              # IRONCALC_WEBAPP_DIR is set, and it isn't -- Caddy serves the frontend),
+              # so an HTTP probe there would 404 forever. TCP for liveness.
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: *api-port
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              # /api/list does a real SELECT against the models table, so readiness
+              # fails if the seeded DB is missing or unreadable rather than serving
+              # 500s to the browser.
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/list
+                    port: *api-port
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+            securityContext: *hardened
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                # xlsx import/export buffers the whole workbook in memory and the
+                # upload cap is 20MB, so a conversion can spike well past its resting
+                # footprint.
+                memory: 1Gi
+
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: {type: RuntimeDefault}
+
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: *port
+
+    # No route here on purpose: the ext-auth component owns the HTTPRoute for this
+    # hostname, and a second route for the same host would collide.
+
+    persistence:
+      config:
+        existingClaim: *app
+        advancedMounts:
+          ironcalc:
+            seed-db:
+              - path: /data
+            server:
+              - path: /data
+      caddyfile:
+        type: configMap
+        name: ironcalc-caddyfile
+        advancedMounts:
+          ironcalc:
+            app:
+              - path: /etc/caddy/Caddyfile
+                subPath: Caddyfile
+                readOnly: true
+      # The official caddy image points XDG_DATA_HOME at /data and XDG_CONFIG_HOME at
+      # /config and writes its autosaved config there on startup -- both are on the
+      # read-only root otherwise. Note this /data is the caddy container's, unrelated
+      # to the server's PVC mount of the same path.
+      caddy-data:
+        type: emptyDir
+        advancedMounts:
+          ironcalc:
+            app:
+              - path: /data
+              - path: /config
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
