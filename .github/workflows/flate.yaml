@@ -5,6 +5,10 @@ name: "Flate"
 on:
   pull_request:
     branches: ["main"]
+  # Work lands on main by direct push, not via PR, so a PR-only trigger would
+  # leave those commits unvalidated until Flux failed on them.
+  push:
+    branches: ["main"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
@@ -20,8 +24,13 @@ jobs:
     outputs:
       any_changed: ${{ steps.changed-files.outputs.any_changed }}
     steps:
+      # Full history so changed-files can resolve github.event.before..sha on
+      # push events; at depth 1 the previous commit is unreachable and the gate
+      # silently degrades to "everything changed".
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
       - name: Get Changed Files
         id: changed-files
@@ -63,7 +72,11 @@ jobs:
         resources: ["hr", "ks"]
       max-parallel: 4
       fail-fast: false
-    if: ${{ needs.pre-job.outputs.any_changed == 'true' }}
+    # PR-only: on a push to main, flate's --base (main) resolves to the same
+    # tree being rendered, so the diff is always empty.
+    if: >-
+      ${{ needs.pre-job.outputs.any_changed == 'true' &&
+          github.event_name == 'pull_request' }}
     steps:
       # Full history so flate's --base (main) can resolve the baseline commit;
       # a shallow clone would leave main unreachable.
