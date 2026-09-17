@@ -178,6 +178,69 @@ spec:
                 memory: 64Mi
               limits:
                 memory: 256Mi
+          # watchman parses the YAML under /config for entity/action references and
+          # flags the ones that no longer resolve. Git-managed rather than
+          # click-installed because its sensors are an alerting source: a HACS
+          # uninstall would take the signal away silently, which is the one failure
+          # mode a config-drift detector must not have.
+          03-install-watchman-component:
+            image:
+              repository: ghcr.io/home-operations/home-assistant
+              tag: 2026.9.2@sha256:83decfe1f940120bd7ecbb2c7d72d5b2723dfddb39de3f4e9914c19ead1f721f
+            env:
+              # renovate: datasource=github-releases depName=dummylabs/thewatchman
+              WATCHMAN_COMPONENT_VERSION: v0.8.4
+            command: ["/bin/bash", "-c"]
+            args:
+              - |
+                set -uo pipefail
+                dest=/config/custom_components/watchman
+                stage=/config/custom_components/.watchman.stage
+
+                if [ "$(cat "$${dest}/.version" 2>/dev/null)" = "$${WATCHMAN_COMPONENT_VERSION}" ]; then
+                  echo "watchman $${WATCHMAN_COMPONENT_VERSION} already installed"
+                  exit 0
+                fi
+
+                # hacs.json declares zip_release/watchman.zip, so the release asset is
+                # the same artifact HACS would install -- and it is FLAT like auth_oidc,
+                # manifest.json at the archive root, no wrapper dir to strip.
+                url="https://github.com/dummylabs/thewatchman/releases/download/$${WATCHMAN_COMPONENT_VERSION}/watchman.zip"
+                rm -rf "$${stage}" "$${stage}.zip"
+                mkdir -p "$${stage}"
+
+                if ! curl -fsSL --retry 3 --retry-delay 2 -o "$${stage}.zip" "$${url}"; then
+                  echo "WARN: could not download $${url} -- keeping the existing install"
+                  rm -rf "$${stage}" "$${stage}.zip"
+                  exit 0
+                fi
+
+                # services.yaml as well as manifest.json: the watchman.report action is
+                # the whole point of the integration, and a zip missing it would install
+                # sensors that work while the report silently does not exist.
+                if ! unzip -q "$${stage}.zip" -d "$${stage}" \
+                   || [ ! -f "$${stage}/manifest.json" ] \
+                   || [ ! -f "$${stage}/services.yaml" ]; then
+                  echo "WARN: $${url} is not a usable release zip -- keeping the existing install"
+                  rm -rf "$${stage}" "$${stage}.zip"
+                  exit 0
+                fi
+
+                echo "$${WATCHMAN_COMPONENT_VERSION}" > "$${stage}/.version"
+                rm -rf "$${dest}"
+                mv "$${stage}" "$${dest}"
+                rm -f "$${stage}.zip"
+                echo "installed watchman $${WATCHMAN_COMPONENT_VERSION}"
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
         containers:
           app:
             image:
