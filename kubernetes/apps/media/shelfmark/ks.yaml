@@ -11,6 +11,7 @@ spec:
       app.kubernetes.io/name: shelfmark
   components:
     - ../../../../components/ceph-rbd
+    - ../../../../components/kopiur
     # Native OIDC, not ext-auth: shelfmark resolves AUTH_METHOD and every OIDC_*
     # setting from env before its PVC json, so the whole flow is declarative and
     # the "create a local admin first" UI wizard is bypassed entirely.
@@ -40,6 +41,9 @@ spec:
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
+  dependsOn:
+    - name: kopiur-repository
+      namespace: kopiur-system
   prune: true
   sourceRef:
     kind: GitRepository

@@ -12,10 +12,13 @@ spec:
   dependsOn:
     - name: ceph-csi-rbd
       namespace: ceph-csi-rbd
+    - name: kopiur-repository
+      namespace: kopiur-system
   interval: 1h
   path: ./kubernetes/apps/media/owncast/app
   components:
     - ../../../../components/ceph-rbd
+    - ../../../../components/kopiur
     - ../../../../components/ext-auth
     - ../../../../components/proxy-application
   postBuild:

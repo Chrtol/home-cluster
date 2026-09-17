@@ -64,8 +64,11 @@ spec:
       namespace: database
     - name: dragonfly-cluster
       namespace: database
+    - name: kopiur-repository
+      namespace: kopiur-system
   components:
     - ../../../../components/ceph-rbd
+    - ../../../../components/kopiur
   path: ./kubernetes/apps/default/paperless/ai
   prune: true
   sourceRef:
@@ -99,8 +102,11 @@ spec:
       namespace: database
     - name: dragonfly-cluster
       namespace: database
+    - name: kopiur-repository
+      namespace: kopiur-system
   components:
     - ../../../../components/ceph-rbd
+    - ../../../../components/kopiur
   path: ./kubernetes/apps/default/paperless/gpt
   prune: true
   sourceRef:

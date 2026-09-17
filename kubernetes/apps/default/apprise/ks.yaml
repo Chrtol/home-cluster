@@ -14,8 +14,11 @@ spec:
       namespace: ceph-csi-rbd
     - name: external-secrets
       namespace: external-secrets
+    - name: kopiur-repository
+      namespace: kopiur-system
   components:
     - ../../../../components/ceph-rbd
+    - ../../../../components/kopiur
   path: ./kubernetes/apps/default/apprise/app
   prune: true
   sourceRef:

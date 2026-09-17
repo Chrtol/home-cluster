@@ -162,9 +162,12 @@ spec:
   path: ./kubernetes/apps/media/plex/agregarr
   components:
     - ../../../../components/ceph-rbd
+    - ../../../../components/kopiur
   dependsOn:
       - name: plex
         namespace: media
+      - name: kopiur-repository
+        namespace: kopiur-system
   prune: true
   retryInterval: 2m
   sourceRef:
