@@ -37,3 +37,4 @@ resources:
   - ./thelounge/ks.yaml
   - ./frigate/ks.yaml
   - ./ironcalc/ks.yaml
+  - ./ocis/ks.yaml

@@ -74,7 +74,12 @@ spec:
         name: "bp-${APP}-oidc"  # bp- prefix for blueprint-managed providers
         type: "oidc"
         oidc:
-          clientType: "confidential"
+          # Browser SPAs that run the whole code exchange in JavaScript cannot hold a
+          # secret, so they register as public clients and prove themselves with PKCE
+          # instead (ocis is the first here -- its `web` client is publicClient in
+          # upstream's own reference realm). Defaulting to confidential keeps every
+          # existing app on this component exactly as it was.
+          clientType: "${OIDC_CLIENT_TYPE:=confidential}"
           # clientID and clientSecret are auto-generated and stored in ${APP}-oidc-authentik-application secret
           redirectURL:
           # The OAuth client's callback may differ from the application's launch

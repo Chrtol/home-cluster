@@ -1,0 +1,180 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app ocis
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  interval: 1h
+  values:
+    controllers:
+      ocis:
+        annotations:
+          # The clientID arrives by secretKeyRef, which is read once at container
+          # start -- without this a regenerated Authentik client leaves ocis holding
+          # the old ID until someone notices the login is broken.
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: docker.io/owncloud/ocis
+              tag: 8.2.0@sha256:1b9e3945890f2cb57283d15d3937a2d8180036db003bec4cc499bf95a2c82446
+            # `ocis init` writes /etc/ocis/ocis.yaml with 16 generated values -- five
+            # UUIDs (system/admin user, graph application, storage mount, service
+            # account) and eleven secrets (JWT, transfer, machine-auth, WOPI, the IDM
+            # service passwords...). It re-reads and PRESERVES an existing file, so it
+            # is idempotent; on an already-initialised volume it exits non-zero, hence
+            # `|| true`. Upstream ships this exact incantation.
+            command:
+              - /bin/sh
+              - -c
+              - ocis init || true; exec ocis server
+            env:
+              TZ: ${SECRET_TIMEZONE}
+              # Single canonical host. Every OIDC redirect, WOPI callback and asset
+              # URL is built from this, so ocis cannot be reached on a second
+              # hostname -- same constraint as karakeep's NEXTAUTH_URL, which is why
+              # there is no internal route below.
+              OCIS_URL: https://files.${SECRET_DOMAIN}
+              OCIS_LOG_LEVEL: info
+              OCIS_LOG_COLOR: "false"
+              # Envoy terminates TLS; ocis serves plaintext behind it.
+              PROXY_TLS: "false"
+              OCIS_INSECURE: "false"
+              # Drop the bundled LibreGraph Connect IdP. Upstream: "mainly targeted at
+              # smaller installations. For larger setups it is recommended to replace
+              # IDP with an external OpenID Connect Provider."
+              OCIS_EXCLUDE_RUN_SERVICES: idp
+              OCIS_OIDC_ISSUER: https://sso.${SECRET_DOMAIN}/application/o/ocis/
+              PROXY_OIDC_REWRITE_WELLKNOWN: "true"
+              WEB_OIDC_SCOPE: openid profile email
+              WEB_OIDC_CLIENT_ID:
+                valueFrom:
+                  secretKeyRef:
+                    name: ocis-oidc-authentik-application
+                    key: clientID
+              # No local user store: the first login through Authentik creates the
+              # ocis account from the token's claims.
+              PROXY_AUTOPROVISION_ACCOUNTS: "true"
+              PROXY_USER_OIDC_CLAIM: preferred_username
+              PROXY_USER_CS3_CLAIM: username
+              GRAPH_USERNAME_MATCH: "none"
+              # Everyone who gets past Authentik's policy bindings lands as an
+              # ordinary user. Promoting an admin is a one-time step after the first
+              # login -- mapping an Authentik group to the admin role needs
+              # PROXY_ROLE_ASSIGNMENT_DRIVER=oidc plus a role_mapping, and that
+              # mapping can only be expressed in a config file, not an env var.
+              PROXY_ROLE_ASSIGNMENT_DRIVER: default
+              GRAPH_ASSIGN_DEFAULT_USER_ROLE: "true"
+              # Blobs and metadata both on the PVC. `s3ng` would put blobs in Garage,
+              # but then a restore pairs a PVC snapshot with a bucket captured at a
+              # different moment.
+              STORAGE_USERS_DRIVER: ocis
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: &port 9200
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: *port
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              # ocis starts ~25 services in one process and runs init on first boot;
+              # a cold start on an empty volume is far slower than a warm one.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: *port
+                  periodSeconds: 5
+                  timeoutSeconds: 5
+                  failureThreshold: 60
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                # Single Go binary hosting every service, including an embedded NATS.
+                # Thumbnailing and search indexing are the spiky parts.
+                memory: 2Gi
+
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: {type: RuntimeDefault}
+
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: *port
+
+    route:
+      # External only, and deliberately no internal twin: OCIS_URL is a single
+      # canonical host (see the env comment above). LAN clients hairpin out to the
+      # VPS and back, as karakeep already does.
+      external:
+        annotations:
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+          # Unauthenticated GET / returns the web app shell, which redirects to
+          # Authentik rather than 200-ing.
+          gatus.home-operations.com/endpoint: |
+            group: external
+            conditions:
+              - "[STATUS] < 400"
+        hostnames: ["files.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+
+    persistence:
+      config:
+        existingClaim: *app
+        advancedMounts:
+          ocis:
+            app:
+              # ocis.yaml holds the transfer secret and the storage mount ID. Lose
+              # this subPath and the data in the other one is unreadable, so both
+              # live on one volume and ride the same kopiur snapshot.
+              - path: /etc/ocis
+                subPath: config
+              - path: /var/lib/ocis
+                subPath: data
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
