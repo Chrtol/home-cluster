@@ -4,6 +4,10 @@ machine:
     fs.inotify.max_user_instances: "8192"  # Watchdog
     net.core.rmem_max: "7500000" # Cloudflared | QUIC
     net.core.wmem_max: "7500000" # Cloudflared | QUIC
+    # NAPI poll budget, raised from the 300/2000 defaults so a line-rate download
+    # cannot squeeze etcd heartbeats off the one core its NIC queue lands on.
+    net.core.netdev_budget: "600"
+    net.core.netdev_budget_usecs: "4000"
     # NOTE: accept_ra_rt_info_max_plen=64 was added here (21a3df158) so the node would
     # accept OTBR's Route Information Option and learn a route to the Thread mesh.
     # REMOVED because matter-server no longer runs on Talos — Talos ships no Bluetooth
