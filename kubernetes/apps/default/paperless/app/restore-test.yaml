@@ -1,0 +1,106 @@
+# TEMPORARY kopiur restore test for paperless -- remove this file and its kustomization
+# entry once the verify Job has passed. Restores the latest paperless snapshot into a
+# scratch claim and checksums it against the live volume. media/ (originals, archive,
+# thumbnails) is write-once and must match exactly; data/ holds the search index, the
+# celery schedule and logs, which keep changing, so its differences are only printed.
+# Shell variables are written $$var: this Kustomization runs postBuild envsubst.
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: paperless-restore-test
+spec:
+  credentialProjection:
+    enabled: true
+  source:
+    fromPolicy:
+      name: paperless
+      offset: 0
+      sourcePath: /pvc/paperless
+  target:
+    populator: {}
+  policy:
+    onMissingSnapshot: Fail
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-restore-test
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: csi-rbd-sc
+  resources:
+    requests:
+      storage: 5Gi
+  dataSourceRef:
+    apiGroup: kopiur.home-operations.com
+    kind: Restore
+    name: paperless-restore-test
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: paperless-restore-test-verify
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      # The live claim is ReadWriteOnce and attached to the paperless node, so the Job
+      # must run alongside the paperless pod to mount it (read-only) at all.
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/controller: paperless
+                  app.kubernetes.io/instance: paperless
+      containers:
+        - name: verify
+          image: busybox:1.38
+          command:
+            - sh
+            - -c
+            - |
+              # Filenames contain spaces, so compare sorted checksum manifests.
+              manifest() { (cd "$$1" && find . -type f -exec sha256sum {} + | sort -k2); }
+              echo "restored top level:"; ls -la /restore
+              for d in media data; do
+                [ -d "/restore/$$d" ] || { echo "FAIL: no $$d/ in restore"; exit 1; }
+                manifest "/restore/$$d" > "/tmp/$$d.restore"
+                manifest "/live/$$d" > "/tmp/$$d.live"
+                echo "$$d: restored=$$(wc -l < /tmp/$$d.restore) live=$$(wc -l < /tmp/$$d.live)"
+              done
+              echo "--- data/ differences (informational):"
+              diff /tmp/data.live /tmp/data.restore || true
+              echo "--- media/ differences:"
+              if diff /tmp/media.live /tmp/media.restore; then
+                grep -q '/originals/' /tmp/media.restore || { echo "FAIL: no originals restored"; exit 1; }
+                echo "PASS: media/ identical, $$(grep -c '/originals/' /tmp/media.restore) originals"
+              else
+                echo "FAIL: media/ differs from live"; exit 1
+              fi
+          volumeMounts:
+            - name: restore
+              mountPath: /restore
+              readOnly: true
+            - name: live
+              mountPath: /live
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: restore
+          persistentVolumeClaim:
+            claimName: paperless-restore-test
+        - name: live
+          persistentVolumeClaim:
+            claimName: paperless
+            readOnly: true
+        - name: tmp
+          emptyDir: {}
