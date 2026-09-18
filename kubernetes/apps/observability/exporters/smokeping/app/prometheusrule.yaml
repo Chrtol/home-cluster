@@ -21,3 +21,21 @@ spec:
           for: 10m
           labels:
             severity: warning
+        # Took over from SpeedtestHighPingLatency, which averaged four hourly
+        # samples and so could be carried over the line by one bad Ookla server
+        # while these probes sat flat. Over 7d the 15m median is 11ms to
+        # cloudflare and 19ms to google and never passed 25ms, so 40ms is a
+        # doubling of the worse target that no normal day reaches.
+        - alert: InternetHighLatency
+          annotations:
+            description: Median latency to {{ $labels.target }} has been {{ $value | humanizeDuration }} for 15 minutes.
+            summary: Internet latency is high.
+          expr: |
+            histogram_quantile(0.5,
+              sum by (target, le) (
+                rate(smokeping_response_duration_seconds_bucket{job=~".*smokeping-exporter.*", target=~"cloudflare|google"}[5m])
+              )
+            ) > 0.040
+          for: 15m
+          labels:
+            severity: warning

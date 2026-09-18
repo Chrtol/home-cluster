@@ -64,31 +64,6 @@ spec:
           for: 0m
           labels:
             severity: warning
-        - alert: SpeedtestHighPingLatency
-          annotations:
-            description: Internet ping latency is averaging {{ humanize $value }} ms over the last 4h of passed tests.
-            summary: SpeedTest high ping latency.
-          expr: |
-            (
-              sum_over_time(speedtest_ping_latency_milliseconds{job=~".*speedtest-exporter.*"}[4h])
-                / sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h])
-                > 15
-            )
-            and sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h]) >= 3
-          for: 0m
-          labels:
-            severity: warning
-        - alert: SpeedtestHighJitterLatency
-          annotations:
-            description: Internet jitter latency is averaging {{ humanize $value }} ms over the last 4h of passed tests.
-            summary: SpeedTest high jitter latency.
-          expr: |
-            (
-              sum_over_time(speedtest_jitter_latency_milliseconds{job=~".*speedtest-exporter.*"}[4h])
-                / sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h])
-                > 30
-            )
-            and sum_over_time(speedtest_up{job=~".*speedtest-exporter.*"}[4h]) >= 3
-          for: 0m
-          labels:
-            severity: warning
+        # Latency is deliberately not alerted here. One sample an hour cannot
+        # tell a bad Ookla server apart from a bad line, and it repeatedly did
+        # not: InternetHighLatency in the smokeping rules watches it at 1 ping/s.
