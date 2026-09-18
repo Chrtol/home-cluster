@@ -14,17 +14,10 @@ spec:
     controllers:
       ocis:
         annotations:
-          # The clientID arrives by secretKeyRef, which is read once at container
-          # start -- without this a regenerated Authentik client leaves ocis holding
-          # the old ID until someone notices the login is broken.
           reloader.stakater.com/auto: "true"
         initContainers:
-          # `ocis init` writes /etc/ocis/ocis.yaml with 16 generated values -- five
-          # UUIDs (system/admin user, graph application, storage mount, service
-          # account) and eleven secrets (JWT, transfer, machine-auth, WOPI, the IDM
-          # service passwords...). Guarded on the file rather than upstream's
-          # `ocis init || true`, which also swallows a genuine init failure and leaves
-          # the pod to fail later and less clearly.
+          # Guarded on the file rather than upstream's `ocis init || true`, which also
+          # swallows a real init failure.
           init-config:
             image: &image
               repository: docker.io/owncloud/ocis
@@ -45,11 +38,8 @@ spec:
                 memory: 64Mi
               limits:
                 memory: 256Mi
-          # The role mapping has to live inside ocis.yaml: `ocis server` parses only
-          # the global config, so a per-service proxy.yaml is never read. Deep-merging
-          # keeps the generated secrets and is a no-op when the values already match,
-          # and `ocis init` above skips an initialised volume, so the block survives
-          # every restart.
+          # `ocis server` parses only the global config, so a per-service proxy.yaml is
+          # never read -- the role mapping has to be merged into ocis.yaml itself.
           merge-role-config:
             image:
               repository: ghcr.io/mikefarah/yq
@@ -68,70 +58,45 @@ spec:
         containers:
           app:
             image: *image
-            # No command: the image's entrypoint is /usr/bin/ocis with `server` as its
-            # default argument, and init now happens above.
             env:
               TZ: ${SECRET_TIMEZONE}
-              # Single canonical host. Every OIDC redirect, WOPI callback and asset
-              # URL is built from this, so ocis cannot be reached on a second
-              # hostname -- same constraint as karakeep's NEXTAUTH_URL, which is why
-              # there is no internal route below.
+              # Single canonical host: every OIDC redirect, WOPI callback and asset URL
+              # is built from it, so there can be no internal twin.
               OCIS_URL: https://drive.${SECRET_DOMAIN}
               OCIS_LOG_LEVEL: info
               OCIS_LOG_COLOR: "false"
-              # Envoy terminates TLS; ocis serves plaintext behind it.
               PROXY_TLS: "false"
               OCIS_INSECURE: "false"
-              # Drop the bundled LibreGraph Connect IdP. Upstream: "mainly targeted at
-              # smaller installations. For larger setups it is recommended to replace
-              # IDP with an external OpenID Connect Provider."
               OCIS_EXCLUDE_RUN_SERVICES: idp
               OCIS_OIDC_ISSUER: https://sso.${SECRET_DOMAIN}/application/o/ocis/
               PROXY_OIDC_REWRITE_WELLKNOWN: "true"
-              # Without this the built-in CSP allows connect-src 'self' only, and the
-              # browser refuses to fetch the discovery document from Authentik.
+              # The built-in CSP allows connect-src 'self' only, which blocks the
+              # discovery fetch from Authentik.
               PROXY_CSP_CONFIG_FILE_LOCATION: /etc/ocis/csp.yaml
-              # offline_access is what makes the session outlive the 5-minute access
-              # token. oidc-client-ts only takes the refresh-grant path when a refresh
-              # token is actually present; otherwise it renews through a hidden iframe
-              # pointed at Authentik, which the CSP below blocks -- the renewal fails
-              # in the browser with no server-side trace and the user is bounced back
-              # to the login screen. The provider must offer the scope too: see
-              # OIDC_EXTRA_SCOPE in ks.yaml.
+              # Without offline_access the web app renews through a hidden iframe
+              # pointed at Authentik, which the CSP blocks. The provider must offer the
+              # scope too -- OIDC_EXTRA_SCOPE in ks.yaml.
               WEB_OIDC_SCOPE: openid profile email offline_access
               WEB_OIDC_CLIENT_ID:
                 valueFrom:
                   secretKeyRef:
                     name: ocis-oidc-authentik-application
                     key: clientID
-              # No local user store: the first login through Authentik creates the
-              # ocis account from the token's claims.
               PROXY_AUTOPROVISION_ACCOUNTS: "true"
               PROXY_USER_OIDC_CLAIM: preferred_username
               PROXY_USER_CS3_CLAIM: username
               GRAPH_USERNAME_MATCH: "none"
-              # Roles come from Authentik group membership -- see resources/proxy.yaml.
-              # PROXY_ROLE_ASSIGNMENT_DRIVER is intentionally NOT set here: env is
-              # decoded after that file, so setting it would override the file.
-              #
-              # False so the OIDC mapping is the only thing that assigns a role;
-              # otherwise a default role is handed out before the claim is consulted.
+              # PROXY_ROLE_ASSIGNMENT_DRIVER is deliberately absent: env is decoded
+              # after resources/role-assignment.yaml, so setting it here would win.
+              # False keeps the OIDC claim the only source of a role.
               GRAPH_ASSIGN_DEFAULT_USER_ROLE: "false"
-              # Secure view renders a document in the editor with download, copy and
-              # print removed, so it needs a WOPI app to render into -- the value is
-              # the collaboration service's registry name, not a URL.
+              # A registry name, not a URL.
               FRONTEND_APP_HANDLER_SECURE_VIEW_APP_ADDR: com.owncloud.api.collaboration.CollaboraOnline
-              # The secure-view share role only appears once it is in this list, and
-              # the list is all-or-nothing: unset, ocis serves a hardcoded default set
-              # that does not include it, so every other role has to be repeated here.
-              # These eight UUIDs are upstream's own collabora example, in its order.
-              # One line, not a folded scalar: ocis splits this on bare commas, so the
-              # space a fold inserts at each line break would be carried into the
-              # next UUID and that role would silently not match.
+              # All-or-nothing: unset, ocis uses a hardcoded set without the secure-view
+              # role. One line -- a folded scalar would put a space inside a UUID.
               GRAPH_AVAILABLE_ROLES: "b1e2218d-eef8-4d4c-b82d-0f1a1b48f3b5,a8d5fe5e-96e3-418d-825b-534dbdf22b99,fb6c3e19-e378-47e5-b277-9732f9de6e21,58c63c02-1d89-4572-916a-870abc5a1b7d,2d00ce52-1fc2-4dbc-8b95-a73b73395f5a,1c996275-f1c9-4e71-abdf-a42f6495e960,312c0871-5ef7-4b3a-85b6-0e4074c64049,aa97fe03-7980-45ac-9e50-b325749fd7e6"
-              # Blobs and metadata both on the PVC. `s3ng` would put blobs in Garage,
-              # but then a restore pairs a PVC snapshot with a bucket captured at a
-              # different moment.
+              # Not s3ng: a restore would pair a PVC snapshot with a bucket captured at
+              # a different moment.
               STORAGE_USERS_DRIVER: ocis
             probes:
               liveness:
@@ -154,8 +119,6 @@ spec:
                   periodSeconds: 10
                   timeoutSeconds: 5
                   failureThreshold: 3
-              # ocis starts ~25 services in one process and runs init on first boot;
-              # a cold start on an empty volume is far slower than a warm one.
               startup:
                 enabled: true
                 custom: true
@@ -172,21 +135,11 @@ spec:
                 cpu: 100m
                 memory: 512Mi
               limits:
-                # Single Go binary hosting every service, including an embedded NATS.
-                # Thumbnailing and search indexing are the spiky parts.
                 memory: 2Gi
 
-          # The WOPI server that brokers between ocis and Collabora. It is the same
-          # binary, run a second time: `collaboration` is absent from the single
-          # process' service registry entirely, so `ocis server` never starts it and
-          # it can only exist as its own process.
-          #
-          # It lives in THIS pod rather than a Deployment of its own because it needs
-          # the secrets `ocis init` generated -- the reva JWT secret and the WOPI
-          # secret, both read out of the shared ocis.yaml -- and that config lives on
-          # a ReadWriteOnce Ceph RBD volume. A second pod could only mount it by
-          # being pinned to whatever node ocis landed on. Sharing the pod also makes
-          # the service registry reachable on loopback, so ocis needs no extra port.
+          # `collaboration` is absent from the single process' service registry, so it
+          # can only run as its own process. It shares this pod because it needs the
+          # secrets in ocis.yaml, which sits on a ReadWriteOnce volume.
           collaboration:
             image: *image
             args: ["collaboration", "server"]
@@ -196,42 +149,26 @@ spec:
               OCIS_LOG_LEVEL: info
               OCIS_LOG_COLOR: "false"
               COLLABORATION_HTTP_ADDR: 0.0.0.0:9300
-              # gRPC stays on loopback: it registers the app provider with ocis'
-              # gateway, which is in this same pod.
               COLLABORATION_GRPC_ADDR: 127.0.0.1:9301
-              # ocis' embedded NATS, which is how this process finds the CS3 gateway.
               MICRO_REGISTRY: nats-js-kv
               MICRO_REGISTRY_ADDRESS: 127.0.0.1:9233
-              # Where Collabora fetches and saves the file. Server-to-server and
-              # in-cluster, so it never leaves the pod network -- and it must have no
-              # path component or the service refuses to start.
+              # Must have no path component or the service refuses to start.
               COLLABORATION_WOPI_SRC: http://ocis:9300
-              # The name the browser sees, and the one secure view matches on above.
               COLLABORATION_APP_NAME: CollaboraOnline
               COLLABORATION_APP_PRODUCT: Collabora
-              # Cluster-internal, NOT https://office.${SECRET_DOMAIN}: this address is
-              # only ever used to GET /hosting/discovery. The editor URLs the browser
-              # actually loads come from inside that document, built from Collabora's
-              # own `server_name`, which is set to the public host. Pointing here
-              # keeps discovery off the VPS hairpin and out of TLS entirely.
+              # Internal on purpose: only used to GET /hosting/discovery. The editor
+              # URLs the browser loads come from inside that document, built from
+              # Collabora's server_name, so they are public either way.
               COLLABORATION_APP_ADDR: http://collabora:9980
               COLLABORATION_APP_ICON: https://office.${SECRET_DOMAIN}/favicon.ico
               COLLABORATION_APP_INSECURE: "false"
               COLLABORATION_CS3API_DATAGATEWAY_INSECURE: "false"
-              # Defaults to 127.0.0.1:9304, which the kubelet cannot reach -- probes
-              # hit the pod IP, not loopback. This is the only endpoint on the service
-              # that is meant to be probed: /hosting/discovery belongs to Collabora,
-              # and the WOPI server answers 404 on it and on /.
+              # Defaults to loopback, which the kubelet cannot probe. The WOPI server
+              # 404s on / and on /hosting/discovery, so this is the only probe target.
               COLLABORATION_DEBUG_ADDR: 0.0.0.0:9304
             probes:
-              # Readiness matters more than usual here: this container is in the ocis
-              # pod, and a container that never becomes ready pulls the whole pod out
-              # of the service endpoints -- taking the files UI down with it. For the
-              # same reason liveness is deliberately slack: a restart loop here costs
-              # the files UI, so it takes a sustained failure to trigger one.
-              #
-              # The debug handler is a real check, not a bare listener: it verifies
-              # both the WOPI HTTP port and the gRPC port the app provider registers on.
+              # A not-ready container here pulls the whole ocis pod out of the service
+              # endpoints, so liveness is slack on purpose.
               liveness:
                 enabled: true
                 custom: true
@@ -258,8 +195,6 @@ spec:
                 cpu: 10m
                 memory: 64Mi
               limits:
-                # A thin broker: it mints WOPI tokens and streams file bodies
-                # between Collabora and the CS3 data gateway.
                 memory: 512Mi
 
     defaultPodOptions:
@@ -277,21 +212,16 @@ spec:
         ports:
           http:
             port: *port
-          # Collabora calls back in here for CheckFileInfo/GetFile/PutFile. A second
-          # PORT on the existing service, not a second service -- app-template renames
-          # the first service the moment a second one appears.
+          # Collabora calls back in here. A second PORT, not a second service --
+          # app-template renames the first service once a second one appears.
           wopi:
             port: 9300
 
     route:
-      # External only, and deliberately no internal twin: OCIS_URL is a single
-      # canonical host (see the env comment above). LAN clients hairpin out to the
-      # VPS and back, as karakeep already does.
       external:
         annotations:
           external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
-          # Unauthenticated GET / returns the web app shell, which redirects to
-          # Authentik rather than 200-ing.
+          # < 400, not == 200: an unauthenticated GET redirects to Authentik.
           gatus.home-operations.com/endpoint: |
             group: external
             conditions:
@@ -311,20 +241,18 @@ spec:
         existingClaim: *app
         advancedMounts:
           ocis:
-            # ocis.yaml holds the transfer secret and the storage mount ID. Lose
-            # this subPath and the data in the other one is unreadable, so both
-            # live on one volume and ride the same kopiur snapshot.
+            # Config and data are two subPaths of one volume so a single snapshot
+            # captures both: ocis.yaml holds the key that makes the data readable.
             init-config: &volume-mounts
               - path: /etc/ocis
                 subPath: config
               - path: /var/lib/ocis
                 subPath: data
-            # Writes ocis.yaml in place, so this one is not read-only.
+            # Writes ocis.yaml in place, so not read-only.
             merge-role-config:
               - path: /etc/ocis
                 subPath: config
-            # Config only. File bytes reach this container over the CS3 data gateway,
-            # never off the volume, so /var/lib/ocis is deliberately absent.
+            # Config only: file bytes arrive over the CS3 data gateway, not the volume.
             collaboration:
               - path: /etc/ocis
                 subPath: config
@@ -335,14 +263,12 @@ spec:
         name: ocis-config
         advancedMounts:
           ocis:
-            # csp.yaml IS read as a config file, mounted over the PVC's config
-            # subPath so it sits beside the generated ocis.yaml without hiding it.
             app:
               - path: /etc/ocis/csp.yaml
                 subPath: csp.yaml
                 readOnly: true
-            # role-assignment.yaml is merged INTO ocis.yaml instead, so it is staged
-            # outside /etc/ocis -- dropping it in there would just be an unread file.
+            # Staged outside /etc/ocis: this one is merged into ocis.yaml, and dropping
+            # it in there would just be a file nothing reads.
             merge-role-config:
               - path: /config-fragment/role-assignment.yaml
                 subPath: role-assignment.yaml

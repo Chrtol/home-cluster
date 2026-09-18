@@ -10,18 +10,12 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    # The proof key and admin credentials come from 1Password, and the pod cannot
-    # start without them.
     - name: onepassword
       namespace: external-secrets
   interval: 1h
   path: ./kubernetes/apps/default/collabora/app
-  # No components. Nothing here is persisted -- documents live in ocis and coolwsd
-  # keeps only per-session jails -- so there is no PVC and nothing to back up. No
-  # oidc-application or ext-auth either: this is a WOPI app, not a user-facing one.
-  # Every request that matters carries a WOPI token minted by ocis' collaboration
-  # service, and putting a forward-auth in front would break the editor's own
-  # callbacks, which never carry a browser session.
+  # No auth component: requests carry a WOPI token minted by ocis, and a forward-auth
+  # would break the editor's own callbacks, which never carry a browser session.
   postBuild:
     substitute:
       APP: *app
@@ -36,9 +30,6 @@ spec:
     namespace: flux-system
   targetNamespace: *namespace
   timeout: 5m
-  # True, unlike most apps here: ocis' collaboration sidecar fetches
-  # /hosting/discovery once at startup and EXITS if it fails, so a cold start that
-  # races Collabora leaves that container crash-looping -- and a not-ready container
-  # takes the whole ocis pod out of the service endpoints. Waiting here lets ocis'
-  # dependsOn hold it back until Collabora actually answers.
+  # ocis dependsOn this one, and its sidecar exits if coolwsd does not answer at
+  # startup -- so this has to report ready only once it actually does.
   wait: true

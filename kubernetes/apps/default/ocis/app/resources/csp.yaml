@@ -1,21 +1,11 @@
 ---
-# ocis' built-in Content-Security-Policy allows connect-src 'self' only, so the web
-# app is blocked from fetching its own OIDC discovery document the moment the IdP
-# lives on another origin -- login dies with "Network Error" from oidc-client and no
-# server-side trace, because the browser never sends the request.
+# ocis' built-in CSP allows connect-src 'self' only, which blocks the web app from
+# fetching its OIDC discovery document once the IdP is on another origin. The browser
+# never sends the request, so every access-log line stays 200 and nothing is logged.
 #
-# Upstream ships this file per deployment for exactly that reason; this is their
-# external-IdP example with the Keycloak origin swapped for Authentik. Any future
-# origin the web app must reach (an OnlyOffice/Collabora WOPI host, say) has to be
-# added to connect-src and frame-src here too.
-#
-# The same applies to token renewal: the fallback is an iframe pointed at the IdP,
-# so the Authentik origin belongs in frame-src as well as connect-src.
-#
-# script-src deliberately has no 'unsafe-eval', matching upstream. A library does
-# attempt an eval and the console logs a CSP violation for it, but that is present in
-# upstream's own config and does not block login -- so it is not worth weakening the
-# policy over.
+# Any other origin the web app must reach belongs in connect-src AND frame-src here.
+# script-src has no 'unsafe-eval', matching upstream: a library trips it, but the
+# violation does not block login.
 directives:
   child-src:
     - "'self'"
@@ -25,8 +15,7 @@ directives:
     - "https://raw.githubusercontent.com/owncloud/awesome-ocis/"
     - "https://marketplace.owncloud.com/"
     - "https://sso.${SECRET_DOMAIN}/"
-    # The editor iframe holds a websocket back to coolwsd for the whole session, and
-    # ws: URLs are governed by connect-src, not frame-src.
+    # The editor holds a websocket for the session, and ws: is connect-src.
     - "https://office.${SECRET_DOMAIN}/"
     - "wss://office.${SECRET_DOMAIN}/"
   default-src:
@@ -34,24 +23,17 @@ directives:
   font-src:
     - "'self'"
     - "data:"
-  # Upstream ships 'none', which also stops ocis framing its OWN pages. The silent
-  # renewal iframe lands back on /oidc-silent-redirect.html with drive.* as its
-  # ancestor, so 'none' blocks the last hop of the fallback renewal path. 'self'
-  # still refuses every cross-origin frame, so clickjacking protection is intact.
+  # Upstream ships 'none', which also stops ocis framing its own
+  # /oidc-silent-redirect.html. 'self' still refuses every cross-origin frame.
   frame-ancestors:
     - "'self'"
   frame-src:
     - "'self'"
     - "blob:"
     - "https://embed.diagrams.net/"
-    # The renewal fallback navigates a hidden iframe to Authentik's authorize
-    # endpoint. The refresh-token grant is the primary path now (offline_access in
-    # WEB_OIDC_SCOPE) and needs no frame at all, but the MFA re-auth path in
-    # authService still goes through the iframe, and without this the browser drops
-    # it with nothing reaching the server.
+    # The MFA re-auth path still frames the IdP, even though refresh tokens made the
+    # ordinary renewal frameless.
     - "https://sso.${SECRET_DOMAIN}/"
-    # Collabora. Without this the document opens to an empty frame and, as usual,
-    # every ocis access-log line stays 200.
     - "https://office.${SECRET_DOMAIN}/"
   img-src:
     - "'self'"
