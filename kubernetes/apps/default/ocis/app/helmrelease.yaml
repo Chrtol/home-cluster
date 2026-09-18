@@ -218,27 +218,37 @@ spec:
               COLLABORATION_APP_ICON: https://office.${SECRET_DOMAIN}/favicon.ico
               COLLABORATION_APP_INSECURE: "false"
               COLLABORATION_CS3API_DATAGATEWAY_INSECURE: "false"
+              # Defaults to 127.0.0.1:9304, which the kubelet cannot reach -- probes
+              # hit the pod IP, not loopback. This is the only endpoint on the service
+              # that is meant to be probed: /hosting/discovery belongs to Collabora,
+              # and the WOPI server answers 404 on it and on /.
+              COLLABORATION_DEBUG_ADDR: 0.0.0.0:9304
             probes:
               # Readiness matters more than usual here: this container is in the ocis
               # pod, and a container that never becomes ready pulls the whole pod out
-              # of the service endpoints -- taking the files UI down with it.
+              # of the service endpoints -- taking the files UI down with it. For the
+              # same reason liveness is deliberately slack: a restart loop here costs
+              # the files UI, so it takes a sustained failure to trigger one.
+              #
+              # The debug handler is a real check, not a bare listener: it verifies
+              # both the WOPI HTTP port and the gRPC port the app provider registers on.
               liveness:
                 enabled: true
                 custom: true
                 spec:
                   httpGet:
-                    path: /hosting/discovery
-                    port: &wopi-port 9300
+                    path: /healthz
+                    port: &debug-port 9304
                   periodSeconds: 30
                   timeoutSeconds: 5
-                  failureThreshold: 5
+                  failureThreshold: 10
               readiness:
                 enabled: true
                 custom: true
                 spec:
                   httpGet:
-                    path: /hosting/discovery
-                    port: *wopi-port
+                    path: /readyz
+                    port: *debug-port
                   periodSeconds: 10
                   timeoutSeconds: 5
                   failureThreshold: 3
@@ -271,7 +281,7 @@ spec:
           # PORT on the existing service, not a second service -- app-template renames
           # the first service the moment a second one appears.
           wopi:
-            port: *wopi-port
+            port: 9300
 
     route:
       # External only, and deliberately no internal twin: OCIS_URL is a single
