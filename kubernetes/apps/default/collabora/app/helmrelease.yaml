@@ -1,0 +1,155 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app collabora
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  interval: 1h
+  values:
+    controllers:
+      collabora:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: docker.io/collabora/code
+              tag: 26.04.4.1.1@sha256:1efda3043e8b9cb437d1b6c6efe20cc3753760e634de012b8dac391da488bf97
+            env:
+              TZ: ${SECRET_TIMEZONE}
+              # Envoy terminates TLS, so coolwsd serves plaintext. `ssl.termination`
+              # is what makes it emit an `external-http` net-zone in
+              # /hosting/discovery -- ocis' parser only reads zones whose name
+              # contains "external", so without it discovery parses to zero app URLs
+              # and no file ever offers an "Open in Collabora" action.
+              #
+              # `server_name` is the reason ocis can fetch discovery over the cluster
+              # service instead of hairpinning out to the VPS: the urlsrc values in
+              # that document are built from this name, not from the address the
+              # request arrived on, so the browser still gets public URLs.
+              #
+              # frame_ancestors is Collabora's own clickjacking guard and is separate
+              # from ocis' CSP -- ocis decides who may frame ocis, this decides who
+              # may frame the editor. Host only, no scheme.
+              extra_params: >-
+                --o:ssl.enable=false
+                --o:ssl.termination=true
+                --o:welcome.enable=false
+                --o:server_name=office.${SECRET_DOMAIN}
+                --o:net.frame_ancestors=drive.${SECRET_DOMAIN}
+              # Nothing to generate when TLS is off, and the image would otherwise
+              # burn startup time on a self-signed pair it never serves.
+              DONT_GEN_SSL_CERT: "YES"
+              username:
+                valueFrom:
+                  secretKeyRef:
+                    name: collabora-secret
+                    key: username
+              password:
+                valueFrom:
+                  secretKeyRef:
+                    name: collabora-secret
+                    key: password
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: &port 9980
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 4
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: *port
+                  periodSeconds: 10
+                  timeoutSeconds: 10
+                  failureThreshold: 3
+              # The image unpacks a LibreOffice core and forks its template
+              # processes before it answers anything.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: *port
+                  periodSeconds: 5
+                  timeoutSeconds: 5
+                  failureThreshold: 60
+            securityContext:
+              allowPrivilegeEscalation: false
+              # Deliberately NOT readOnlyRootFilesystem: coolwsd builds a chroot jail
+              # per document under /opt/cool and rewrites its own config at startup.
+              # Collabora's own chart ships `readOnlyRootFilesystem: false` for the
+              # same reason.
+              capabilities:
+                drop:
+                  - ALL
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                # One forked LibreOffice kit per open document. Idle sits near the
+                # request; the limit is headroom for a handful of documents at once.
+                memory: 2Gi
+
+    defaultPodOptions:
+      # No securityContext block on purpose. coolwsd needs its own uid to own the
+      # jails it creates, and the seccomp filter it wants is a custom profile that
+      # has to be staged on the node -- RuntimeDefault blocks the syscalls it uses
+      # to build them. Collabora's chart ships an empty podSecurityContext for the
+      # same reason, and the `default` namespace enforces no Pod Security Standard.
+      enableServiceLinks: false
+
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: *port
+
+    route:
+      # External, because the browser loads the editor iframe from here and reaches
+      # it the same way it reaches drive.* -- there is no internal twin to pair with.
+      # ocis itself does NOT use this route: its collaboration sidecar talks to the
+      # cluster service directly.
+      external:
+        annotations:
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+          gatus.home-operations.com/endpoint: |
+            group: external
+            conditions:
+              - "[STATUS] == 200"
+        hostnames: ["office.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+
+    persistence:
+      proof-key:
+        type: secret
+        name: collabora-secret
+        advancedMounts:
+          collabora:
+            app:
+              - path: /etc/coolwsd/proof_key
+                subPath: proof_key
+                readOnly: true

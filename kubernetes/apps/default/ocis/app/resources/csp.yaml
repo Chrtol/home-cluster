@@ -25,6 +25,10 @@ directives:
     - "https://raw.githubusercontent.com/owncloud/awesome-ocis/"
     - "https://marketplace.owncloud.com/"
     - "https://sso.${SECRET_DOMAIN}/"
+    # The editor iframe holds a websocket back to coolwsd for the whole session, and
+    # ws: URLs are governed by connect-src, not frame-src.
+    - "https://office.${SECRET_DOMAIN}/"
+    - "wss://office.${SECRET_DOMAIN}/"
   default-src:
     - "'none'"
   font-src:
@@ -46,6 +50,9 @@ directives:
     # authService still goes through the iframe, and without this the browser drops
     # it with nothing reaching the server.
     - "https://sso.${SECRET_DOMAIN}/"
+    # Collabora. Without this the document opens to an empty frame and, as usual,
+    # every ocis access-log line stays 200.
+    - "https://office.${SECRET_DOMAIN}/"
   img-src:
     - "'self'"
     - "data:"

@@ -117,6 +117,18 @@ spec:
               # False so the OIDC mapping is the only thing that assigns a role;
               # otherwise a default role is handed out before the claim is consulted.
               GRAPH_ASSIGN_DEFAULT_USER_ROLE: "false"
+              # Secure view renders a document in the editor with download, copy and
+              # print removed, so it needs a WOPI app to render into -- the value is
+              # the collaboration service's registry name, not a URL.
+              FRONTEND_APP_HANDLER_SECURE_VIEW_APP_ADDR: com.owncloud.api.collaboration.CollaboraOnline
+              # The secure-view share role only appears once it is in this list, and
+              # the list is all-or-nothing: unset, ocis serves a hardcoded default set
+              # that does not include it, so every other role has to be repeated here.
+              # These eight UUIDs are upstream's own collabora example, in its order.
+              # One line, not a folded scalar: ocis splits this on bare commas, so the
+              # space a fold inserts at each line break would be carried into the
+              # next UUID and that role would silently not match.
+              GRAPH_AVAILABLE_ROLES: "b1e2218d-eef8-4d4c-b82d-0f1a1b48f3b5,a8d5fe5e-96e3-418d-825b-534dbdf22b99,fb6c3e19-e378-47e5-b277-9732f9de6e21,58c63c02-1d89-4572-916a-870abc5a1b7d,2d00ce52-1fc2-4dbc-8b95-a73b73395f5a,1c996275-f1c9-4e71-abdf-a42f6495e960,312c0871-5ef7-4b3a-85b6-0e4074c64049,aa97fe03-7980-45ac-9e50-b325749fd7e6"
               # Blobs and metadata both on the PVC. `s3ng` would put blobs in Garage,
               # but then a restore pairs a PVC snapshot with a bucket captured at a
               # different moment.
@@ -164,6 +176,82 @@ spec:
                 # Thumbnailing and search indexing are the spiky parts.
                 memory: 2Gi
 
+          # The WOPI server that brokers between ocis and Collabora. It is the same
+          # binary, run a second time: `collaboration` is absent from the single
+          # process' service registry entirely, so `ocis server` never starts it and
+          # it can only exist as its own process.
+          #
+          # It lives in THIS pod rather than a Deployment of its own because it needs
+          # the secrets `ocis init` generated -- the reva JWT secret and the WOPI
+          # secret, both read out of the shared ocis.yaml -- and that config lives on
+          # a ReadWriteOnce Ceph RBD volume. A second pod could only mount it by
+          # being pinned to whatever node ocis landed on. Sharing the pod also makes
+          # the service registry reachable on loopback, so ocis needs no extra port.
+          collaboration:
+            image: *image
+            args: ["collaboration", "server"]
+            env:
+              TZ: ${SECRET_TIMEZONE}
+              OCIS_URL: https://drive.${SECRET_DOMAIN}
+              OCIS_LOG_LEVEL: info
+              OCIS_LOG_COLOR: "false"
+              COLLABORATION_HTTP_ADDR: 0.0.0.0:9300
+              # gRPC stays on loopback: it registers the app provider with ocis'
+              # gateway, which is in this same pod.
+              COLLABORATION_GRPC_ADDR: 127.0.0.1:9301
+              # ocis' embedded NATS, which is how this process finds the CS3 gateway.
+              MICRO_REGISTRY: nats-js-kv
+              MICRO_REGISTRY_ADDRESS: 127.0.0.1:9233
+              # Where Collabora fetches and saves the file. Server-to-server and
+              # in-cluster, so it never leaves the pod network -- and it must have no
+              # path component or the service refuses to start.
+              COLLABORATION_WOPI_SRC: http://ocis:9300
+              # The name the browser sees, and the one secure view matches on above.
+              COLLABORATION_APP_NAME: CollaboraOnline
+              COLLABORATION_APP_PRODUCT: Collabora
+              # Cluster-internal, NOT https://office.${SECRET_DOMAIN}: this address is
+              # only ever used to GET /hosting/discovery. The editor URLs the browser
+              # actually loads come from inside that document, built from Collabora's
+              # own `server_name`, which is set to the public host. Pointing here
+              # keeps discovery off the VPS hairpin and out of TLS entirely.
+              COLLABORATION_APP_ADDR: http://collabora:9980
+              COLLABORATION_APP_ICON: https://office.${SECRET_DOMAIN}/favicon.ico
+              COLLABORATION_APP_INSECURE: "false"
+              COLLABORATION_CS3API_DATAGATEWAY_INSECURE: "false"
+            probes:
+              # Readiness matters more than usual here: this container is in the ocis
+              # pod, and a container that never becomes ready pulls the whole pod out
+              # of the service endpoints -- taking the files UI down with it.
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /hosting/discovery
+                    port: &wopi-port 9300
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /hosting/discovery
+                    port: *wopi-port
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+            securityContext: *hardened
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                # A thin broker: it mints WOPI tokens and streams file bodies
+                # between Collabora and the CS3 data gateway.
+                memory: 512Mi
+
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
@@ -179,6 +267,11 @@ spec:
         ports:
           http:
             port: *port
+          # Collabora calls back in here for CheckFileInfo/GetFile/PutFile. A second
+          # PORT on the existing service, not a second service -- app-template renames
+          # the first service the moment a second one appears.
+          wopi:
+            port: *wopi-port
 
     route:
       # External only, and deliberately no internal twin: OCIS_URL is a single
@@ -220,6 +313,12 @@ spec:
             merge-role-config:
               - path: /etc/ocis
                 subPath: config
+            # Config only. File bytes reach this container over the CS3 data gateway,
+            # never off the volume, so /var/lib/ocis is deliberately absent.
+            collaboration:
+              - path: /etc/ocis
+                subPath: config
+                readOnly: true
             app: *volume-mounts
       config-files:
         type: configMap

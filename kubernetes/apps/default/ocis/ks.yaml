@@ -14,6 +14,14 @@ spec:
       namespace: ceph-csi-rbd
     - name: kopiur-repository
       namespace: kopiur-system
+    # The collaboration sidecar in the ocis pod resolves Collabora's
+    # /hosting/discovery once at startup and exits on failure, and a container that
+    # will not start keeps the whole pod out of the service endpoints. Collabora's
+    # Kustomization sets wait: true, so this holds the roll until coolwsd answers.
+    # It only gates reconciliation -- a broken Collabora stalls this Kustomization
+    # but never stops the ocis Deployment that is already running.
+    - name: collabora
+      namespace: default
   interval: 1h
   path: ./kubernetes/apps/default/ocis/app
   components:

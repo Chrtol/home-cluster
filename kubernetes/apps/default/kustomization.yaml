@@ -38,3 +38,4 @@ resources:
   - ./frigate/ks.yaml
   - ./ironcalc/ks.yaml
   - ./ocis/ks.yaml
+  - ./collabora/ks.yaml
