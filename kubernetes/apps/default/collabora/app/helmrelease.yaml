@@ -31,6 +31,7 @@ spec:
                 --o:welcome.enable=false
                 --o:server_name=office.${SECRET_DOMAIN}
                 --o:net.frame_ancestors=drive.${SECRET_DOMAIN}
+                --o:user_interface.mode=notebookbar
               DONT_GEN_SSL_CERT: "YES"
               # Lowercase: the image reads these env names verbatim.
               username:
