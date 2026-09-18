@@ -42,6 +42,14 @@ spec:
       # client secret. Upstream's reference realm registers `web` as a public client;
       # Authentik enforces PKCE for those.
       OIDC_CLIENT_TYPE: public
+      # Makes Authentik issue a REFRESH token. Without it ownCloud Web renews the
+      # access token by navigating a hidden iframe to the IdP, which ocis' own CSP
+      # blocks (frame-src has no Authentik origin) -- so the renewal fails and the
+      # session ends the moment the 5-minute access token expires. With a refresh
+      # token present, oidc-client-ts uses the refresh grant instead: a plain fetch
+      # to the token endpoint, already allowed by connect-src. grant_types on the
+      # provider already carries refresh_token.
+      OIDC_EXTRA_SCOPE: offline_access
       # From web-runtime's userManager.ts: redirect_uri is /oidc-callback.html and
       # silent_redirect_uri is /oidc-silent-redirect.html. Both must be registered or
       # login succeeds and then token renewal silently fails.

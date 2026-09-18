@@ -9,6 +9,9 @@
 # origin the web app must reach (an OnlyOffice/Collabora WOPI host, say) has to be
 # added to connect-src and frame-src here too.
 #
+# The same applies to token renewal: the fallback is an iframe pointed at the IdP,
+# so the Authentik origin belongs in frame-src as well as connect-src.
+#
 # script-src deliberately has no 'unsafe-eval', matching upstream. A library does
 # attempt an eval and the console logs a CSP violation for it, but that is present in
 # upstream's own config and does not block login -- so it is not worth weakening the
@@ -27,12 +30,22 @@ directives:
   font-src:
     - "'self'"
     - "data:"
+  # Upstream ships 'none', which also stops ocis framing its OWN pages. The silent
+  # renewal iframe lands back on /oidc-silent-redirect.html with drive.* as its
+  # ancestor, so 'none' blocks the last hop of the fallback renewal path. 'self'
+  # still refuses every cross-origin frame, so clickjacking protection is intact.
   frame-ancestors:
-    - "'none'"
+    - "'self'"
   frame-src:
     - "'self'"
     - "blob:"
     - "https://embed.diagrams.net/"
+    # The renewal fallback navigates a hidden iframe to Authentik's authorize
+    # endpoint. The refresh-token grant is the primary path now (offline_access in
+    # WEB_OIDC_SCOPE) and needs no frame at all, but the MFA re-auth path in
+    # authService still goes through the iframe, and without this the browser drops
+    # it with nothing reaching the server.
+    - "https://sso.${SECRET_DOMAIN}/"
   img-src:
     - "'self'"
     - "data:"

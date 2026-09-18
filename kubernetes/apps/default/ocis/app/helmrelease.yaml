@@ -91,7 +91,14 @@ spec:
               # Without this the built-in CSP allows connect-src 'self' only, and the
               # browser refuses to fetch the discovery document from Authentik.
               PROXY_CSP_CONFIG_FILE_LOCATION: /etc/ocis/csp.yaml
-              WEB_OIDC_SCOPE: openid profile email
+              # offline_access is what makes the session outlive the 5-minute access
+              # token. oidc-client-ts only takes the refresh-grant path when a refresh
+              # token is actually present; otherwise it renews through a hidden iframe
+              # pointed at Authentik, which the CSP below blocks -- the renewal fails
+              # in the browser with no server-side trace and the user is bounced back
+              # to the login screen. The provider must offer the scope too: see
+              # OIDC_EXTRA_SCOPE in ks.yaml.
+              WEB_OIDC_SCOPE: openid profile email offline_access
               WEB_OIDC_CLIENT_ID:
                 valueFrom:
                   secretKeyRef:
