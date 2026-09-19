@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app anisette
+  namespace: &namespace default
+spec:
+  targetNamespace: *namespace
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  # ceph-rbd      -> RWO PVC holding the Apple libraries extracted from the Music
+  #                  APK, plus adi.pb -- the provisioned machine identity.
+  # kopiur        -> Kopia backup of that PVC. adi.pb is only recoverable by
+  #                  re-provisioning against Apple, which is rate-limited, so the
+  #                  identity is worth more than the 1Gi it sits on.
+  # route-timeout -> anisette-v3 provisions over a WebSocket
+  #                  (/v3/provisioning_session). The gateway's default 180s
+  #                  requestTimeout would sever it mid-handshake.
+  components:
+    - ../../../../components/ceph-rbd
+    - ../../../../components/kopiur
+    - ../../../../components/route-timeout
+  dependsOn:
+    - name: ceph-csi-rbd
+      namespace: ceph-csi-rbd
+    - name: kopiur-repository
+      namespace: kopiur-system
+  interval: 1h
+  path: ./kubernetes/apps/default/anisette/app
+  postBuild:
+    substitute:
+      APP: *app
+      GATUS_SUBDOMAIN: *app
+      CEPH_RBD_CAPACITY: 1Gi
+      # "0s" disables the cap outright, which is what the component's own comment
+      # prescribes for long-lived streams. A large finite value would still cut
+      # the provisioning socket, just less often.
+      ROUTE_TIMEOUT_REQUEST: "0s"
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  timeout: 5m
+  wait: false

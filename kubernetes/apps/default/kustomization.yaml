@@ -39,3 +39,4 @@ resources:
   - ./ironcalc/ks.yaml
   - ./ocis/ks.yaml
   - ./collabora/ks.yaml
+  - ./anisette/ks.yaml

@@ -1,0 +1,118 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: anisette
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+
+  values:
+    controllers:
+      anisette:
+        annotations:
+          reloader.stakater.com/auto: "true"
+
+        containers:
+          app:
+            image:
+              # Upstream publishes to Docker Hub only -- ghcr.io/dadoum/... 403s --
+              # and ships a single rolling "latest" tag, so the digest is the
+              # actual pin here. The manifest list covers amd64/arm64/arm/386.
+              repository: docker.io/dadoum/anisette-v3-server
+              tag: latest@sha256:1e20384985d3c49965f444bef39d627768dacc39ea0dca91f2a535edb7591ba3
+            env:
+              TZ: ${SECRET_TIMEZONE}
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 15m
+                memory: 128Mi
+              limits:
+                # On first start the server GETs Apple Music's APK to extract
+                # libCoreADI.so / libstoreservicescore.so, and app.d reads the
+                # whole archive into a ubyte[] before unzipping it. A tighter cap
+                # OOMKills the pod before it ever provisions, which presents as an
+                # unexplained CrashLoopBackOff rather than an obvious OOM.
+                memory: 1Gi
+            probes:
+              # TCP, not HTTP: the server binds :6969 only after the Apple
+              # libraries are on disk, so a connect succeeding is already proof
+              # the download and extraction finished. No endpoint path assumed.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: &port 6969
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  # ~10 minutes of grace. Only the very first start pays the
+                  # APK download; later starts pass on the first probe.
+                  failureThreshold: 60
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: *port
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 6
+              readiness: *probe
+
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        # The image does `useradd -ms /bin/bash Alcoholic` on debian-slim, which
+        # takes the first free UID -- 1000. fsGroup lets that user own the PVC.
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+
+    route:
+      internal:
+        # Internal gateway only. An open anisette server will mint valid Apple
+        # authentication headers against this machine identity for anyone who
+        # asks, so it stays on the LAN; reach it over WireGuard from off-network.
+        # gatus-sidecar: no per-route annotation -- inherits group:guarded from
+        # the internal Gateway, same as node-red.
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+
+    persistence:
+      # The extracted Apple libraries (lib/) and adi.pb. The server expands
+      # ~/.config/anisette-v3, and $HOME for UID 1000 in this image is
+      # /home/Alcoholic -- so the mount path is tied to the image's username.
+      config:
+        existingClaim: "{{ .Release.Name }}"
+        globalMounts:
+          - path: /home/Alcoholic/.config/anisette-v3
+      # Per-request provisioning scratch, created and rmdirRecurse'd each time.
+      # WORKDIR is /opt and the server falls back to getcwd() for its runtime
+      # path, so /opt/anisette-v3 must be writable under a read-only rootfs.
+      # Nothing here needs to outlive the pod.
+      provisioning:
+        type: emptyDir
+        globalMounts:
+          - path: /opt/anisette-v3
