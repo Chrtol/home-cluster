@@ -45,7 +45,7 @@ spec:
             # one ref means Renovate can never leave the two skewed.
             image:
               repository: ghcr.io/home-operations/home-assistant
-              tag: 2026.9.2@sha256:83decfe1f940120bd7ecbb2c7d72d5b2723dfddb39de3f4e9914c19ead1f721f
+              tag: 2026.9.3@sha256:638c4c8d62caad377e70bfa7beef75f70c9343a49aed64aad824f2cd06843c1c
             env:
               # renovate: datasource=github-releases depName=christiaangoossens/hass-oidc-auth
               OIDC_COMPONENT_VERSION: v1.2.1
@@ -114,7 +114,7 @@ spec:
           02-install-health-check-component:
             image:
               repository: ghcr.io/home-operations/home-assistant
-              tag: 2026.9.2@sha256:83decfe1f940120bd7ecbb2c7d72d5b2723dfddb39de3f4e9914c19ead1f721f
+              tag: 2026.9.3@sha256:638c4c8d62caad377e70bfa7beef75f70c9343a49aed64aad824f2cd06843c1c
             env:
               # renovate: datasource=github-releases depName=Tobix99/ha-health-check
               HEALTH_CHECK_COMPONENT_VERSION: v1.2.0
@@ -186,7 +186,7 @@ spec:
           03-install-watchman-component:
             image:
               repository: ghcr.io/home-operations/home-assistant
-              tag: 2026.9.2@sha256:83decfe1f940120bd7ecbb2c7d72d5b2723dfddb39de3f4e9914c19ead1f721f
+              tag: 2026.9.3@sha256:638c4c8d62caad377e70bfa7beef75f70c9343a49aed64aad824f2cd06843c1c
             env:
               # renovate: datasource=github-releases depName=dummylabs/thewatchman
               WATCHMAN_COMPONENT_VERSION: v0.8.4
@@ -245,7 +245,7 @@ spec:
           app:
             image:
               repository: ghcr.io/home-operations/home-assistant
-              tag: 2026.9.2@sha256:83decfe1f940120bd7ecbb2c7d72d5b2723dfddb39de3f4e9914c19ead1f721f
+              tag: 2026.9.3@sha256:638c4c8d62caad377e70bfa7beef75f70c9343a49aed64aad824f2cd06843c1c
             env:
               TZ: ${SECRET_TIMEZONE}
               # NO HASS_HTTP_TRUSTED_PROXY_* here any more, and adding them back
