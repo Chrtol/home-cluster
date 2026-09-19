@@ -149,7 +149,7 @@ spec:
           broadcast:
             image:
               repository: ghcr.io/mcxboxbroadcast/standalone
-              tag: latest@sha256:aa6290ec80ee9cb3a63927b2bcb298af63c5447508d5d2328a0eac57ebcc6d0c
+              tag: latest@sha256:fb9edba97367783c27af4473e41623a304e0b0da6c4ff6ffac1c17d8dae34c92
             env:
               TZ: ${SECRET_TIMEZONE}
             securityContext:
