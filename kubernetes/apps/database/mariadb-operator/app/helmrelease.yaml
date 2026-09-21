@@ -26,10 +26,16 @@ spec:
   values:
     crds:
       enabled: true
+    # Off because of a name collision, not because the data is unwanted. This chart
+    # names its Service mariadb-operator-metrics; the MariaDB instance is also called
+    # mariadb-operator, so the operator wants that same name for the instance's
+    # mysqld-exporter Service. Merging the two gave two ports named "metrics", the
+    # API rejected it, and every failed reconcile re-stamped the CR's Ready condition
+    # and so triggered the next one at once: ~15 reconciles/s, 69 of the cluster's
+    # 122 API requests/s on 2026-09-21, with mysql_up never scraped. Nothing in this
+    # repo reads the operator's own controller metrics; the instance exporter wins.
     metrics:
-      enabled: true
-      serviceMonitor:
-        enabled: true
+      enabled: false
     webhook:
       cert:
         certManager:
