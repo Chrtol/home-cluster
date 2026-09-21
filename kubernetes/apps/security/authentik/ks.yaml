@@ -26,7 +26,7 @@ spec:
     substitute:
       APP: *app
       GATUS_SUBDOMAIN: sso
-      # /media is mounted from global.volumeMounts, so it lands on the worker
+      # /data is mounted from global.volumeMounts, so it lands on the worker
       # pods too -- and those run up to 3 replicas. RBD is ReadWriteOnce, so the
       # replicas that lose the race would sit in ContainerCreating. CephFS is
       # still Proxmox Ceph, just the RWX filesystem rather than a block device.

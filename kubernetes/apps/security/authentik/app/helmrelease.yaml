@@ -40,8 +40,14 @@ spec:
       securityContext:
         fsGroup: 1000
       volumeMounts:
+        # /data, not /media. The file backend only reports itself as manageable
+        # when its base dir is an actual mount point, and the image ships
+        # /data/media as a symlink to /media -- os.path.ismount() is False for a
+        # symlink by definition, so mounting at /media leaves uploads rejected
+        # with "No file management backend configured". Files land in
+        # /data/media/<schema>/ and are served from the same path.
         - name: media
-          mountPath: /media
+          mountPath: /data
         - name: sidecar-blueprints
           mountPath: /blueprints/sidecar
         # Signing key for OIDC id_tokens, imported by authentik's certificate_discovery
