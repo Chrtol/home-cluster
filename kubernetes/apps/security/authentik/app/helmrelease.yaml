@@ -165,7 +165,15 @@ spec:
           memory: 1Gi
     worker:
       serviceAccountName: authentik
-      replicas: 3
+      # One worker, no HPA. The work is ~1.7 background tasks a minute (2411 in the
+      # 24h to 2026-09-21), and an idle worker burns ~90m polling the dramatiq
+      # queue, so a CPU-utilisation HPA had nothing to measure: it sat at exactly 2
+      # replicas for 7 days straight. From 2 replicas it needs utilisation <= 42.5%
+      # to remove one (ceil(2 * util / 85) must be 1) and the idle floor alone is
+      # 72% of the request. A second worker added no throughput, only another
+      # ~90m of polling and 896Mi of memory requests. Logins run on the server pod;
+      # tasks queued in Postgres simply wait out a worker restart.
+      replicas: 1
       env:
         # Authentik native OTEL support (don't use auto-instrumentation - it conflicts)
         - name: OTEL_SERVICE_NAME
@@ -189,23 +197,7 @@ spec:
         - name: OTEL_RESOURCE_ATTRIBUTES
           value: "service.name=authentik-worker,service.namespace=security,app.type=identity-provider,component=worker"
       autoscaling:
-        enabled: true
-        minReplicas: 1
-        # An idle worker burns ~93m on dramatiq-postgres polling + probe tracing --
-        # fixed per-pod overhead, not shared work. At a 60% target that floor sits
-        # ABOVE the target, so each replica the HPA added brought its own polling
-        # and utilisation never fell: pinned at max continuously since the
-        # 2026.5.2 upgrade. The target must stay above the idle floor to converge.
-        # Steady state is 2 (73% util against the 85% target). Max 3 leaves real
-        # burst room AND stops KubeHpaMaxedOut, which fires on current==max without
-        # checking whether the HPA actually wants to scale.
-        maxReplicas: 3
-        targetCPUUtilizationPercentage: 85
-        behavior:
-          scaleUp:
-            stabilizationWindowSeconds: 300
-          scaleDown:
-            stabilizationWindowSeconds: 300
+        enabled: false
       serviceAccount:
         create: true
       extraContainers:
