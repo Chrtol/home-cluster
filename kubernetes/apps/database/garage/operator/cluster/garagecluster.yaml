@@ -32,6 +32,18 @@ spec:
     # dell1 over the 70% line, and a BestEffort pod is the first one picked.
     podLabels:
       descheduler.home.arpa/no-rebalance: "true"
+    # Ran BestEffort until 2026-09-21, which is what made it the first eviction pick.
+    # cpu is the Goldilocks target (93m, upper bound 115m). Memory is sized on the
+    # 30d working-set peak of 170Mi, not the 44Mi RSS: the difference is the hot
+    # mmap'd LMDB pages, and the kubelet ranks eviction on working set over request.
+    # The limit leaves room for the whole metadata volume (238Mi) plus Garage's
+    # 256Mi block buffer; without one the cgroup had grown to 5Gi of page cache.
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 1Gi
     # LMDB is mmap'd and is NOT safe to copy while running -- a filesystem-level
     # copy of a live meta dir can restore corrupt. Garage writes its own consistent
     # snapshots into <metadata_dir>/snapshots on this interval, and kopiur backs the
