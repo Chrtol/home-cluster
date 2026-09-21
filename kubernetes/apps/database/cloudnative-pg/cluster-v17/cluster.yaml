@@ -35,6 +35,11 @@ spec:
     parameters:
       max_connections: "600"
       shared_buffers: 512MB
+      # No table here is big enough for JIT to pay off (largest honest full scan
+      # costs ~27k against the 100k threshold), so it only ever fired on
+      # mis-estimates from never-analyzed tables: authentik's login page spent
+      # 810 ms compiling a query that ran in 0.2 ms, on every render.
+      jit: "off"
       archive_mode: "on"
       wal_keep_size: "512MB"
       # --- Tuned for high-latency Ceph backing (one slow SATA-SSD OSD ~46ms) ---

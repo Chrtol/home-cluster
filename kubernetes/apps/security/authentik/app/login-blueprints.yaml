@@ -32,6 +32,24 @@ data:
             - !Find [authentik_sources_oauth.oauthsource, [slug, google]]
             - !Find [authentik_sources_plex.plexsource, [slug, plex]]
 
+      ## The model default is seconds=0, a cookie that dies with the browser, so
+      ## every restart meant the whole Plex popup round trip again. Only the
+      ## source stages are extended; break-glass uses default-authentication-login
+      ## and stays browser-session.
+      - model: authentik_stages_user_login.userloginstage
+        state: present
+        identifiers:
+          name: default-source-authentication-login
+        attrs:
+          session_duration: weeks=4
+
+      - model: authentik_stages_user_login.userloginstage
+        state: present
+        identifiers:
+          name: default-source-enrollment-login
+        attrs:
+          session_duration: weeks=4
+
       ## Break-glass path: same password and TOTP stages as the default flow,
       ## just reached by its own URL instead of from the brand's login page.
       - model: authentik_stages_identification.identificationstage
