@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Last gate before the values become public. pre-commit does not run on push, so
+# commits made with --no-verify, or on a clone without core.hooksPath set, only
+# meet the scanner here.
+set -euo pipefail
+root="$(git rev-parse --show-toplevel)"
+zero=$(git hash-object --stdin </dev/null | tr '0-9a-f' '0')
+status=0
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+  [[ "$local_sha" == "$zero" ]] && continue   # branch deletion, nothing to scan
+  if [[ "$remote_sha" == "$zero" ]]; then
+    # New branch: everything on it that the remote does not already have.
+    "$root/scripts/scan-secret-leaks.sh" push "$local_sha" --not --remotes=origin || status=1
+  else
+    "$root/scripts/scan-secret-leaks.sh" push "$remote_sha..$local_sha" || status=1
+  fi
+done
+exit $status

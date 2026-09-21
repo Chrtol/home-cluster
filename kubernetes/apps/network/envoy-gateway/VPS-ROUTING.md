@@ -19,7 +19,7 @@ server {
     # Service-specific routing
     location / {
         # Services with auth → Envoy Gateway
-        if ($host ~ ^(glance|radarr|sonarr|prowlarr|readarr|sabnzbd)\.cftollefsen\.com$) {
+        if ($host ~ ^(glance|radarr|sonarr|prowlarr|readarr|sabnzbd)\.${SECRET_DOMAIN_NAME}\.com$) {
             proxy_pass https://10.0.30.62:443;
             proxy_ssl_verify off;
             break;
@@ -45,7 +45,7 @@ Use a prefix for testing before migration:
 ```nginx
 location / {
     # Test services on Envoy Gateway
-    if ($host ~ ^test-(.+)\.cftollefsen\.com$) {
+    if ($host ~ ^test-(.+)\.${SECRET_DOMAIN_NAME}\.com$) {
         proxy_pass https://10.0.30.62:443;
         proxy_ssl_verify off;
         break;

@@ -1,0 +1,2 @@
+# Known-good matches, one '<path glob>:<KEY>' per line. Paths and key names only
+# -- never a value; this file is committed to a public repo.
