@@ -1,0 +1,380 @@
+/*
+ * authentik login - "dark, warm minimal"
+ *
+ * Paste into: Admin -> Brands -> Default brand -> Custom CSS
+ * Written against authentik 2026.8.2 (PatternFly 4.224.5). Previous contents
+ * are kept in current-brand.css for rollback.
+ *
+ * How this file is put together, so it can be maintained:
+ *
+ *   - authentik adopts this sheet into the document AND into every component's
+ *     shadow root. The second half is marked @deprecated upstream ("use CSS
+ *     parts and custom properties instead"), so sections 1-7 rely only on
+ *     tokens and ::part(). Section 8 is the one place that leans on the
+ *     deprecated injection; if it ever stops working the page still holds.
+ *
+ *   - No !important. Across a shadow boundary a normal ::part() declaration
+ *     from the document already beats the component's own normal declarations.
+ *     Where authentik itself uses !important (card box-shadow, source-list
+ *     padding) the property cannot be overridden from outside at all - those
+ *     are driven through the token they read instead.
+ *
+ *   - The brand sheet is shared with the admin and user interfaces. Every
+ *     document-level rule is therefore gated on :has(ak-flow-executor), so
+ *     nothing here leaks out of the login flow.
+ */
+
+/* 1. Tokens ---------------------------------------------------------------- */
+
+html:root:has(ak-flow-executor) {
+    /* Palette: neutrals are tinted toward the amber accent, never pure grey. */
+    --cft-page: #110f0d;
+    --cft-card: #1a1815;
+    --cft-raise: #23201c;
+    --cft-raise-hover: #2b2722;
+    --cft-line: rgb(255 236 209 / 0.09);
+    --cft-line-strong: rgb(255 236 209 / 0.18);
+    --cft-text: #f3ede4;
+    --cft-muted: #a79d8f;
+    --cft-accent: #e5a00d;
+    --cft-accent-hover: #f2b63a;
+    --cft-accent-line: rgb(229 160 13 / 0.6);
+    --cft-chip: #f4eee5;
+    --cft-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+    /*
+     * Replaces the stock photo. authentik paints this token on body::before
+     * (desktop only); gradients are valid there. html:root outranks the inline
+     * `:root { --ak-global--background-image: url(...) }` in the page head.
+     */
+    --ak-global--background-image:
+        radial-gradient(52rem 34rem at 50% 42%, rgb(229 160 13 / 0.075), transparent 68%),
+        radial-gradient(90rem 50rem at 50% 120%, rgb(255 236 209 / 0.035), transparent 60%);
+    /* The drop-shadow authentik adds for legibility over a photo; not needed. */
+    --ak-global--BackgroundContrastFilter: none;
+
+    /* Card */
+    --ak-c-login--MaxWidth: 25rem;
+    --ak-c-login--spacer: clamp(1.25rem, 6dvw, 2.25rem);
+    --ak-c-login__main--BackgroundColor: var(--cft-card);
+    --ak-c-login__main--Color: var(--cft-text);
+    --ak-c-login__main--BoxShadow:
+        inset 0 1px 0 rgb(255 236 209 / 0.05), 0 2px 6px rgb(0 0 0 / 0.35),
+        0 28px 56px -16px rgb(0 0 0 / 0.6);
+    /* Space under the last element of every stage. PatternFly applies it as
+       padding-bottom on the stage host (the last child of the card). */
+    --ak-c-login__main--footer-PaddingIdeal: 2.5rem;
+
+    /* Page chrome. authentik's footer grid parks a lone text item in column 1
+       of 4; it ships a flex fallback behind this token, which centres it. */
+    --ak-c-login__footer--Color: var(--cft-muted);
+    --ak-c-login__footer--Display: flex;
+}
+
+/*
+ * The page colour goes on <html> ONLY. authentik paints the background image
+ * (body::before) and the phone full-bleed fill (.pf-c-login::before) at
+ * z-index -1; once <html> has a background, a background on <body> would
+ * paint as an ordinary box on top of both and hide them.
+ */
+html:has(ak-flow-executor) {
+    background-color: var(--cft-page);
+    color-scheme: dark;
+}
+
+html:has(ak-flow-executor) body {
+    background-color: transparent;
+    color-scheme: dark;
+}
+
+/* 2. Page + card ----------------------------------------------------------- */
+
+ak-flow-executor::part(login) {
+    /* Text colours, so the card reads correctly even if the brand is not yet
+       forced to the dark theme. */
+    --pf-global--Color--100: var(--cft-text);
+    --pf-global--Color--200: var(--cft-muted);
+
+    /* Title block: more air above the heading than below it. */
+    --pf-c-login__main-header--PaddingTop: 2.5rem;
+    --pf-c-login__main-header--PaddingBottom: 0.375rem;
+    /* Title size. The h1 has no part; it reads this token. */
+    --pf-global--FontSize--3xl: 1.5rem;
+}
+
+ak-flow-executor::part(main) {
+    /* authentik pins the card to the top of a 75dvh row; centre it instead. */
+    align-self: center;
+    color: var(--cft-text);
+    background-color: var(--cft-card);
+    border: 1px solid var(--cft-line);
+    border-radius: 1.25rem;
+    /* Inherited through the shadow boundary by the h1. */
+    text-align: center;
+}
+
+/* Text wordmark only: the flow title carries the identity. */
+ak-flow-executor::part(branding) {
+    display: none;
+}
+
+/* authentik drops the card chrome on phones and lets it fill the screen. */
+@media (max-width: 35rem), (max-height: 17.5rem) {
+    ak-flow-executor::part(main) {
+        border-color: transparent;
+        border-radius: 0;
+    }
+}
+
+/* 3. Source buttons -------------------------------------------------------- */
+
+ak-stage-identification::part(source-list) {
+    /* padding-inline is !important inside the component; feed its token. */
+    --ak-c-login-sources-padding-inline: var(--ak-c-login--spacer);
+
+    flex-flow: column nowrap;
+    align-items: stretch;
+    gap: 0.625rem;
+    /*
+     * ak-flow-card pulls footer-slot content down with
+     * margin-block-end: calc(-0.75 * footer padding), leaving the source list
+     * a quarter of the space every other stage gets. Cancel exactly that, from
+     * the same token, so step 1 and the later steps share one bottom margin.
+     */
+    margin-block-end: calc(0.75 * var(--pf-c-login__main-footer--PaddingBottom));
+}
+
+ak-stage-identification::part(source-item) {
+    position: relative;
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 3rem;
+    padding: 0 1rem 0 0.625rem;
+
+    /*
+     * The visible label is drawn by ::after below. Zeroing the font size here
+     * hides authentik's own text node, so turning on the stage's
+     * "show source labels" option can never produce a doubled label.
+     */
+    font-size: 0;
+    color: var(--cft-text);
+    text-align: start;
+
+    background-color: var(--cft-raise);
+    border: 1px solid var(--cft-line);
+    border-radius: 0.75rem;
+    box-shadow:
+        inset 0 1px 0 rgb(255 236 209 / 0.05),
+        0 1px 2px rgb(0 0 0 / 0.4);
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+        background-color 180ms var(--cft-ease),
+        border-color 180ms var(--cft-ease),
+        transform 180ms var(--cft-ease);
+}
+
+/*
+ * Label. Parts cannot be told apart (no :first-child, no attribute selectors
+ * after ::part), but attr() resolves against each button, so one rule yields
+ * "Continue with Google" / "Continue with Plex" - already localised by
+ * authentik. PatternFly uses this same pseudo-element as an absolutely
+ * positioned border overlay; the first four declarations undo that.
+ */
+ak-stage-identification::part(source-item)::after {
+    content: attr(aria-label);
+    position: static;
+    inset: auto;
+    border: 0;
+
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: -0.006em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Trailing chevron, drawn with borders: nothing to load, nothing to block. */
+ak-stage-identification::part(source-item)::before {
+    content: "";
+    order: 2;
+    flex: none;
+    width: 0.4375rem;
+    height: 0.4375rem;
+    margin-inline-start: auto;
+    border-block-start: 1.5px solid currentColor;
+    border-inline-end: 1.5px solid currentColor;
+    opacity: 0.32;
+    transform: rotate(45deg);
+    transition:
+        opacity 180ms var(--cft-ease),
+        transform 180ms var(--cft-ease),
+        border-color 180ms var(--cft-ease);
+}
+
+/*
+ * Icons sit on a light chip. authentik inverts source icons in dark mode,
+ * which wrecks Google's colours; a chip keeps any icon legible - full colour
+ * or monochrome - without caring which theme is active.
+ */
+ak-stage-identification::part(source-icon) {
+    box-sizing: border-box;
+    flex: none;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0.3125rem;
+    object-fit: contain;
+    font-size: 1rem;
+    line-height: 1.125rem;
+    color: #1a1815;
+    background-color: var(--cft-chip);
+    border-radius: 0.5rem;
+    filter: none;
+}
+
+@media (hover: hover) {
+    ak-stage-identification::part(source-item):hover {
+        background-color: var(--cft-raise-hover);
+        border-color: var(--cft-accent-line);
+    }
+
+    ak-stage-identification::part(source-item):hover::before {
+        border-color: var(--cft-accent);
+        opacity: 1;
+        transform: translateX(0.1875rem) rotate(45deg);
+    }
+}
+
+ak-stage-identification::part(source-item):active {
+    background-color: var(--cft-raise);
+    transform: scale(0.985);
+}
+
+ak-stage-identification::part(source-item):focus-visible {
+    border-color: var(--cft-accent-line);
+    outline: 2px solid var(--cft-accent);
+    outline-offset: 2px;
+}
+
+/* 4. Every other stage ------------------------------------------------------
+ *
+ * The Plex / Google hand-off, the break-glass password stage, consent, errors.
+ * Their buttons, spinners and inputs carry no parts, so they are themed purely
+ * by re-pointing the PatternFly tokens they read, scoped to the current stage.
+ * authentik's dark mode resolves "primary" to blue on <html>; declaring it here,
+ * closer to the components, wins by inheritance.
+ */
+
+ak-flow-executor::part(challenge) {
+    /* Primary = the amber accent: filled buttons, spinners, checked controls. */
+    --pf-global--primary-color--100: var(--cft-accent);
+    --pf-global--primary-color--200: var(--cft-accent-hover);
+    --pf-global--primary-color--300: var(--cft-accent);
+    --pf-global--primary-color--light-100: var(--cft-accent);
+    --pf-global--primary-color--dark-100: var(--cft-accent);
+    --pf-global--active-color--100: var(--cft-accent);
+
+    /*
+     * PatternFly's "text on a filled button" colour. White on amber is 2.2:1;
+     * the card ink is 9:1. Body text is unaffected - it reads --Color--100,
+     * which section 2 sets explicitly.
+     */
+    --pf-global--Color--light-100: var(--cft-card);
+
+    --pf-global--link--Color: var(--cft-text);
+    --pf-global--link--Color--hover: var(--cft-accent);
+    --pf-global--BorderColor--100: var(--cft-line-strong);
+
+    /* Same 48px height and 12px radius as the source buttons. */
+    --pf-global--spacer--form-element: 0.75rem;
+    --pf-global--BorderRadius--sm: 0.75rem;
+}
+
+/* 5. Locale selector ------------------------------------------------------- */
+
+ak-flow-executor::part(locale-select) {
+    --ak-c-flow-executor__locale-select--Color: var(--cft-muted);
+    --ak-c-flow-executor__locale-select--Color--hover: var(--cft-text);
+}
+
+ak-flow-executor::part(locale-select-select):focus-visible {
+    outline: 2px solid var(--cft-accent);
+    outline-offset: 2px;
+}
+
+/* 6. Footer ---------------------------------------------------------------- */
+
+ak-brand-links::part(list-item) {
+    font-size: 0.75rem;
+    letter-spacing: 0.01em;
+    color: var(--cft-muted);
+}
+
+ak-brand-links::part(list-item-link) {
+    color: var(--cft-muted);
+    text-decoration-color: var(--cft-line-strong);
+    text-underline-offset: 0.2em;
+}
+
+ak-brand-links::part(list-item-link):hover {
+    color: var(--cft-text);
+    text-decoration-color: var(--cft-accent);
+}
+
+ak-brand-links::part(list-item)::selection,
+ak-brand-links::part(list-item-link)::selection {
+    color: var(--cft-page);
+    background-color: var(--cft-accent);
+}
+
+/* 7. Motion ---------------------------------------------------------------- */
+
+/* One entrance, from a default that is already visible if it never runs. */
+@keyframes cft-card-in {
+    from {
+        opacity: 0;
+        filter: blur(6px);
+        transform: translateY(0.625rem) scale(0.985);
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    ak-flow-executor::part(main) {
+        animation: cft-card-in 620ms var(--cft-ease) both;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ak-stage-identification::part(source-item),
+    ak-stage-identification::part(source-item)::before {
+        transition-duration: 1ms;
+    }
+}
+
+/* 8. Optional: relies on the deprecated shadow-root injection --------------
+ *
+ * The flow title <h1> carries no part. These selectors only match because
+ * authentik currently adopts this sheet inside ak-flow-card's shadow root.
+ * Size, colour, font and centring are already handled above through tokens
+ * and inheritance; this only tightens weight and tracking.
+ */
+
+.pf-c-login__main-header .pf-c-title.pf-m-3xl {
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.022em;
+    text-wrap: balance;
+}
+
+.pf-c-login__main-header .pf-c-title.pf-m-3xl::selection {
+    color: var(--cft-page);
+    background-color: var(--cft-accent);
+}
