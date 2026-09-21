@@ -25,6 +25,13 @@ spec:
 
   storage:
     replicas: 1
+    # Single replica, so an eviction is an S3 outage for every client. The
+    # descheduler's LowNodeUtilization evicted this pod 13 times in 7 days, and at
+    # 00:20 on 2026-09-20 and 00:15 on 09-21 that landed mid-upload of the nightly
+    # CNPG base backup, which failed both nights. The backup's own CPU is what tips
+    # dell1 over the 70% line, and a BestEffort pod is the first one picked.
+    podLabels:
+      descheduler.home.arpa/no-rebalance: "true"
     # LMDB is mmap'd and is NOT safe to copy while running -- a filesystem-level
     # copy of a live meta dir can restore corrupt. Garage writes its own consistent
     # snapshots into <metadata_dir>/snapshots on this interval, and kopiur backs the
