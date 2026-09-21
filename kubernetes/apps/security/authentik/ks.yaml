@@ -21,10 +21,18 @@ spec:
       namespace: external-secrets
   components:
     - ../../../../components/cnpg
+    - ../../../../components/cephfs
   postBuild:
     substitute:
       APP: *app
       GATUS_SUBDOMAIN: sso
+      # /media is mounted from global.volumeMounts, so it lands on the worker
+      # pods too -- and those run up to 3 replicas. RBD is ReadWriteOnce, so the
+      # replicas that lose the race would sit in ContainerCreating. CephFS is
+      # still Proxmox Ceph, just the RWX filesystem rather than a block device.
+      CEPHFS_CLAIM_NAME: authentik-media
+      CEPHFS_ACCESSMODES: ReadWriteMany
+      CEPHFS_CAPACITY: 1Gi
       # Split off the shared "app" role: authentik now owns its DB with its own
       # role and password (field on the authentik 1Password item). Last app off
       # the shared role — after this, "app" owns nothing and can be dropped.

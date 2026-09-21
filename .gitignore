@@ -31,3 +31,4 @@ ai-activity/*
 tmp/*
 .env
 .kube/
+.playwright-mcp

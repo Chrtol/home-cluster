@@ -35,7 +35,13 @@ spec:
       envFrom:
         - secretRef:
             name: authentik-secret
+      # ceph-csi hands over a subvolume owned by root, and authentik runs as
+      # uid/gid 1000, so without this the first upload fails with EACCES.
+      securityContext:
+        fsGroup: 1000
       volumeMounts:
+        - name: media
+          mountPath: /media
         - name: sidecar-blueprints
           mountPath: /blueprints/sidecar
         # Signing key for OIDC id_tokens, imported by authentik's certificate_discovery
@@ -61,6 +67,9 @@ spec:
           mountPath: /certs/authentik-cert-ec
           readOnly: true
       volumes:
+        - name: media
+          persistentVolumeClaim:
+            claimName: authentik-media
         - name: sidecar-blueprints
           emptyDir: {}
         - name: authentik-cert
