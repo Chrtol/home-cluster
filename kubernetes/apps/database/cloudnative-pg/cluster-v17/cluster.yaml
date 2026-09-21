@@ -48,6 +48,12 @@ spec:
       # Bind parameters are left out because these logs are shipped off the pod.
       log_min_duration_statement: "1s"
       log_parameter_max_length: "0"
+      # Setting any pg_stat_statements.* parameter is what makes CNPG preload the
+      # library; the CREATE EXTENSION in postInitSQL below does not. On 2026-09-21
+      # shared_preload_libraries was empty and the view did not exist, so there
+      # was no per-query history while JIT was costing 810 ms per login.
+      pg_stat_statements.max: "10000"
+      pg_stat_statements.track: "all"
       archive_mode: "on"
       wal_keep_size: "512MB"
       # --- Write path ---
