@@ -1,0 +1,102 @@
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: authentik-login-blueprints
+  namespace: security
+  labels:
+    goauthentik_blueprint: "1"
+data:
+  login_sources_only.yaml: |
+    version: 1
+    metadata:
+      name: login-sources-only
+      labels:
+        blueprints.goauthentik.io/description: |
+          Public login page offers Google and Plex only. Password login stays
+          reachable on a separate flow so a source outage cannot lock everyone out.
+
+    entries:
+      ## Empty user_fields drops the "Email or Username" input. Authentik only
+      ## accepts this while the stage still has at least one source attached.
+      - model: authentik_stages_identification.identificationstage
+        state: present
+        identifiers:
+          name: default-authentication-identification
+        attrs:
+          user_fields: []
+
+      ## Break-glass path: same password and TOTP stages as the default flow,
+      ## just reached by its own URL instead of from the brand's login page.
+      - model: authentik_stages_identification.identificationstage
+        state: present
+        id: break-glass-identification
+        identifiers:
+          name: break-glass-identification
+        attrs:
+          user_fields:
+            - username
+          case_insensitive_matching: true
+          pretend_user_exists: false
+
+      - model: authentik_flows.flow
+        state: present
+        id: break-glass-flow
+        identifiers:
+          slug: break-glass-authentication
+        attrs:
+          name: break-glass-authentication
+          title: Break-glass login
+          designation: authentication
+          authentication: none
+          layout: stacked
+          denied_action: message_continue
+          policy_engine_mode: any
+
+      - model: authentik_flows.flowstagebinding
+        state: present
+        identifiers:
+          target: !KeyOf break-glass-flow
+          stage: !KeyOf break-glass-identification
+          order: 10
+        attrs:
+          evaluate_on_plan: false
+          re_evaluate_policies: true
+          invalid_response_action: retry
+          policy_engine_mode: any
+
+      - model: authentik_flows.flowstagebinding
+        state: present
+        identifiers:
+          target: !KeyOf break-glass-flow
+          stage: !Find [authentik_stages_password.passwordstage, [name, default-authentication-password]]
+          order: 20
+        attrs:
+          evaluate_on_plan: false
+          re_evaluate_policies: true
+          invalid_response_action: retry
+          policy_engine_mode: any
+
+      - model: authentik_flows.flowstagebinding
+        state: present
+        identifiers:
+          target: !KeyOf break-glass-flow
+          stage: !Find [authentik_stages_authenticator_validate.authenticatorvalidatestage, [name, default-authentication-mfa-validation]]
+          order: 30
+        attrs:
+          evaluate_on_plan: false
+          re_evaluate_policies: true
+          invalid_response_action: retry
+          policy_engine_mode: any
+
+      - model: authentik_flows.flowstagebinding
+        state: present
+        identifiers:
+          target: !KeyOf break-glass-flow
+          stage: !Find [authentik_stages_user_login.userloginstage, [name, default-authentication-login]]
+          order: 100
+        attrs:
+          evaluate_on_plan: false
+          re_evaluate_policies: true
+          invalid_response_action: retry
+          policy_engine_mode: any

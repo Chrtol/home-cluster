@@ -9,5 +9,6 @@ resources:
   - ./configmap.yaml
   - ./internal-certificate.yaml
   - ./base-blueprints.yaml
+  - ./login-blueprints.yaml
   - ./referencegrant.yaml
   - ./sidecar-rbac.yaml
