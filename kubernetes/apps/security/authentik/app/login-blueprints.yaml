@@ -17,14 +17,20 @@ data:
           reachable on a separate flow so a source outage cannot lock everyone out.
 
     entries:
-      ## Empty user_fields drops the "Email or Username" input. Authentik only
-      ## accepts this while the stage still has at least one source attached.
+      ## Empty user_fields drops the "Email or Username" input. The serializer
+      ## checks user_fields against the sources in THIS payload rather than the
+      ## ones already on the stage, so both have to be listed together or it
+      ## rejects the entry. Listing them here also means this blueprint now owns
+      ## the stage's source list.
       - model: authentik_stages_identification.identificationstage
         state: present
         identifiers:
           name: default-authentication-identification
         attrs:
           user_fields: []
+          sources:
+            - !Find [authentik_sources_oauth.oauthsource, [slug, google]]
+            - !Find [authentik_sources_plex.plexsource, [slug, plex]]
 
       ## Break-glass path: same password and TOTP stages as the default flow,
       ## just reached by its own URL instead of from the brand's login page.
