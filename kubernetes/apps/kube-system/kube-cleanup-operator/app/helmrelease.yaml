@@ -16,6 +16,11 @@ spec:
         namespace: flux-system
       interval: 5m
   values:
+    # The chart defaults to a 50m cpu limit, throttled in 9.6% of periods on
+    # 2026-09-21. null is how a Helm default gets deleted rather than overridden.
+    resources:
+      limits:
+        cpu: null
     rbac:
       create: true
       global: true

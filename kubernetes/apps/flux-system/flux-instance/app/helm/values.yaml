@@ -18,6 +18,17 @@ instance:
     - notification-controller
     - image-reflector-controller
     - image-automation-controller
+  kustomize:
+    patches:
+      # Upstream ships every controller with a 1-CPU limit. kustomize-controller was
+      # throttled in 12.7% of its CFS periods on 2026-09-21, which stretches every
+      # reconcile; this repo sets cpu requests only.
+      - target:
+          kind: Deployment
+          labelSelector: app.kubernetes.io/part-of=flux
+        patch: |
+          - op: remove
+            path: /spec/template/spec/containers/0/resources/limits/cpu
   sync:
     kind: GitRepository
     url: "https://github.com/chrtol/home-cluster.git"

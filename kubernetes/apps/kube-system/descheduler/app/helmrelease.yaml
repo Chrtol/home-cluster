@@ -25,10 +25,14 @@ spec:
     kind: Deployment
     deschedulerPolicyAPIVersion: descheduler/v1alpha2
     deschedulerPolicy:
-      # Feeds LowNodeUtilization real usage from metrics-server instead of requests.
-      # Without a provider here the metricsUtilization arg below is silently inert.
-      metricsProviders:
-        - source: KubernetesMetrics
+      # LowNodeUtilization is deliberately absent. It made 516 evictions in the 7 days
+      # to 2026-09-21 and balanced nothing: it evicts on real usage, the scheduler
+      # places on requests, and dell1 (16 CPU) always has the most unrequested room
+      # next to two 6-CPU nodes, so evictees landed straight back -- loki-0 ran on
+      # dell1 for 17 of its 18 lives that week. The victims were stateful singletons
+      # (loki-0 16x, garage 13x, tempo-memcached 10x); the garage evictions also
+      # killed two nightly CNPG base backups mid-upload. Pods still carrying the
+      # descheduler.home.arpa/no-rebalance label predate this; nothing reads it now.
       profiles:
         - name: Default
           pluginConfig:
@@ -79,47 +83,6 @@ spec:
                 - RemovePodsViolatingInterPodAntiAffinity
                 - RemovePodsViolatingNodeAffinity
                 - RemovePodsViolatingNodeTaints
-        # Separate profile only so its evictor can skip pods labelled
-        # descheduler.home.arpa/no-rebalance (LowNodeUtilization has no labelSelector of
-        # its own). Three kinds of pod carry it. Node-preferring ones: evicting them off
-        # their preferred node for load lets RemovePodsViolatingNodeAffinity pull them
-        # straight back, which bounced Plex twice on 2026-09-13. Ones whose work
-        # lives in an emptyDir: sabnzbd lost in-flight downloads to three evictions
-        # 2026-09-13/14, each triggered by the CPU of the download itself. And
-        # single-replica stores other workloads stream to: evicting garage-operated
-        # killed the CNPG base backup mid-upload on 2026-09-20 and 09-21.
-        - name: Utilization
-          pluginConfig:
-            - name: DefaultEvictor
-              args:
-                evictFailedBarePods: true
-                evictLocalStoragePods: true
-                evictSystemCriticalPods: true
-                nodeFit: true
-                labelSelector:
-                  matchExpressions:
-                    - key: descheduler.home.arpa/no-rebalance
-                      operator: DoesNotExist
-            - name: LowNodeUtilization
-              namespaces:
-                exclude:
-                  - "remote"
-              args:
-                # Scores ACTUAL usage, not requests. Requests lie here by ~6GiB on dell1
-                # alone, which is what made it look full while running at 71%, and what
-                # left lenovo1 unnoticed at 88% CPU while its requests read 55%.
-                metricsUtilization:
-                  source: KubernetesMetrics
-                thresholds:
-                  cpu: 50
-                  memory: 82
-                targetThresholds:
-                  cpu: 70
-                  memory: 88
-          plugins:
-            balance:
-              enabled:
-                - LowNodeUtilization
     service:
       enabled: true
     serviceMonitor:
