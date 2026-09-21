@@ -79,3 +79,58 @@ spec:
           for: 5m
           labels:
             severity: critical
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: controller-loop.rules
+spec:
+  groups:
+    - name: controller-loop.rules
+      rules:
+        # A controller stuck rewriting the same objects. Nothing built in catches it:
+        # the API server stays healthy and the controller reports Ready. The
+        # mariadb-operator did this for months until 2026-09-21 -- 16.7 writes/s each
+        # to mariadbs, services and configmaps, 69 of the cluster's 122 API requests/s
+        # and ~0.9 cores of kube-apiserver. The busiest healthy resource that day was
+        # verticalpodautoscalers at 8.4/s sustained (Goldilocks), then pods at 5.4/s.
+        # Leases and events are excluded because they are high by design; the review
+        # resources are POSTs that write nothing.
+        - alert: KubeAPIResourceWriteRateHigh
+          annotations:
+            summary: One resource type is being written to the API server unusually fast.
+            description: >-
+              {{ $labels.resource }} has taken {{ $value | humanize }} writes/s for 2
+              hours. That is usually a controller reconciling in a loop. Find it with
+              sum by (verb, resource) (rate(apiserver_request_total[10m])): several
+              resources at an identical rate belong to the same controller.
+          expr: |
+            sum by (resource) (
+              rate(apiserver_request_total{verb=~"POST|PUT|PATCH|DELETE", resource!~"leases|events|tokenreviews|subjectaccessreviews|selfsubjectaccessreviews|selfsubjectrulesreviews"}[30m])
+            )
+              > 12
+          for: 2h
+          labels:
+            severity: warning
+        # Names the controller, which the rule above cannot, but only sees controllers
+        # that export controller-runtime metrics (9 on 2026-09-21; mariadb-operator is
+        # no longer one of them). Every one of those sat at 0 errors/s that day while
+        # the mariadb loop ran at 4.6/s. controller-runtime only backs off error
+        # retries, so a controller whose failing pass still writes to its own object
+        # re-triggers itself through the watch and never slows down.
+        - alert: ControllerReconcileErrorLoop
+          annotations:
+            summary: A controller is failing every reconcile without backing off.
+            description: >-
+              Controller {{ $labels.controller }} in {{ $labels.namespace }} has failed
+              {{ $value | humanize }} reconciles/s for an hour. Its log will be repeating
+              one error.
+          expr: |
+            sum by (namespace, controller) (
+              rate(controller_runtime_reconcile_errors_total[15m])
+            )
+              > 0.5
+          for: 1h
+          labels:
+            severity: warning
