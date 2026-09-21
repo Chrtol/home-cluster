@@ -68,6 +68,19 @@ is_allowed() { # <file> <key>
   return 1
 }
 
+# One walk of the range, annotating every added line with its commit and file,
+# rather than re-running git once per secret.
+added=""
+if [[ "$mode" == push ]]; then
+  added=$(
+    git log -p --no-color --format='commit %h' ${range[@]+"${range[@]}"} \
+      | awk '/^commit /      { c = $2 }
+             /^\+\+\+ b\//    { f = substr($0, 7) }
+             /^\+/ && !/^\+\+\+/ { print c "\t" f "\t" substr($0, 2) }'
+  )
+  [[ -z "$added" ]] && { echo "scan-secret-leaks: no added lines in range"; exit 0; }
+fi
+
 declare -a staged=()
 if [[ "$mode" == staged ]]; then
   mapfile -t staged < <(git diff --cached --name-only --diff-filter=ACMR)
@@ -77,15 +90,17 @@ fi
 # --cached reads the index, so it sees exactly what the commit will contain --
 # not the working tree, which may hold unstaged fixes that mask a leak.
 #
-# push uses the pickaxe over just the outgoing range: a value introduced and
-# then removed within those commits still counts, since pushing publishes the
-# blob either way. Scanning full history instead would block every push, this
-# repo having carried the domain since 2025-05.
+# push looks at added lines only, per commit in the outgoing range. The pickaxe
+# was wrong here: it flags any commit where the occurrence count *changed*, so
+# the commit that REMOVES a leak got blocked alongside the one that added it --
+# the guard refusing to let its own remediation through. Scanning added lines
+# per commit still catches a value introduced and then removed inside the range
+# (the blob ships either way), while a pure removal is correctly silent.
 search() {
   case "$mode" in
     staged)  git grep --cached -I -n --no-color -F -e "$1" -- ${staged[@]+"${staged[@]}"} || true ;;
     tree)    git grep -I -n --no-color -F -e "$1" -- . || true ;;
-    push)    git log --oneline -S"$1" ${range[@]+"${range[@]}"} || true ;;
+    push)    grep -F -- "$1" <<<"$added" || true ;;
     history) git log --all --oneline -S"$1" || true ;;
     *) echo "scan-secret-leaks: unknown mode '$mode' (staged|push|tree|history)" >&2; exit 2 ;;
   esac
@@ -100,7 +115,10 @@ for pair in ${pairs[@]+"${pairs[@]}"}; do
 
   while IFS= read -r hit; do
     [[ -z "$hit" ]] && continue
-    if [[ "$mode" == history || "$mode" == push ]]; then
+    if [[ "$mode" == push ]]; then
+      location="commit ${hit%%$'\t'*} $(cut -f2 <<<"$hit")"
+      file="$(cut -f2 <<<"$hit")"
+    elif [[ "$mode" == history ]]; then
       location="commit ${hit%% *}"
       file=""
     else
