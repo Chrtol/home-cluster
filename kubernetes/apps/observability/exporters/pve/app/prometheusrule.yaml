@@ -94,9 +94,9 @@ spec:
     #
     # Replaces CephClusterUnhealthy (2026-08-04), which alerted on ceph_health_status
     # != 0 — a single scalar summarising every health check at once. That is why it was
-    # unmutable: the cluster has sat at HEALTH_WARN continuously (312h firing out of the
-    # last 14d) for one accepted reason, and there was no way to accept it without
-    # blinding the alert to everything else.
+    # unmutable: the cluster sat at HEALTH_WARN continuously (312h firing out of 14d)
+    # for one accepted reason, a failing disk since replaced, and there was no way to
+    # accept it without blinding the alert to everything else.
     #
     # ceph_health_detail{name="<CHECK>"} is the per-check version of the same data — one
     # series per named check, 1 while active. Alerting on that makes individual checks
@@ -107,24 +107,16 @@ spec:
         # THE MUTE LIST. Single source of truth — every ceph-health alert below is built
         # on this series, so a check named here is silenced everywhere at once.
         #
-        #   BLUESTORE_SLOW_OP_ALERT — a known-slow OSD that cannot be replaced right now
-        #     (accepted 2026-08-04). This is the sole reason the cluster reports WARN.
-        #     The culprit is osd.1 on lenovo1 — sda, Samsung SSD 850 PRO 256GB — which
-        #     peaked at 11387ms apply latency over the last 7d against 18-33ms for the
-        #     two Kingston NVMe OSDs on dell1/lenovo2. Delete this entry once it is
-        #     replaced.
-        #     Caveat worth knowing: the check carries no OSD label, so muting it also
-        #     hides slow ops on the other two OSDs. Escalation is still covered — SLOW_OPS,
-        #     OSD_SLOW_PING_TIME_* and DB_DEVICE_STALLED_READ_ALERT stay live, and
-        #     CephClusterError catches anything that reaches HEALTH_ERR. A per-OSD
-        #     latency alert on ceph_osd_apply_latency_ms (see below) would close the gap
-        #     properly by letting osd.1 be excluded by name.
         #   OSD_DOWN — not muted, just already owned by CephOSDDown below, which names
         #     the specific daemon. Listing it here prevents a duplicate notification.
+        #
+        # BLUESTORE_SLOW_OP_ALERT was muted here from 2026-08-04 for a failing osd.1
+        # disk. That disk was replaced on 2026-09-05 and the check has not fired since,
+        # so it alerts again. Nothing is muted at the moment.
         - record: ceph:health_check:actionable
           expr: |
             max by (name, namespace, instance) (
-              ceph_health_detail{name!~"BLUESTORE_SLOW_OP_ALERT|OSD_DOWN"} == 1
+              ceph_health_detail{name!~"OSD_DOWN"} == 1
             )
 
         # Checks that mean data is unavailable or redundancy is gone. Everything else
@@ -151,8 +143,7 @@ spec:
             description: "Ceph raised {{ $labels.name }}. Run `ceph health detail` on a Proxmox node for the specifics."
 
         # Kept blunt and unmuted on purpose. HEALTH_ERR is never something this cluster
-        # sits at, and no muted check can produce it — BLUESTORE_SLOW_OP_ALERT is a
-        # HEALTH_WARN check. This is the backstop for a check name nothing above knows.
+        # sits at. This is the backstop for a check name nothing above knows.
         - alert: CephClusterError
           expr: ceph_health_status == 2
           for: 2m
@@ -216,13 +207,11 @@ spec:
         # returning nothing. That regex was simply wrong: the metrics exist under
         # different names — ceph_osd_apply_latency_ms and ceph_osd_commit_latency_ms,
         # both per-OSD and both joinable to a host via ceph_osd_metadata. They are what
-        # identified osd.1/lenovo1 as the slow disk above.
+        # identified osd.1/lenovo1 as the failing disk that was replaced on 2026-09-05.
         #
-        # No alert is written on them yet: osd.1 idles at ~19ms against ~5ms for the
-        # NVMe OSDs, so a fleet-wide threshold would just re-fire the thing that was
-        # muted. The useful shape is per-OSD with osd.1 excluded by name, e.g.
-        #   avg_over_time(ceph_osd_apply_latency_ms{ceph_daemon!="osd.1"}[30m]) > 100
-        # Worth adding once there is a baseline for what "normal" looks like here.
+        # No alert is written on them yet. With that disk gone a fleet-wide threshold
+        # is now viable: 7d average commit latency on 2026-09-21 was 0.05 ms (osd.1),
+        # 4.95 ms (osd.0) and 6.26 ms (osd.2), with one 108 ms spike on osd.2.
 
     - name: ceph-capacity
       rules:

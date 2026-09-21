@@ -40,22 +40,31 @@ spec:
       # mis-estimates from never-analyzed tables: authentik's login page spent
       # 810 ms compiling a query that ran in 0.2 ms, on every render.
       jit: "off"
+      # Every OSD is an SSD (5-6 ms commit latency over the network), but the
+      # defaults of 4 and 1 describe a spinning disk and push the planner toward
+      # sequential scans.
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      # Bind parameters are left out because these logs are shipped off the pod.
+      log_min_duration_statement: "1s"
+      log_parameter_max_length: "0"
       archive_mode: "on"
       wal_keep_size: "512MB"
-      # --- Tuned for high-latency Ceph backing (one slow SATA-SSD OSD ~46ms) ---
-      # Fewer, larger checkpoints so data-file write bursts hit the slow disk
-      # less often (default 1GB caused checkpoints every few minutes).
+      # --- Write path ---
+      # Chosen when osd.1 was a failing Samsung 850 PRO with ~46 ms fsync. That disk
+      # was replaced on 2026-09-05 and the OSDs now commit in 0.05-6 ms; the values
+      # stay because none of them costs anything on a fast disk.
+      #
+      # Fewer, larger checkpoints (the 1GB default caused one every few minutes).
       max_wal_size: "8GB"
       min_wal_size: "2GB"
       # Spread checkpoint writes across 90% of the interval instead of bursting.
       checkpoint_completion_target: "0.9"
       checkpoint_timeout: "30min"
-      # Larger WAL buffer eliminates mid-transaction WAL flushes to the slow disk
-      # (pg_stat_wal.wal_buffers_full was in the millions with the ~16MB default).
+      # pg_stat_wal.wal_buffers_full was in the millions with the ~16MB default.
       wal_buffers: "128MB"
-      # Group concurrent commits into a single fsync (commit_delay in microseconds).
-      # On a 46ms-fsync disk this batches many commits per flush, trading <2ms of
-      # latency for a large drop in fsync count.
+      # Group commit, in microseconds. Only engages with 5+ transactions in flight,
+      # which this cluster rarely reaches.
       commit_delay: "2000"
       commit_siblings: "5"
       # Spread background writer load so dirty pages trickle out between checkpoints.
@@ -106,11 +115,14 @@ spec:
   backup:
     retentionPolicy: 7d
     barmanObjectStore: &barmanObjectStore
+      # snappy, not bzip2: compression runs on the primary for every WAL segment,
+      # and bzip2 is the most CPU-expensive codec barman offers. Older bzip2 objects
+      # stay restorable -- barman picks the codec per object.
       data:
-        compression: bzip2
+        compression: snappy
       # WAL archiving re-enabled with Garage S3 support
       wal:
-        compression: bzip2
+        compression: snappy
         maxParallel: 2
       destinationPath: s3://postgres-wal/
       # Cutover to the operator-managed cluster (garage-operated), internal svc DNS --
