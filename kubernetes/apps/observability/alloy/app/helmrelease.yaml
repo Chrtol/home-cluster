@@ -24,9 +24,18 @@ spec:
         dockercontainers: false
       configMap:
         content: |-
-          // Discover every pod in the cluster.
+          // Only the pods on this Alloy pod's own node. Without the selector all
+          // three DaemonSet pods discovered every pod in the cluster, so each
+          // container's log was followed three times: 1035 streams for 337
+          // containers on 2026-09-21. A followed stream makes the kubelet poll CRI
+          // ContainerStatus about once a second, which cost dell1 ~700 calls/s and
+          // roughly 1.9 cores of containerd + kubelet CPU.
           discovery.kubernetes "pods" {
             role = "pod"
+            selectors {
+              role  = "pod"
+              field = "spec.nodeName=" + sys.env("K8S_NODE_NAME")
+            }
           }
 
           // Port of Promtail's default kubernetes-pods scrape_config relabel rules,
