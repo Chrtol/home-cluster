@@ -135,11 +135,16 @@ spec:
         serviceMonitorSelectorNilUsesHelmValues: false
         retention: 14d
         retentionSize: 50GB
+        # Request covers RSS (~1.9Gi peak); the limit above it is page cache for TSDB
+        # blocks. At 2000Mi limit there was ~0.3Gi of cache for 22GB of blocks, so
+        # long-range queries re-read the RBD every evaluation. Without an explicit
+        # memory request, Kubernetes defaults it to the limit.
         resources:
           requests:
             cpu: 100m
-          limits:
             memory: 2000Mi
+          limits:
+            memory: 3Gi
         # Increase probe tolerance for large TSDB (17GB+)
         # Prometheus returns 503 while loading, needs time to become ready
         startupProbe:

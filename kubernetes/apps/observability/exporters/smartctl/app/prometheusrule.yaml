@@ -80,44 +80,6 @@ spec:
             summary: "No SATA SSD wear attribute is being published"
             description: "SataWearHigh matches neither attr 173 nor 177 anywhere in the fleet, so SATA SSD wear is unmonitored. A replaced disk probably reports wear under a different attribute id - run `smartctl -A` on it and add the id to both expressions."
 
-        # HDD sector health (the NAS Seagate/HGST drives). Spinning disks fail via bad
-        # sectors, not wear-levelling, so none of the SSD rules above cover them: attr 5
-        # Reallocated_Sector_Ct, 197 Current_Pending_Sector, 198 Offline_Uncorrectable and
-        # 187 Reported_Uncorrect all count reallocations/unreadable sectors, and the RAW
-        # value IS the count.
-        #
-        # 5 and 187 are lifetime counters that never decrease, so `> 0` paged every 12h
-        # forever: nas:sdc logged one Reported_Uncorrect on 2026-09-12, then passed a scrub
-        # and an extended self-test. They alert only when the value rises above the
-        # previous week's max (offset 1d, so the alert holds ~1 day after a rise, then
-        # resolves). 197/198 are CURRENT state - still-unresolved sectors - and drop back
-        # when the drive remaps or rewrites them, so any nonzero still alerts.
-        #
-        # The lookback needs 8d of history (retention is 14d). A series younger than 1d
-        # has no right-hand side, so a newly installed disk with nonzero 5/187 stays quiet.
-        #
-        # Regex matchers tolerate drives that omit an attribute: the HGST HUH721212 (sdd)
-        # does not expose 187, and this simply never matches it rather than erroring. NVMe
-        # carries no attribute_id 5/197/198, so there are no false matches there.
-        # smart_status still trips DiskSmartFailed on collapse.
-        - alert: HddSectorErrors
-          expr: |
-            (
-              smartctl_device_attribute{attribute_id=~"5|187",attribute_value_type="raw",job="smartctl"}
-                > max_over_time(smartctl_device_attribute{attribute_id=~"5|187",attribute_value_type="raw",job="smartctl"}[7d] offset 1d)
-            )
-            or
-            (
-              smartctl_device_attribute{attribute_id=~"197|198",attribute_value_type="raw",job="smartctl"} > 0
-            )
-          for: 15m
-          labels:
-            severity: warning
-            component: smartctl
-          annotations:
-            summary: "{{ $labels.attribute_name }} = {{ $value }} on {{ $labels.node }} {{ $labels.device }}"
-            description: "{{ $labels.device }} on {{ $labels.node }} reports {{ $value }} for {{ $labels.attribute_name }} (increased, or pending/uncorrectable sectors present). Reallocated/pending/uncorrectable sectors predict HDD failure - run `smartctl -a` and plan a replacement."
-
         # NVMe spare blocks. available_spare and available_spare_threshold are both percent
         # (0-100); comparing the two series is self-documenting and survives a drive that
         # reports a threshold other than the usual 10. Fires when the NVMe crosses its own
@@ -131,19 +93,6 @@ spec:
           annotations:
             summary: "NVMe spare area low on {{ $labels.node }} {{ $labels.device }}"
             description: "{{ $labels.device }} on {{ $labels.node }} has dropped below its spare-block failure threshold. Replace now."
-
-        # New uncorrectable media errors (data unrecoverable even with ECC/retries). The
-        # counter is cumulative, so a nonzero total from years ago would fire forever -
-        # alert on the RATE, which resolves once errors stop appearing. Currently 0.
-        - alert: DiskMediaErrors
-          expr: increase(smartctl_device_media_errors{job="smartctl"}[24h]) > 0
-          for: 5m
-          labels:
-            severity: critical
-            component: smartctl
-          annotations:
-            summary: "New media errors on {{ $labels.node }} {{ $labels.device }}"
-            description: "{{ $labels.device }} on {{ $labels.node }} logged {{ $value | printf \"%.0f\" }} new uncorrectable media error(s) in 24h."
 
         # smartctl's own exit status is a bitmask, and only bits 0-5 (values 1-32) are
         # faults: open failed, SMART command failed, DISK FAILING, prefail attribute below
@@ -206,3 +155,62 @@ spec:
           annotations:
             summary: "smartctl-exporter is publishing no metrics"
             description: "smartctl_device_smart_status has disappeared from all three Proxmox hosts - every SMART alert is now inert."
+
+    # Rules with day-scale range selectors. At a 1m interval these two took 15s and 8s
+    # per evaluation (2026-09-24): each one re-reads days of chunks from the RBD, because
+    # Prometheus has no page cache to spare. That kept NodeDiskIOSaturation firing for
+    # the Prometheus volume. The SMART counters they read change a few times per drive
+    # lifetime, so 15m costs little detection time. There is no `for:`: the counters only
+    # rise, so one evaluation seeing a rise is enough, and `for: 15m` would add another
+    # full interval.
+    - name: smartctl-slow
+      interval: 15m
+      rules:
+        # HDD sector health (the NAS Seagate/HGST drives). Spinning disks fail via bad
+        # sectors, not wear-levelling, so none of the SSD rules above cover them: attr 5
+        # Reallocated_Sector_Ct, 197 Current_Pending_Sector, 198 Offline_Uncorrectable and
+        # 187 Reported_Uncorrect all count reallocations/unreadable sectors, and the RAW
+        # value IS the count.
+        #
+        # 5 and 187 are lifetime counters that never decrease, so `> 0` paged every 12h
+        # forever: nas:sdc logged one Reported_Uncorrect on 2026-09-12, then passed a scrub
+        # and an extended self-test. They alert only when the value rises above the
+        # previous week's max (offset 1d, so the alert holds ~1 day after a rise, then
+        # resolves). 197/198 are CURRENT state - still-unresolved sectors - and drop back
+        # when the drive remaps or rewrites them, so any nonzero still alerts.
+        #
+        # The lookback needs 8d of history (retention is 14d). A series younger than 1d
+        # has no right-hand side, so a newly installed disk with nonzero 5/187 stays quiet.
+        #
+        # Regex matchers tolerate drives that omit an attribute: the HGST HUH721212 (sdd)
+        # does not expose 187, and this simply never matches it rather than erroring. NVMe
+        # carries no attribute_id 5/197/198, so there are no false matches there.
+        # smart_status still trips DiskSmartFailed on collapse.
+        - alert: HddSectorErrors
+          expr: |
+            (
+              smartctl_device_attribute{attribute_id=~"5|187",attribute_value_type="raw",job="smartctl"}
+                > max_over_time(smartctl_device_attribute{attribute_id=~"5|187",attribute_value_type="raw",job="smartctl"}[7d] offset 1d)
+            )
+            or
+            (
+              smartctl_device_attribute{attribute_id=~"197|198",attribute_value_type="raw",job="smartctl"} > 0
+            )
+          labels:
+            severity: warning
+            component: smartctl
+          annotations:
+            summary: "{{ $labels.attribute_name }} = {{ $value }} on {{ $labels.node }} {{ $labels.device }}"
+            description: "{{ $labels.device }} on {{ $labels.node }} reports {{ $value }} for {{ $labels.attribute_name }} (increased, or pending/uncorrectable sectors present). Reallocated/pending/uncorrectable sectors predict HDD failure - run `smartctl -a` and plan a replacement."
+
+        # New uncorrectable media errors (data unrecoverable even with ECC/retries). The
+        # counter is cumulative, so a nonzero total from years ago would fire forever -
+        # alert on the RATE, which resolves once errors stop appearing. Currently 0.
+        - alert: DiskMediaErrors
+          expr: increase(smartctl_device_media_errors{job="smartctl"}[24h]) > 0
+          labels:
+            severity: critical
+            component: smartctl
+          annotations:
+            summary: "New media errors on {{ $labels.node }} {{ $labels.device }}"
+            description: "{{ $labels.device }} on {{ $labels.node }} logged {{ $value | printf \"%.0f\" }} new uncorrectable media error(s) in 24h."
