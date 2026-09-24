@@ -21,6 +21,8 @@ spec:
       namespace: ceph-csi-rbd
     - name: external-secrets
       namespace: external-secrets
+  components:
+    - ../../../../components/ceph-rbd
   wait: false
   interval: 30m
   retryInterval: 1m

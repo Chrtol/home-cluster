@@ -67,9 +67,8 @@ spec:
           - backendRefs:
               - identifier: app
                 port: http
-    # persistence:
-    #   config:
-    #     enabled: true
-    #     existingClaim: *app
-    #     globalMounts:
-    #       - path: /var/lib/pgadmin
+    persistence:
+      config:
+        existingClaim: *app
+        globalMounts:
+          - path: /var/lib/pgadmin
