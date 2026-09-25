@@ -222,6 +222,16 @@ spec:
                   secretKeyRef:
                     name: reptile-tracker-secret
                     key: oidc-discovery-url
+              VAPID_PRIVATE_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: reptile-tracker-secret
+                    key: VAPID_PRIVATE_KEY
+              VAPID_SUBJECT:
+                valueFrom:
+                  secretKeyRef:
+                    name: reptile-tracker-secret
+                    key: VAPID_SUBJECT
               OIDC_REDIRECT_URI: "https://reptile-tracker.${SECRET_DOMAIN}/auth/callback"
               FRONTEND_URL: "https://reptile-tracker.${SECRET_DOMAIN}"
               WEBHOOK_URL: ""
