@@ -23,7 +23,7 @@ spec:
               # and ships a single rolling "latest" tag, so the digest is the
               # actual pin here. The manifest list covers amd64/arm64/arm/386.
               repository: docker.io/dadoum/anisette-v3-server
-              tag: latest@sha256:1e20384985d3c49965f444bef39d627768dacc39ea0dca91f2a535edb7591ba3
+              tag: latest@sha256:cc149fd7e0b91ee73e22278c3d2e6571bdc8464491d66eb45cd239266f4dcdc9
             env:
               TZ: ${SECRET_TIMEZONE}
             securityContext:
