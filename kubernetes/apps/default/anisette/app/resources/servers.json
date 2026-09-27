@@ -1,0 +1,5 @@
+{
+  "servers": [
+    { "name": "cf-homelab", "address": "https://anisette.${SECRET_DOMAIN}" }
+  ]
+}

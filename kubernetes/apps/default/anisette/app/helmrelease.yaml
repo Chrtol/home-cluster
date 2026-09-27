@@ -67,6 +67,24 @@ spec:
                   failureThreshold: 6
               readiness: *probe
 
+          # SideStore takes a URL to a server *list*, not a server, and
+          # anisette-v3 has no static-file handler -- so this serves
+          # /servers.json alongside it on the same hostname.
+          servers:
+            image:
+              repository: docker.io/nginxinc/nginx-unprivileged
+              tag: 1.31-alpine
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 5m
+                memory: 16Mi
+              limits:
+                memory: 64Mi
+
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
@@ -82,6 +100,8 @@ spec:
         ports:
           http:
             port: *port
+          servers:
+            port: &serversPort 8080
 
     route:
       internal:
@@ -96,6 +116,13 @@ spec:
             namespace: network
             sectionName: https
         rules:
+          - matches:
+              - path:
+                  type: Exact
+                  value: /servers.json
+            backendRefs:
+              - identifier: app
+                port: *serversPort
           - backendRefs:
               - identifier: app
                 port: *port
@@ -116,3 +143,19 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /opt/anisette-v3
+      servers-json:
+        type: configMap
+        name: anisette-servers
+        advancedMounts:
+          anisette:
+            servers:
+              - path: /usr/share/nginx/html/servers.json
+                subPath: servers.json
+                readOnly: true
+      # nginx writes its pid and client/proxy temp dirs here.
+      servers-tmp:
+        type: emptyDir
+        advancedMounts:
+          anisette:
+            servers:
+              - path: /tmp
