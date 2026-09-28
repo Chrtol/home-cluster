@@ -194,18 +194,6 @@ spec:
         existingClaim: nas-frigate
         globalMounts:
           - path: /media/frigate
-      # Previews and review thumbnails: thousands of small files the timeline loads
-      # while scrolling, which is the slow case on NFS. Mounted over the NAS at a
-      # deeper path, so it wins; the old NAS clips/ folder is shadowed, not deleted.
-      # Chart-managed and not backed up -- with detect and snapshots off, all of it
-      # is regenerated from recordings.
-      clips:
-        type: persistentVolumeClaim
-        storageClass: csi-rbd-sc
-        accessMode: ReadWriteOnce
-        size: 10Gi
-        globalMounts:
-          - path: /media/frigate/clips
       # Frigate's frame buffers plus the generated go2rtc.yaml. Two 640x360 detect
       # streams need ~12 MB; the rest is slack.
       dev-shm:
