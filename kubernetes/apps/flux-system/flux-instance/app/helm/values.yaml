@@ -8,7 +8,7 @@ instance:
       goldilocks.fairwinds.com/enabled: "true"
   distribution:
     # renovate: datasource=github-releases depName=controlplaneio-fluxcd/distribution
-    version: 2.9.5
+    version: 2.9.6
   cluster:
     networkPolicy: false
   components:
