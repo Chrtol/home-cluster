@@ -40,6 +40,22 @@ This is a Kubernetes home cluster deployment based on the onedr0p/cluster-templa
 - All nodes are configured as both controllers and workers
 - Uses external-dns to manage Cloudflare (external) and AdGuard Home on OPNSense (internal) DNS records
 
+## Tokens: context-mode and memini
+
+- Big output never goes straight into the conversation: `kubectl get -o yaml/json`, `kubectl logs`,
+  `flux build ks`, `kustomize build`, `helm template`, `talosctl logs/dmesg`, recursive greps over
+  `kubernetes/`, and long files go through context-mode (`ctx_batch_execute`, `ctx_execute`,
+  `ctx_search`) and print only the answer. Narrow flux-operator MCP calls with `fields`, `grep`, `since`.
+  A Bash hook (`.claude/hooks/ctx-guard.sh`) refuses the usual offenders. A refusal means switch to
+  context-mode, never work around it (no wrapper scripts). A `CTX_OK=1` prefix asks the owner; it is
+  not a self-service bypass.
+- memini: the session-start hook injects the briefing; call `memory_briefing` only when no
+  `<memini-context>` block arrived. `memory_recall` before re-deriving an earlier diagnosis.
+  Always pass `tier` (without it a save expires in 72h): decisions and root causes `semantic`,
+  how-tos `procedural`. Set `metadata.category` and tag the app name.
+- Standing rules and working agreements stay in file memory (MEMORY.md); app and incident facts go
+  to memini.
+
 ## Memory
 
 - Always remember I am using FluxCD and kustomizations
