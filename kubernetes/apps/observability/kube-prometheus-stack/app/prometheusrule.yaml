@@ -84,6 +84,37 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
+  name: etcd-peer.rules
+spec:
+  groups:
+    - name: etcd-peer.rules
+      rules:
+        # Replaces the built-in etcdMemberCommunicationSlow, disabled in the
+        # HelmRelease. sabnzbd and qbittorrent downloads saturate their node's NIC and
+        # push peer RTT past 0.15s for 8-26 minutes (22 bursts 2026-09-23 to 10-07), so
+        # the built-in 10m hold paged on every one while quorum stayed healthy. A
+        # sustained slow link means a failing NIC, cable or node. Lost quorum is
+        # caught sooner by the built-in etcdMembersDown, etcdNoLeader and
+        # etcdHighNumberOfLeaderChanges.
+        - alert: EtcdMemberCommunicationSlowSustained
+          annotations:
+            summary: etcd peer link has been slow for 45 minutes.
+            description: >-
+              p99 round trip from {{ $labels.instance }} to member {{ $labels.To }} is
+              {{ $value | humanizeDuration }}. instance is the reporting member; the slow
+              node is the one common to every firing To/instance pair. Check that
+              node's network throughput first.
+          expr: |
+            histogram_quantile(0.99, rate(etcd_network_peer_round_trip_time_seconds_bucket{job=~".*etcd.*"}[5m]))
+              > 0.15
+          for: 45m
+          labels:
+            severity: warning
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
   name: controller-loop.rules
 spec:
   groups:

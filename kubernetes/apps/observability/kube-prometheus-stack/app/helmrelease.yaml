@@ -60,6 +60,9 @@ spec:
         # reconnect reads as 100% failed. Replaced by EtcdHighFailedUnaryRequests in
         # ./prometheusrule.yaml.
         etcdHighNumberOfFailedGRPCRequests: true
+        # Fires on every line-rate download: etcd peer traffic shares the node NIC.
+        # Replaced by EtcdMemberCommunicationSlowSustained in ./prometheusrule.yaml.
+        etcdMemberCommunicationSlow: true
       rules:
         kubeApiserverAvailability: false
         kubeApiserverBurnrate: false
