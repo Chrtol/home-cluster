@@ -84,6 +84,11 @@ spec:
                   secretKeyRef:
                     name: reptile-tracker-secret
                     key: VAPID_SUBJECT
+              ADMIN_EMAILS:
+                valueFrom:
+                  secretKeyRef:
+                    name: reptile-tracker-secret
+                    key: ADMIN_EMAILS
               OIDC_REDIRECT_URI: "https://reptile-tracker.${SECRET_DOMAIN}/auth/callback"
               FRONTEND_URL: "https://reptile-tracker.${SECRET_DOMAIN}"
               WEBHOOK_URL: ""
