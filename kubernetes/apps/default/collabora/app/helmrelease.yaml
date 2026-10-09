@@ -19,7 +19,7 @@ spec:
           app:
             image:
               repository: docker.io/collabora/code
-              tag: 26.04.4.1.1@sha256:1efda3043e8b9cb437d1b6c6efe20cc3753760e634de012b8dac391da488bf97
+              tag: 26.04.5.1.1@sha256:bb8f3c9c5c9016045f25fccb5f0649be94469ebc7c7cc379f3576e470cccf33d
             env:
               TZ: ${SECRET_TIMEZONE}
               # ssl.termination does more than TLS: it makes the discovery document
