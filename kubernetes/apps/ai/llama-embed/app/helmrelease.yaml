@@ -66,7 +66,7 @@ spec:
           app:
             image:
               repository: ghcr.io/ggml-org/llama.cpp
-              tag: server@sha256:9116e6ed0f288247a9daaa610a3a30c061af2b1d6ee8c9acc0d402b65ec87c29
+              tag: server@sha256:bf3da52e92c083472b3d1c9f9da081f423ab9def95a87ec4bba51940382d75fd
             args:
               - --model
               - /models/Qwen3-Embedding-0.6B-Q8_0.gguf
