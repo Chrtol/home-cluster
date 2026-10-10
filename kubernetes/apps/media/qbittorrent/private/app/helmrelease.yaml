@@ -209,7 +209,7 @@ spec:
               # docker.io/alpine/curl — same utility image used by the opnsense/
               # hetzner exporters. Ships curl + BusyBox sh (no jq needed here).
               repository: docker.io/alpine/curl
-              tag: 8.22.0@sha256:d7720f8cffb47e7a80d01fb2c1b38562fab0e436948537e9b77dc312d29d12d6
+              tag: 8.22.0@sha256:e17bf3bdfef2efda277af9b73149ece806d30354b3eebd002555f66a8cabb357
             command:
               - /bin/sh
               - /scripts/port-watchdog.sh
@@ -245,7 +245,7 @@ spec:
           dyn-ip:
             image:
               repository: docker.io/alpine/curl
-              tag: 8.22.0@sha256:d7720f8cffb47e7a80d01fb2c1b38562fab0e436948537e9b77dc312d29d12d6
+              tag: 8.22.0@sha256:e17bf3bdfef2efda277af9b73149ece806d30354b3eebd002555f66a8cabb357
             command:
               - /bin/sh
               - /scripts/dyn-ip.sh
