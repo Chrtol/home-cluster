@@ -29,7 +29,7 @@ spec:
           app:
             image:
               repository: ghcr.io/homeassistant-ai/ha-mcp
-              tag: 8.4.3@sha256:d5cea47a0115e5d161c2b319ee637b1b0a5bcfafe1597cb490299bbbc6329456
+              tag: 8.7.0@sha256:600677bbd7574dfb59682e40d6945f73fcc8852d3684b3671506602473942448
             # ha-mcp-oidc, NOT the ha-mcp-web default. Standard web mode
             # authenticates purely by URL-path secrecy (MCP_SECRET_PATH), which on
             # a routed hostname means a token with full control of the house sits
