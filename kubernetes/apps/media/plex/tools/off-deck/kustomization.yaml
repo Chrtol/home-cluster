@@ -5,3 +5,9 @@ kind: Kustomization
 resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
+configMapGenerator:
+  - name: plex-off-deck-script
+    files:
+      - ./resources/continue_watching.py
+generatorOptions:
+  disableNameSuffixHash: true
