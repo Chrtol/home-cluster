@@ -39,7 +39,7 @@ spec:
           download-model:
             image:
               repository: docker.io/curlimages/curl
-              tag: 8.22.0
+              tag: 8.23.0
             command: ["/bin/sh", "-c"]
             args:
               - |
