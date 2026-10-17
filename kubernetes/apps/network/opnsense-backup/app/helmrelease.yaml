@@ -36,7 +36,7 @@ spec:
           app:
             image:
               repository: docker.io/alpine/curl
-              tag: 8.22.0@sha256:d7720f8cffb47e7a80d01fb2c1b38562fab0e436948537e9b77dc312d29d12d6
+              tag: 8.22.0@sha256:ba0b29b383a3f387587b24a058c55f103b71733263faecd5ebd0d51f1f4c0014
             command:
               - /bin/sh
               - -c
