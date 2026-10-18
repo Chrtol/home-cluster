@@ -355,7 +355,8 @@
       matchStrings: [
         // Split an optional @sha256 digest out of the value so docker versioning can
         // parse the tag (a combined "tag@sha256:..." currentValue is silently skipped).
-        'datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( repository=(?<registryUrl>\\S+))?\\n.+(:\\s|=)(&\\S+\\s)?(?<currentValue>[^@\\s]+)(@(?<currentDigest>sha256:[a-f0-9]+))?',
+        // Likewise skip an inline "registry/image:" prefix (e.g. CNPG's imageName field).
+        'datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( repository=(?<registryUrl>\\S+))?\\n.+(:\\s|=)(&\\S+\\s)?([^\\s:@]+/[^\\s:@]+:)?(?<currentValue>[^@\\s]+)(@(?<currentDigest>sha256:[a-f0-9]+))?',
         'datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n.+/(?<currentValue>(v|\\d)[^/]+)',
       ],
       datasourceTemplate: '{{#if datasource}}{{{datasource}}}{{else}}github-releases{{/if}}',
