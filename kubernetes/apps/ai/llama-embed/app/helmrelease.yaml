@@ -95,16 +95,14 @@ spec:
               - "4096"
               - --threads
               - "4"
-              # Pin the slot count. Without this llama-server defaults to 4
-              # slots and allocates n_ctx_slot of KV for EACH -- 4 x 4096 =
-              # 16384 tokens, ~1.9GB, which OOMKilled the pod at a 3Gi limit
-              # on 2026-09-11. Memini never sends more than
-              # MEMINI_EMBED_MAX_CONCURRENCY (2) concurrent embed requests, so
-              # the other two slots were pure cost. Keep these two numbers in
-              # step: raising memini's concurrency without raising this will
-              # queue requests, and raising this without more memory will OOM.
+              # --ctx-size is shared across slots, so each request gets
+              # ctx-size / parallel tokens. At 2 slots that was 2048, below the
+              # 4096 memini's MEMINI_EMBED_MAX_ITEM_CHARS is sized for, and long
+              # memories failed with "exceeds the available context size".
+              # memini's second concurrent request now queues instead. Without
+              # this flag llama-server defaults to 4 slots.
               - --parallel
-              - "2"
+              - "1"
               # THE bound on this container's memory growth. llama-server keeps a
               # prompt cache in host RAM whose ceiling is --cache-ram, and that
               # ceiling DEFAULTS TO 8192 MiB -- nearly double the memory limit
@@ -204,6 +202,18 @@ spec:
                 # incident.
                 memory: 4300Mi
         pod:
+          affinity:
+            nodeAffinity:
+              # Off dell1, whose memory pressure was squeezing page cache into
+              # major-fault churn; lenovo2 has headroom and runs memini-0, the
+              # only client. Preferred so it still schedules if lenovo2 is down.
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values: ["lenovo2"]
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000
