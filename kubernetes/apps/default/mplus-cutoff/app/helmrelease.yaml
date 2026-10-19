@@ -99,6 +99,8 @@ spec:
           concurrencyPolicy: Forbid
           successfulJobsHistory: 1
           failedJobsHistory: 3
+          backoffLimit: 1
+          activeDeadlineSeconds: 3600
         containers:
           app:
             image:
