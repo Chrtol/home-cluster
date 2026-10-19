@@ -133,7 +133,7 @@ spec:
             path: /healthz
             conditions:
               - "[STATUS] == 200"
-        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        hostnames: ["mplus.${SECRET_DOMAIN}"]
         parentRefs:
           - name: internal
             namespace: network
