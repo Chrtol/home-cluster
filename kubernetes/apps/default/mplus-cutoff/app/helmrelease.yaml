@@ -1,0 +1,142 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app mplus-cutoff
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  # init-db initContainer + db.home.arpa/postgres pod label come from the cnpg component
+  valuesFrom:
+    - kind: ConfigMap
+      name: ${APP}-cnpg-values
+  values:
+    defaultPodOptions:
+      # From components/ghcr-pull, included by the namespace kustomization.
+      imagePullSecrets:
+        - name: ghcr-pull
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+    controllers:
+      mplus-cutoff:
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          migrate:
+            dependsOn: init-db
+            image:
+              repository: ghcr.io/chrtol/mplus-cutoff
+              tag: main-20261019152259  # {"$imagepolicy": "flux-system:mplus-cutoff:tag"}
+              digest:  sha256:a2a557f13e34300a3d88efd403db7a473c6a43f34b0508f7e36f717c08f9b413 # {"$imagepolicy": "flux-system:mplus-cutoff:digest"}
+              pullPolicy: IfNotPresent
+            args: ["migrate"]
+            envFrom: &envFrom
+              - secretRef:
+                  name: mplus-cutoff-secret
+            env:
+              TZ: ${SECRET_TIMEZONE}
+            resources: &serveResources
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
+            securityContext: &securityContext
+              runAsNonRoot: true
+              runAsUser: 1000
+              runAsGroup: 1000
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+        containers:
+          app:
+            image:
+              repository: ghcr.io/chrtol/mplus-cutoff
+              tag: main-20261019152259 # {"$imagepolicy": "flux-system:mplus-cutoff:tag"}
+              digest:  sha256:a2a557f13e34300a3d88efd403db7a473c6a43f34b0508f7e36f717c08f9b413 # {"$imagepolicy": "flux-system:mplus-cutoff:digest"}
+              pullPolicy: IfNotPresent
+            args: ["serve"]
+            envFrom: *envFrom
+            env:
+              TZ: ${SECRET_TIMEZONE}
+              PORT: &port 8080
+            probes:
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: *port
+                  periodSeconds: 10
+              readiness: *probe
+            resources: *serveResources
+            securityContext: *securityContext
+      collector:
+        type: cronjob
+        cronjob:
+          schedule: "0 */6 * * *"
+          timeZone: ${SECRET_TIMEZONE}
+          concurrencyPolicy: Forbid
+          successfulJobsHistory: 1
+          failedJobsHistory: 3
+        containers:
+          app:
+            image:
+              repository: ghcr.io/chrtol/mplus-cutoff
+              tag: main-20261019152259 # {"$imagepolicy": "flux-system:mplus-cutoff:tag"}
+              digest:  sha256:a2a557f13e34300a3d88efd403db7a473c6a43f34b0508f7e36f717c08f9b413 # {"$imagepolicy": "flux-system:mplus-cutoff:digest"}
+              pullPolicy: IfNotPresent
+            args: ["collect"]
+            envFrom: *envFrom
+            env:
+              TZ: ${SECRET_TIMEZONE}
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+            securityContext: *securityContext
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: *port
+    route:
+      app:
+        annotations:
+          gatus.home-operations.com/endpoint: |
+            group: internal
+            path: /healthz
+            conditions:
+              - "[STATUS] == 200"
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port

@@ -1,0 +1,62 @@
+---
+# Lives here, not in the app dir: an ImageUpdateAutomation only resolves
+# policies from its own namespace, and the write credential is here.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: mplus-cutoff
+  namespace: flux-system
+spec:
+  image: ghcr.io/chrtol/mplus-cutoff
+  interval: 1m
+  secretRef:
+    name: ghcr-pull
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: mplus-cutoff
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: mplus-cutoff
+  policy:
+    numerical:
+      order: asc
+  filterTags:
+    pattern: '^main-([0-9]+)$'
+    extract: '$1'
+  digestReflectionPolicy: IfNotPresent
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageUpdateAutomation
+metadata:
+  name: mplus-cutoff
+  namespace: flux-system
+spec:
+  interval: 1m
+  sourceRef:
+    kind: GitRepository
+    name: home-cluster-write
+    namespace: flux-system
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        email: fluxcdbot@users.noreply.github.com
+        name: fluxcdbot
+      messageTemplate: >-
+        {{- $msg := "chore(mplus-cutoff): update image digest" -}}
+        {{- range .Changed.Changes -}}
+          {{- if hasSuffix ":tag" .Setter -}}
+            {{- $msg = printf "chore(mplus-cutoff): update image %s -> %s" .OldValue .NewValue -}}
+          {{- end -}}
+        {{- end -}}
+        {{- $msg -}}
+    push:
+      branch: main
+  update:
+    path: ./kubernetes/apps/default/mplus-cutoff
+    strategy: Setters

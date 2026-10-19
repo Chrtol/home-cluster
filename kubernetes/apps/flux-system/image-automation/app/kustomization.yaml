@@ -8,3 +8,4 @@ resources:
   - ./externalsecret-flux-ssh.yaml
   - ./ai-orchestrator.yaml
   - ./reptile-tracker.yaml
+  - ./mplus-cutoff.yaml

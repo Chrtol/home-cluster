@@ -40,3 +40,4 @@ resources:
   - ./ocis/ks.yaml
   - ./collabora/ks.yaml
   - ./anisette/ks.yaml
+  - ./mplus-cutoff/ks.yaml
