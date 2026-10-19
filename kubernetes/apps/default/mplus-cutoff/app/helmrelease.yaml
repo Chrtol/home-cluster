@@ -1,4 +1,3 @@
----
 # yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -43,8 +42,8 @@ spec:
             dependsOn: init-db
             image:
               repository: ghcr.io/chrtol/mplus-cutoff
-              tag: main-20261019152259  # {"$imagepolicy": "flux-system:mplus-cutoff:tag"}
-              digest:  sha256:a2a557f13e34300a3d88efd403db7a473c6a43f34b0508f7e36f717c08f9b413 # {"$imagepolicy": "flux-system:mplus-cutoff:digest"}
+              tag: main-20261019164342 # {"$imagepolicy": "flux-system:mplus-cutoff:tag"}
+              digest: sha256:575c619f99f2203462c0628eb3e55ab9bd80f0e267038cdbb7fc51fa30313d68 # {"$imagepolicy": "flux-system:mplus-cutoff:digest"}
               pullPolicy: IfNotPresent
             args: ["migrate"]
             envFrom: &envFrom
@@ -71,8 +70,8 @@ spec:
           app:
             image:
               repository: ghcr.io/chrtol/mplus-cutoff
-              tag: main-20261019152259 # {"$imagepolicy": "flux-system:mplus-cutoff:tag"}
-              digest:  sha256:a2a557f13e34300a3d88efd403db7a473c6a43f34b0508f7e36f717c08f9b413 # {"$imagepolicy": "flux-system:mplus-cutoff:digest"}
+              tag: main-20261019164342 # {"$imagepolicy": "flux-system:mplus-cutoff:tag"}
+              digest: sha256:575c619f99f2203462c0628eb3e55ab9bd80f0e267038cdbb7fc51fa30313d68 # {"$imagepolicy": "flux-system:mplus-cutoff:digest"}
               pullPolicy: IfNotPresent
             args: ["serve"]
             envFrom: *envFrom
@@ -105,8 +104,8 @@ spec:
           app:
             image:
               repository: ghcr.io/chrtol/mplus-cutoff
-              tag: main-20261019152259 # {"$imagepolicy": "flux-system:mplus-cutoff:tag"}
-              digest:  sha256:a2a557f13e34300a3d88efd403db7a473c6a43f34b0508f7e36f717c08f9b413 # {"$imagepolicy": "flux-system:mplus-cutoff:digest"}
+              tag: main-20261019164342 # {"$imagepolicy": "flux-system:mplus-cutoff:tag"}
+              digest: sha256:575c619f99f2203462c0628eb3e55ab9bd80f0e267038cdbb7fc51fa30313d68 # {"$imagepolicy": "flux-system:mplus-cutoff:digest"}
               pullPolicy: IfNotPresent
             args: ["collect"]
             envFrom: *envFrom
