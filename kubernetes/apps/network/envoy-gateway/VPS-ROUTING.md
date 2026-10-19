@@ -19,7 +19,7 @@ server {
     # Service-specific routing
     location / {
         # Services with auth → Envoy Gateway
-        if ($host ~ ^(glance|radarr|sonarr|prowlarr|readarr|sabnzbd)\.${SECRET_DOMAIN_NAME}\.com$) {
+        if ($host ~ ^(glance|radarr|sonarr|prowlarr|sabnzbd)\.${SECRET_DOMAIN_NAME}\.com$) {
             proxy_pass https://10.0.30.62:443;
             proxy_ssl_verify off;
             break;

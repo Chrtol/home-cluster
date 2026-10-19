@@ -70,15 +70,6 @@ Complete media automation stack providing content acquisition, management, and s
   - Automatic upgrading
   - Integration with download clients
 
-### 📚 Readarr (Books)
-- **URL**: [readarr.example.com](https://readarr.example.com)
-- **Purpose**: Book and audiobook management
-- **Features**:
-  - Author and series tracking
-  - Multiple format support
-  - Metadata enhancement
-  - Integration with book download sources
-
 ### 🔍 Prowlarr (Indexers)
 - **Purpose**: Centralized indexer management
 - **Features**:

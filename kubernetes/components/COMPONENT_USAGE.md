@@ -71,7 +71,7 @@ by construction — no policy edits per app.
 |---|---|---|
 | `APP` | — | always required |
 | `DB_NAME` | `${APP}` | multi-DB apps (space-separated: `radarr_main radarr_log`) or non-app-named DBs (`paperless-main`) |
-| `DB_USER` | `${APP}` | role name differs from app (`readarrbooks`, `reptiletracker`) |
+| `DB_USER` | `${APP}` | role name differs from app (`reptiletracker`) |
 | `DB_OP_ITEM` | `cloudnative-pg` | app has its own 1Password item holding its DB password |
 | `DB_PASS_FIELD` | `POSTGRES_PASS` | field name inside `DB_OP_ITEM`, e.g. `KAN_POSTGRES_PASS` |
 | `DB_CONTROLLER` | `${APP}` | app-template controller key differs (immich's is `server`) |
