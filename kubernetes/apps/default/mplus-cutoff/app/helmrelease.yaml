@@ -42,8 +42,8 @@ spec:
             dependsOn: init-db
             image:
               repository: ghcr.io/chrtol/mplus-cutoff
-              tag: main-20261019232935 # {"$imagepolicy": "flux-system:mplus-cutoff:tag"}
-              digest: sha256:b6179b4b48f15ddf4a798a65c6277aecde2e6db525845adf92973fbdc09c9e07 # {"$imagepolicy": "flux-system:mplus-cutoff:digest"}
+              tag: main-20261021093614 # {"$imagepolicy": "flux-system:mplus-cutoff:tag"}
+              digest: sha256:1f0837291e38a58a49bf4377b39d414844f2e95d99f2328ff0846f55fab9cfba # {"$imagepolicy": "flux-system:mplus-cutoff:digest"}
               pullPolicy: IfNotPresent
             args: ["migrate"]
             envFrom: &envFrom
@@ -70,8 +70,8 @@ spec:
           app:
             image:
               repository: ghcr.io/chrtol/mplus-cutoff
-              tag: main-20261019232935 # {"$imagepolicy": "flux-system:mplus-cutoff:tag"}
-              digest: sha256:b6179b4b48f15ddf4a798a65c6277aecde2e6db525845adf92973fbdc09c9e07 # {"$imagepolicy": "flux-system:mplus-cutoff:digest"}
+              tag: main-20261021093614 # {"$imagepolicy": "flux-system:mplus-cutoff:tag"}
+              digest: sha256:1f0837291e38a58a49bf4377b39d414844f2e95d99f2328ff0846f55fab9cfba # {"$imagepolicy": "flux-system:mplus-cutoff:digest"}
               pullPolicy: IfNotPresent
             args: ["serve"]
             envFrom: *envFrom
@@ -104,8 +104,8 @@ spec:
           app:
             image:
               repository: ghcr.io/chrtol/mplus-cutoff
-              tag: main-20261019232935 # {"$imagepolicy": "flux-system:mplus-cutoff:tag"}
-              digest: sha256:b6179b4b48f15ddf4a798a65c6277aecde2e6db525845adf92973fbdc09c9e07 # {"$imagepolicy": "flux-system:mplus-cutoff:digest"}
+              tag: main-20261021093614 # {"$imagepolicy": "flux-system:mplus-cutoff:tag"}
+              digest: sha256:1f0837291e38a58a49bf4377b39d414844f2e95d99f2328ff0846f55fab9cfba # {"$imagepolicy": "flux-system:mplus-cutoff:digest"}
               pullPolicy: IfNotPresent
             args: ["collect"]
             envFrom: *envFrom
