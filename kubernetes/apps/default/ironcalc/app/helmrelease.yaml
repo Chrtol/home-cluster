@@ -25,7 +25,7 @@ spec:
           seed-db:
             image: &server-image
               repository: ghcr.io/ironcalc/ironcalc-server
-              tag: 0.9.0@sha256:69a13d48d33214797dec7d18c56876b40e2ab7642688611bcf43d8fe35385d04
+              tag: 0.9.1@sha256:3e30978764d130ba4939218cb9e23b880eb8aac03095a390aea69b629cabdb86
             command:
               - sh
               - -c
@@ -48,7 +48,7 @@ spec:
           app:
             image:
               repository: ghcr.io/ironcalc/ironcalc-caddy
-              tag: 0.9.0@sha256:b454a378084f84f1dd5723be78313f948fa9a0e47df515cf2c4e40cfedc7914f
+              tag: 0.9.1@sha256:90e6ebda9dd0a46d1910d0c459fb62e961067f5f9575b687268c0f85e51a34c4
             env:
               TZ: ${SECRET_TIMEZONE}
             probes:
