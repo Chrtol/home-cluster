@@ -89,8 +89,8 @@ spec:
                   secretKeyRef:
                     name: reptile-tracker-secret
                     key: ADMIN_EMAILS
-              OIDC_REDIRECT_URI: "https://reptile-tracker.${SECRET_DOMAIN}/auth/callback"
-              FRONTEND_URL: "https://reptile-tracker.${SECRET_DOMAIN}"
+              OIDC_REDIRECT_URI: "https://bask.${SECRET_DOMAIN}/auth/callback"
+              FRONTEND_URL: "https://bask.${SECRET_DOMAIN}"
               WEBHOOK_URL: ""
               REDIS_HOST: "dragonfly.database.svc.cluster.local"
               REDIS_PORT: "6379"
@@ -236,8 +236,8 @@ spec:
                   secretKeyRef:
                     name: reptile-tracker-secret
                     key: VAPID_SUBJECT
-              OIDC_REDIRECT_URI: "https://reptile-tracker.${SECRET_DOMAIN}/auth/callback"
-              FRONTEND_URL: "https://reptile-tracker.${SECRET_DOMAIN}"
+              OIDC_REDIRECT_URI: "https://bask.${SECRET_DOMAIN}/auth/callback"
+              FRONTEND_URL: "https://bask.${SECRET_DOMAIN}"
               WEBHOOK_URL: ""
               REDIS_HOST: "dragonfly.database.svc.cluster.local"
               REDIS_PORT: "6379"
@@ -337,7 +337,7 @@ spec:
             path: ""
             conditions:
               - "[STATUS] == 200"
-        hostnames: ["reptile-tracker.${SECRET_DOMAIN}"]
+        hostnames: ["bask.${SECRET_DOMAIN}"]
         parentRefs:
           - name: external
             namespace: network
