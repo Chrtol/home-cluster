@@ -34,7 +34,7 @@ spec:
           seed-broadcast-config:
             image: &bdsImage
               repository: docker.io/itzg/minecraft-bedrock-server
-              tag: 2026.8.2@sha256:6bb1cb8ee0c1fdf96dbd9dfe77bed4e20c8e3946112bed4f9be609e8f14efe9a
+              tag: 2026.10.3@sha256:ad8243d09604051085702536d1e9fef4b0a97fb308f2f2fa73c3fb56b5f4c580
             command:
               - /bin/sh
               - -c
