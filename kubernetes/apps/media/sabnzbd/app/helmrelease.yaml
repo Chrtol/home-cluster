@@ -45,7 +45,7 @@ spec:
               DNS_ADDRESS: 127.0.0.2
               DNS_KEEP_NAMESERVER: "off"
               HTTP_CONTROL_SERVER_ADDRESS: ":8000"
-              HTTP_CONTROL_SERVER_AUTH_CONFIG_FILEPATH: /config/auth.toml
+              HTTP_CONTROL_SERVER_AUTH_CONFIG_FILEPATH: &gluetunAuthPath /gluetun-auth/auth.toml
               HTTP_CONTROL_SERVER_API_KEY:
                 valueFrom:
                   secretKeyRef:
@@ -295,5 +295,8 @@ spec:
         advancedMounts:
           sabnzbd:
             gluetun:
-              - path: /config/auth.toml
+              # Not under /config: the sabnzbd config PVC is mounted there in every
+              # container, and it holds an empty auth.toml/ directory left by the
+              # kubelet from when this secret key did not exist yet.
+              - path: *gluetunAuthPath
                 subPath: auth.toml
