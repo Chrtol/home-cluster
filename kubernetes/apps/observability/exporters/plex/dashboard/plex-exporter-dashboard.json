@@ -70,6 +70,7 @@
       "targets": [
         {
           "expr": "plex_server_info{server=~\"$server\"}",
+          "instant": true,
           "legendFormat": "{{ server }} v{{ version }}"
         }
       ]
@@ -133,8 +134,8 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "plex_session_poll_reachable{server=~\"$server\"} or on() vector(0)",
-          "legendFormat": "{{ server }}"
+          "expr": "max(plex_session_poll_reachable) or on() vector(0)",
+          "legendFormat": "Session poll"
         }
       ]
     },

@@ -82,45 +82,6 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app plex-dashboard
-  namespace: &namespace media
-spec:
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: *app
-  dependsOn:
-      - name: plex
-        namespace: media
-  interval: 1h
-  path: ./kubernetes/apps/media/plex/dashboard
-  # The dashboard JSON carries hostnames, so it must be substituted like any
-  # other manifest -- without this the configMapGenerator ships the literal
-  # string `${SECRET_DOMAIN}` into Grafana and every query filters on nothing.
-  #
-  # Consequence: envsubst now runs over the whole dashboard, and it eats bare
-  # `$var` as well as `${var}`. Grafana's own variables are therefore written
-  # `$$__range` / `$$__auto` in the JSON; Flux turns `$$` back into a single `$`
-  # and leaves them alone. Every other dashboard in this repo avoids the problem
-  # by not substituting at all -- this one cannot, because it needs the domain.
-  # If you paste a fresh dashboard export over that file, re-escape them.
-  postBuild:
-    substituteFrom:
-      - name: cluster-secrets
-        kind: Secret
-  prune: true
-  retryInterval: 2m
-  sourceRef:
-    kind: GitRepository
-    name: flux-system
-    namespace: flux-system
-  targetNamespace: *namespace
-  timeout: 5m
-  wait: false
----
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
   name: &app plex-auto-languages
   namespace: &namespace media
 spec:
