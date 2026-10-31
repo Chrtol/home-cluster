@@ -16,11 +16,10 @@ data:
       # the OIDC callback URL.
       trustProxyHeaders: true
     server:
-      # SQLite on the Ceph RBD PVC. migrateFrom is a one-time v1 -> v2 import
-      # from the renamed BoltDB file; drop it once the migration is validated.
+      # SQLite on the Ceph RBD PVC. /config/database.db.old is the pre-v2 BoltDB
+      # file, kept only as an offline rollback copy.
       database:
         path: "/config/filebrowser.sqlite"
-        migrateFrom: "/config/database.db.old"
       # Thumbnail/preview cache. Quantum speed-tests this dir at startup and
       # FATALS if it's slow, so it must be on fast block storage (Ceph RBD),
       # never NFS.
