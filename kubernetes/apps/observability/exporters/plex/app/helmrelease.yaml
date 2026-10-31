@@ -28,7 +28,7 @@ spec:
           app:
             image:
               repository: ghcr.io/cplieger/plex-exporter
-              tag: v4.3.0@sha256:9e1af00129267d2a38c5d934a1f94d99ee2328ecf2bfa5c1a3c95ea7d0f01994
+              tag: v4.4.4@sha256:4e0d9b9e8155678ecb8c9329a05625cb03915eb2733fbde62833cc315ff99685
             env:
               TZ: ${SECRET_TIMEZONE}
               PLEX_URL: http://plex.media.svc.cluster.local:32400
