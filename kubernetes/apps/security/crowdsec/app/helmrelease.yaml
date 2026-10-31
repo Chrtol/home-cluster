@@ -80,7 +80,7 @@ spec:
         # the hub data files (GeoLite, allowlists) must be copied in. Keep the tag
         # in step with the LAPI image the chart version ships.
         - name: stage-data
-          image: crowdsecurity/crowdsec:v1.8.1
+          image: crowdsecurity/crowdsec:v1.8.2
           command: ["sh", "-c", "cp -a /staging/var/lib/crowdsec/data/. /data/"]
           volumeMounts:
             - name: crowdsec-data
