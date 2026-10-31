@@ -53,10 +53,9 @@ spec:
                   secretKeyRef:
                     name: filebrowser-oidc-authentik-application
                     key: clientSecret
-            envFrom:
-              # FILEBROWSER_JWT_TOKEN_SECRET
-              - secretRef:
-                  name: filebrowser-secret
+            # No FILEBROWSER_JWT_TOKEN_SECRET: v2 persists its signing key in the
+            # SQLite DB (backed up with the PVC) and refuses to start when an
+            # env-supplied key differs from it.
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
