@@ -45,6 +45,7 @@ spec:
               DNS_ADDRESS: 127.0.0.2
               DNS_KEEP_NAMESERVER: "off"
               HTTP_CONTROL_SERVER_ADDRESS: ":8000"
+              HTTP_CONTROL_SERVER_AUTH_CONFIG_FILEPATH: /config/auth.toml
               HTTP_CONTROL_SERVER_API_KEY:
                 valueFrom:
                   secretKeyRef:
@@ -162,6 +163,45 @@ spec:
                 memory: 1536Mi
               limits:
                 memory: 6141M
+          # Cycles the tunnel when sabnzbd AND a direct throughput test are both slow;
+          # gluetun's healthcheck passes on a connected-but-crawling server.
+          vpn-watchdog:
+            image:
+              repository: docker.io/alpine/curl
+              tag: 8.23.0@sha256:96a0479d24c465a7d8d29ebf5ebe92b82536e8443a870d2654e66d3ac235441f
+            command:
+              - /bin/sh
+              - /scripts/vpn-watchdog.sh
+            env:
+              SABNZBD_PORT: *port
+              SABNZBD_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: sabnzbd-secret
+                    key: SABNZBD__API_KEY
+              GLUETUN_CONTROL_SERVER_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: sabnzbd-gluetun-secret
+                    key: GLUETUN_CONTROL_SERVER_API_KEY
+              DISCORD_WEBHOOK_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: sabnzbd-gluetun-secret
+                    key: DISCORD_WEBHOOK_URL
+            securityContext:
+              runAsUser: 568
+              runAsGroup: 568
+              runAsNonRoot: true
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 5m
+                memory: 16Mi
+              limits:
+                memory: 32Mi
     defaultPodOptions:
       labels:
         # Starting a download pushes its node past LowNodeUtilization's CPU target, and

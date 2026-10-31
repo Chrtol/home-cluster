@@ -9,6 +9,7 @@ configMapGenerator:
   - name: sabnzbd-scripts
     files:
       - cross-seed.sh=./resources/cross-seed.sh
+      - vpn-watchdog.sh=./resources/vpn-watchdog.sh
   - name: sabnzbd-coredns
     files:
       - Corefile=./config/Corefile
