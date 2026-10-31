@@ -45,7 +45,7 @@ spec:
           app:
             image:
               repository: python
-              tag: 3.14-alpine
+              tag: 3.15-alpine
             command: [python, -u, /app/exporter.py]
             env:
               TZ: ${SECRET_TIMEZONE}
