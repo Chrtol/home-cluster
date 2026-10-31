@@ -21,7 +21,7 @@ spec:
           fetch-speedtest-go:
             image:
               repository: docker.io/alpine/curl
-              tag: 8.22.0
+              tag: 8.23.0
             env:
               # renovate: datasource=github-releases depName=showwin/speedtest-go
               SPEEDTEST_GO_VERSION: v1.8.3
