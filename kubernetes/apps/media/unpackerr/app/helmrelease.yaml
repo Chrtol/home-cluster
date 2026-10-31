@@ -33,6 +33,10 @@ spec:
             env:
               TZ: ${SECRET_TIMEZONE}
               UN_WEBSERVER_METRICS: "true"
+              # v1 /metrics needs an API key with system:metrics:read (key in unpackerr-secret)
+              UN_WEBSERVER_ROLES_metrics_PERMISSIONS_0: system:metrics:read
+              UN_WEBSERVER_API_KEYS_0_NAME: prometheus
+              UN_WEBSERVER_API_KEYS_0_ROLES_0: metrics
               UN_ACTIVITY: "true"
               # Sonarr
               UN_SONARR_0_URL: http://sonarr.media.svc.cluster.local:80
@@ -102,5 +106,10 @@ spec:
           - port: http
             scheme: http
             path: /metrics
+            authorization:
+              type: Bearer
+              credentials:
+                name: unpackerr-secret
+                key: UN_WEBSERVER_API_KEYS_0_KEY
             interval: 1m
             scrapeTimeout: 10s
