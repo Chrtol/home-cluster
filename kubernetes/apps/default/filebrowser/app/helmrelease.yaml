@@ -15,6 +15,22 @@ spec:
       filebrowser:
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          # v2 refuses to start while a BoltDB `database.db` sits in /config; it
+          # imports from the renamed file via server.database.migrateFrom.
+          # Remove once the migration is validated.
+          rename-boltdb:
+            image:
+              repository: busybox
+              tag: "1.38"
+            command:
+              - /bin/sh
+              - -c
+              - if [ -f /config/database.db ] && [ ! -e /config/database.db.old ]; then mv /config/database.db /config/database.db.old; fi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
         containers:
           app:
             image:

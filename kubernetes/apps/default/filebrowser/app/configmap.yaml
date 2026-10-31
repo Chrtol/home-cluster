@@ -9,11 +9,18 @@ data:
   # JWT) are injected at runtime through FILEBROWSER_* env vars, which override
   # anything set here -- so no credentials live in git.
   config.yaml: |
-    server:
+    http:
       port: 80
       baseURL: "/"
-      # bbolt database file -- lives on the Ceph RBD PVC (persistent state).
-      database: "/config/database.db"
+      # Behind Envoy Gateway: honour X-Forwarded-* for client IP, cookies and
+      # the OIDC callback URL.
+      trustProxyHeaders: true
+    server:
+      # SQLite on the Ceph RBD PVC. migrateFrom is a one-time v1 -> v2 import
+      # from the renamed BoltDB file; drop it once the migration is validated.
+      database:
+        path: "/config/filebrowser.sqlite"
+        migrateFrom: "/config/database.db.old"
       # Thumbnail/preview cache. Quantum speed-tests this dir at startup and
       # FATALS if it's slow, so it must be on fast block storage (Ceph RBD),
       # never NFS.
@@ -26,6 +33,12 @@ data:
           name: "media"
           config:
             defaultEnabled: true
+            defaultPermissions:
+              view: true
+              download: true
+              modify: false
+              create: false
+              delete: false
     auth:
       # OIDC-only: send users straight to Authentik, no local login form.
       methods:
@@ -33,8 +46,6 @@ data:
           enabled: false
         oidc:
           enabled: true
-          # createUser provisions a Filebrowser account on first Authentik login.
-          createUser: true
           # clientId/clientSecret come from FILEBROWSER_OIDC_CLIENT_ID / _SECRET
           # env (the oidc-application component's generated secret).
           issuerUrl: "https://sso.${SECRET_DOMAIN}/application/o/filebrowser/"
@@ -48,12 +59,10 @@ data:
           # automatically with no further change.
           adminGroup: "authentik Admins"
     userDefaults:
-      darkMode: true
-      permissions:
-        admin: false
-        modify: false
-        share: false
-        api: false
-        download: true
-        create: false
-        delete: false
+      ui:
+        darkMode: true
+      account:
+        permissions:
+          admin: false
+          share: false
+          api: false
