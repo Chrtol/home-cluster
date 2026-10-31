@@ -16,6 +16,9 @@ spec:
   resource:
     addK8sUIDAttributes: true
   python:
+    # Pinned so Renovate tracks it: the operator default lags, and its bundled
+    # typing_extensions shadows the app's (mealie v3.29 crashed on 4.15.0)
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.66b0@sha256:569ce79ab56503ab5aea8998b141b7c90615cbf21d814e654e99d3987e9b6c3b
     env:
       # Python uses http/proto by default, so we need port 4318 for HTTP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
