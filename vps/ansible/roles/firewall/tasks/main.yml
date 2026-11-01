@@ -23,7 +23,16 @@
     - { port: "80", proto: tcp, comment: "HTTP" }
     - { port: "443", proto: tcp, comment: "HTTPS" }
     - { port: "51820", proto: udp, comment: "WireGuard" }
-    - { port: "21820", proto: udp, comment: "Gerbil" }
+
+# Dropping a port from the list above leaves its rule live on the host.
+- name: Remove UFW rules for retired services
+  ufw:
+    rule: allow
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+    delete: true
+  loop:
+    - { port: "21820", proto: udp }  # Pangolin's Gerbil
 
 - name: Enable UFW
   ufw:

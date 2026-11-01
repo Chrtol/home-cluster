@@ -38,19 +38,6 @@ http:
       service: ping@internal
       priority: 1000
 
-    # Traefik Dashboard
-    traefik-dashboard:
-      entryPoints:
-        - websecure
-      rule: "Host(`traefik.{{ traefik_domain }}`)"
-      service: api@internal
-      tls: {}
-      middlewares:
-{% if traefik_crowdsec_enabled | default(true) %}
-        - crowdsec-bouncer
-{% endif %}
-        - security-headers
-
 {% if traefik_enable_metrics | default(false) %}
     # Node exporter metrics endpoint
     metrics-node:
