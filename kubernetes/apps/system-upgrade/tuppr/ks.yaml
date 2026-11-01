@@ -6,6 +6,7 @@ metadata:
   name: tuppr
 spec:
   interval: 1h
+  retryInterval: 2m
   path: ./kubernetes/apps/system-upgrade/tuppr/app
   prune: true
   sourceRef:
@@ -24,7 +25,12 @@ spec:
   dependsOn:
     - name: tuppr
   interval: 1h
+  retryInterval: 2m
   path: ./kubernetes/apps/system-upgrade/tuppr/upgrades
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
   prune: true
   sourceRef:
     kind: GitRepository

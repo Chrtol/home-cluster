@@ -8,6 +8,11 @@ spec:
   kubernetes:
     # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
     version: v1.37.2
+  maintenance:
+    windows:
+      - start: "0 4 * * *"
+        duration: 2h
+        timezone: ${SECRET_TIMEZONE}
   healthChecks:
     # Same gate as the TalosUpgrade: no node restarts while a kopiur backup is queued
     # or copying.

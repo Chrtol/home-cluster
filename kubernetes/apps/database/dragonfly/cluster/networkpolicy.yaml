@@ -46,7 +46,7 @@ spec:
             matchExpressions:
               - key: app.kubernetes.io/name
                 operator: In
-                values: [outline, homarr, reptile-tracker, paperless, postiz, affine]
+                values: [outline, homarr, reptile-tracker, paperless, postiz]
         # media: tracearr, immich
         - namespaceSelector:
             matchLabels:

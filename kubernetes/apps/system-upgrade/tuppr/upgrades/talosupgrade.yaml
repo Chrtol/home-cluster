@@ -10,6 +10,11 @@ spec:
     version: v1.14.5
   policy:
     rebootMode: powercycle
+  maintenance:
+    windows:
+      - start: "0 4 * * *"
+        duration: 2h
+        timezone: ${SECRET_TIMEZONE}
   healthChecks:
     # Hold each node's reboot while any kopiur backup is queued or copying, so a
     # powercycle can't kill a mover mid-snapshot. A Snapshot too new to have a phase
