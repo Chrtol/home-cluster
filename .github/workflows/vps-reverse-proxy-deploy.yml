@@ -60,7 +60,6 @@ jobs:
 
           # Traefik Configuration
           PROXY_DOMAIN: "op://Lab/vps-proxy/VPS_PROXY_DOMAIN"
-          PROXY_EXTERNAL_INGRESS_IP: "op://Lab/vps-proxy/VPS_EXTERNAL_INGRESS_IP"
           PROXY_ENVOY_GATEWAY_IP: "op://Lab/vps-proxy/VPS_ENVOY_GATEWAY_IP"
           PROXY_SSL_CERT_PATH: "op://Lab/vps-proxy/VPS_SSL_CERT_PATH"
           PROXY_SSL_KEY_PATH: "op://Lab/vps-proxy/VPS_SSL_KEY_PATH"

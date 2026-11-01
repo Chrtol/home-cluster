@@ -58,18 +58,14 @@
     quiet: true
   when: wireguard_live.rc == 0
 
-- name: WireGuard -- show AllowedIPs, live vs desired
-  ansible.builtin.debug:
-    msg:
-      live: "{{ wireguard_live_allowed_ips | default('interface not up') }}"
-      desired: "{{ wireguard_home_allowed_ips | sort }}"
-
 # A routing change can silently strand the cluster, so it has to be asked for.
+# Addresses stay out of the message: the CI log of this repo is public.
 - name: WireGuard -- refuse an unrequested AllowedIPs change
   ansible.builtin.assert:
     that: wireguard_live_allowed_ips == (wireguard_home_allowed_ips | sort)
     fail_msg: >-
-      AllowedIPs would change (see the task above). Set
+      AllowedIPs would change; compare `wg show {{ wireguard_interface }}
+      allowed-ips` on the VPS with wireguard_home_allowed_ips. Set
       wireguard_allow_routing_change=true for the deploy that intends it.
     quiet: true
   when:

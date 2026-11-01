@@ -23,7 +23,7 @@ This Ansible role deploys Traefik as the VPS reverse proxy with full OpenTelemet
 ```yaml
 # Domain configuration
 proxy_domain: "example.com"  # Your domain
-proxy_external_ingress_ip: "10.0.30.60"  # Kubernetes external ingress IP
+proxy_envoy_gateway_ip: "<envoy-ip>"  # Envoy external gateway (reached over WireGuard)
 proxy_ssl_cert_path: "/path/to/cert.pem"  # SSL certificate path
 proxy_ssl_key_path: "/path/to/key.pem"    # SSL private key path
 ```

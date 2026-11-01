@@ -14,9 +14,10 @@
       - chrony
     state: present
 
+# What the VPS already runs; keeps its log and timer times in the owner's local time.
 - name: Configure timezone
   timezone:
-    name: UTC
+    name: Europe/Oslo
 
 - name: Configure automatic security updates
   copy:
@@ -43,14 +44,3 @@
       // The weekly maintenance workflow reboots when needed, at a known time.
       Unattended-Upgrade::Automatic-Reboot "false";
     dest: /etc/apt/apt.conf.d/50unattended-upgrades
-
-- name: Configure kernel parameters for WireGuard
-  sysctl:
-    name: "{{ item.key }}"
-    value: "{{ item.value }}"
-    sysctl_set: yes
-    state: present
-    reload: yes
-  loop:
-    - { key: net.ipv4.ip_forward, value: 1 }
-    - { key: net.ipv6.conf.all.forwarding, value: 1 }

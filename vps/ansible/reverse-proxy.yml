@@ -11,7 +11,6 @@
   vars:
     # Configuration from 1Password via CI/CD environment variables
     proxy_domain: "{{ lookup('env', 'PROXY_DOMAIN') }}"
-    proxy_external_ingress_ip: "{{ lookup('env', 'PROXY_EXTERNAL_INGRESS_IP') }}"
     proxy_envoy_gateway_ip: "{{ lookup('env', 'PROXY_ENVOY_GATEWAY_IP') }}"
     proxy_ssl_cert_path: "{{ lookup('env', 'PROXY_SSL_CERT_PATH') | default('/etc/letsencrypt/live/' + proxy_domain + '/fullchain.pem') }}"
     proxy_ssl_key_path: "{{ lookup('env', 'PROXY_SSL_KEY_PATH') | default('/etc/letsencrypt/live/' + proxy_domain + '/privkey.pem') }}"
@@ -63,7 +62,6 @@
     traefik_crowdsec_api_key: "{{ crowdsec_bouncer_api_key }}"
     traefik_crowdsec_lapi_host: "{{ crowdsec_lapi_host }}"
     traefik_crowdsec_log_level: "{{ crowdsec_log_level }}"
-    kubernetes_external_ingress_ip: "{{ proxy_external_ingress_ip }}"
     traefik_enable_echo_test: "{{ enable_echo_test }}"
     traefik_envoy_gateway_ip: "{{ proxy_envoy_gateway_ip }}"
     traefik_minecraft_ip: "{{ minecraft_lb_ip }}"
@@ -75,7 +73,7 @@
     - name: Create backup of current configuration
       archive:
         path: /opt/traefik
-        dest: "/tmp/traefik-backup-{{ ansible_date_time.epoch }}.tar.gz"
+        dest: "/tmp/traefik-backup-{{ ansible_facts['date_time']['epoch'] }}.tar.gz"
         format: gz
       ignore_errors: true
 
@@ -140,31 +138,32 @@
       debug:
         var: traefik_container_status.stdout_lines
 
-    - name: Test connectivity to external ingress
-      uri:
-        url: "https://{{ proxy_external_ingress_ip }}:443"
-        method: GET
-        validate_certs: no
-        timeout: 5
-      register: ingress_test
-      ignore_errors: true
-
     - name: Test health endpoint
       uri:
         url: "http://localhost/ping"
         method: GET
         timeout: 5
       register: health_test
-      ignore_errors: true
+      retries: 6
+      delay: 5
+      until: health_test.status == 200
+
+    # The same hop Traefik makes: through the tunnel to Envoy, with Envoy's SNI.
+    # Any HTTP status proves the path; 000 means the tunnel or Envoy is down.
+    - name: Test the path to Envoy over the tunnel
+      command: >-
+        curl -sk -o /dev/null -w '%{http_code}' --max-time 5
+        --resolve envoy.{{ proxy_domain }}:443:{{ proxy_envoy_gateway_ip }}
+        https://envoy.{{ proxy_domain }}/
+      register: envoy_test
+      changed_when: false
+      retries: 6
+      delay: 5
+      until: envoy_test.stdout != '000'
 
     - name: Show deployment result
       debug:
-        msg: |
-          VPS configuration applied!
-
-          Status:
-          - Traefik: {{ 'Running' if traefik_container_status is defined else 'Not Running' }}
-          - Health Check: {{ 'OK' if health_test.status is defined and health_test.status == 200 else 'Failed' }}
-          - External Ingress: {{ 'Reachable' if ingress_test.status is defined else 'Unreachable' }}
-
-          Trivy: Daily scans at 3 AM, results in /var/log/trivy/
+        msg: >-
+          VPS configuration applied; Traefik answers /ping and Envoy is
+          reachable over the tunnel (HTTP {{ envoy_test.stdout }}).
+          Trivy scans daily at 3 AM, results in /var/log/trivy/.

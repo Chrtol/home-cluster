@@ -16,7 +16,6 @@ This document lists all the 1Password secrets required for VPS deployment via Gi
 
 #### Required Fields:
 - `VPS_PROXY_DOMAIN` - Your domain name
-- `VPS_EXTERNAL_INGRESS_IP` - Kubernetes external ingress IP
 - `VPS_ENVOY_GATEWAY_IP` - Envoy gateway IP
 
 #### OpenTelemetry Fields:
@@ -88,7 +87,6 @@ op signin
 # Create or update vps-proxy item
 op item edit "vps-proxy" --vault="Lab" \
   "VPS_PROXY_DOMAIN[text]={your domain}" \
-  "VPS_EXTERNAL_INGRESS_IP[text]={your IP}" \
   "VPS_ENVOY_GATEWAY_IP[text]={your IP}" \
   "VPS_OTEL_ENDPOINT[text]=tempo-otlp.{domain}:443" \
   "VPS_OTEL_SERVICE_NAME[text]=vps-traefik" \

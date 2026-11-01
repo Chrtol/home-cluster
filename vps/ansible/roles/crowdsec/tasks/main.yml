@@ -20,7 +20,7 @@
 
     - name: Add crowdsec repository
       ansible.builtin.apt_repository:
-        repo: "deb https://packagecloud.io/crowdsec/crowdsec/ubuntu/ {{ ansible_distribution_release }} main"
+        repo: "deb https://packagecloud.io/crowdsec/crowdsec/ubuntu/ {{ ansible_facts['distribution_release'] }} main"
         state: present
 
     - name: Install crowdsec and the firewall bouncer
