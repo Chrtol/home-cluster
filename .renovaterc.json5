@@ -3,7 +3,7 @@
   extends: [
     'config:recommended',
     'docker:enableMajor',
-    'helpers:pinGitHubActionDigests',
+    'helpers:pinGitHubActionDigestsToSemver',
     ':automergeBranch',
     ':dependencyDashboard',
     ':disableRateLimiting',
@@ -258,6 +258,17 @@
       commitMessageExtra: '( {{currentDigestShort}} → {{newDigestShort}} )',
     },
     {
+      // zer0ver: a 0.x minor can break (paperless-gpt 0.26), so mark it breaking and
+      // route it onto the major- branch instead of bundling it with real minors.
+      description: '0.x minors are breaking: add ! prefix',
+      matchUpdateTypes: [
+        'minor',
+      ],
+      matchCurrentVersion: '/^v?0\\./',
+      commitMessagePrefix: '{{semanticCommitType}}({{semanticCommitScope}})!:',
+      additionalBranchPrefix: 'major-',
+    },
+    {
       matchDatasources: [
         'docker',
       ],
@@ -285,6 +296,17 @@
       ],
       semanticCommitScope: 'github-release',
       commitMessageTopic: 'release {{depName}}',
+    },
+    {
+      // Dashboard revisions are a single integer, so every bump is a "major"; drop the ! prefix.
+      matchDatasources: [
+        'custom.grafana-dashboards',
+      ],
+      semanticCommitType: 'chore',
+      semanticCommitScope: 'grafana-dashboards',
+      commitMessagePrefix: '{{semanticCommitType}}({{semanticCommitScope}}):',
+      commitMessageTopic: 'dashboard {{depName}}',
+      commitMessageExtra: '( {{currentVersion}} → {{newVersion}} )',
     },
     {
       matchUpdateTypes: [
@@ -361,5 +383,28 @@
       ],
       datasourceTemplate: '{{#if datasource}}{{{datasource}}}{{else}}github-releases{{/if}}',
     },
+    {
+      // The comment's depName is a display name; gnetId is the grafana.com lookup key.
+      description: 'Process Grafana chart dashboards (gnetId + revision)',
+      customType: 'regex',
+      managerFilePatterns: [
+        '/(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$/',
+      ],
+      matchStrings: [
+        'depName="(?<depName>[^"]+)"\\n(?<indentation>\\s+)gnetId: (?<packageName>\\d+)\\n.+revision: (?<currentValue>\\d+)',
+      ],
+      datasourceTemplate: 'custom.grafana-dashboards',
+      versioningTemplate: 'regex:^(?<major>\\d+)$',
+      autoReplaceStringTemplate: 'depName="{{{depName}}}"\n{{{indentation}}}gnetId: {{{packageName}}}\n{{{indentation}}}revision: {{{newValue}}}',
+    },
   ],
+  customDatasources: {
+    'grafana-dashboards': {
+      defaultRegistryUrlTemplate: 'https://grafana.com/api/dashboards/{{packageName}}',
+      format: 'json',
+      transformTemplates: [
+        '{"releases":[{"version": $string(revision)}]}',
+      ],
+    },
+  },
 }
