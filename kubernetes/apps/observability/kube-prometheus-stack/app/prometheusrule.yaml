@@ -115,6 +115,41 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
+  name: etcd-db.rules
+spec:
+  groups:
+    - name: etcd-db.rules
+      rules:
+        # Replaces the built-in etcdDatabaseHighFragmentationRatio, disabled in the
+        # HelmRelease. This cluster's churn keeps the file about half in use (7-day
+        # average 55%, low 45%, to 2026-11-01), so the built-in <50% fired for up to
+        # 19h a week per member and came back within a day of a defrag. Fragmentation
+        # only matters once the file nears the backend quota, so this also requires the
+        # file to fill half of it.
+        - alert: EtcdDatabaseFragmentedNearQuota
+          annotations:
+            summary: etcd database is fragmented and using over half its quota.
+            description: >-
+              etcd member {{ $labels.instance }} has only {{ $value | humanizePercentage }}
+              of its database file in use, and the file fills over half of the backend
+              quota. Defragment that member with talosctl etcd defrag, leader last.
+          expr: |
+            (
+              etcd_mvcc_db_total_size_in_use_in_bytes{job=~".*etcd.*"}
+                /
+              etcd_mvcc_db_total_size_in_bytes{job=~".*etcd.*"}
+            ) < 0.5
+            and on (job, instance)
+            etcd_mvcc_db_total_size_in_bytes{job=~".*etcd.*"}
+              > 0.5 * etcd_server_quota_backend_bytes{job=~".*etcd.*"}
+          for: 10m
+          labels:
+            severity: warning
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
   name: controller-loop.rules
 spec:
   groups:

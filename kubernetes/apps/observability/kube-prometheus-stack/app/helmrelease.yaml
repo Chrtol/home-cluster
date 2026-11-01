@@ -63,6 +63,9 @@ spec:
         # Fires on every line-rate download: etcd peer traffic shares the node NIC.
         # Replaced by EtcdMemberCommunicationSlowSustained in ./prometheusrule.yaml.
         etcdMemberCommunicationSlow: true
+        # Fires on this cluster's normal state, about half the file in use. Replaced by
+        # EtcdDatabaseFragmentedNearQuota in ./prometheusrule.yaml.
+        etcdDatabaseHighFragmentationRatio: true
       rules:
         kubeApiserverAvailability: false
         kubeApiserverBurnrate: false
