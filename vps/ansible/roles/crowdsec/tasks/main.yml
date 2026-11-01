@@ -1,45 +1,28 @@
 ---
 # CrowdSec engine on the VPS: reads SSH and Traefik access logs, feeds the local
 # LAPI that the Traefik bouncer plugin queries, and reports to the console.
+# Runs in Docker Compose on the config and database the apt install left on the
+# host; the firewall bouncer runs on the host (tasks/firewall-bouncer.yml).
 
-- name: Check whether crowdsec is installed
-  ansible.builtin.command: which cscli
-  register: cscli_path
-  changed_when: false
+# Notification plugins run as nobody, which needs setuid; the container drops
+# every capability, so a profile that notifies would stop the LAPI from starting.
+- name: Read the decision profiles
+  ansible.builtin.slurp:
+    src: /etc/crowdsec/profiles.yaml
+  register: crowdsec_profiles
   failed_when: false
-  check_mode: false
 
-# Bootstrap only: the live VPS already has crowdsec, so this never runs in CI.
-# The crowdsec apt repository comes from the base role.
-- name: Install crowdsec
-  when: cscli_path.rc != 0
-  block:
-    - name: Install crowdsec and the firewall bouncer
-      ansible.builtin.apt:
-        name:
-          - crowdsec
-          - crowdsec-firewall-bouncer-iptables
-        state: present
-        update_cache: true
-
-- name: List installed collections
-  ansible.builtin.command: cscli collections list -o json
-  register: crowdsec_collections_json
-  changed_when: false
-  check_mode: false
-
-- name: Work out which collections are missing
-  ansible.builtin.set_fact:
-    crowdsec_missing_collections: "{{ crowdsec_collections | difference((crowdsec_collections_json.stdout | from_json)['collections'] | map(attribute='name') | list) }}"
-
-- name: Update the hub index before installing collections
-  ansible.builtin.command: cscli hub update
-  when: crowdsec_missing_collections | length > 0
-
-- name: Install missing collections
-  ansible.builtin.command: "cscli collections install {{ item }}"
-  loop: "{{ crowdsec_missing_collections }}"
-  notify: restart crowdsec
+- name: Refuse profiles that need notification plugins
+  ansible.builtin.assert:
+    that:
+      - >-
+        crowdsec_profiles.content | b64decode | from_yaml_all | select
+        | map(attribute='notifications', default=[]) | select | list | length == 0
+    fail_msg: >-
+      A profile in /etc/crowdsec/profiles.yaml sends notifications. The plugins
+      need CAP_SETUID/CAP_SETGID, which the crowdsec container drops.
+    quiet: true
+  when: crowdsec_profiles.content is defined
 
 # Acquisition is owned here. The installer's setup.* files watched nginx (replaced
 # by Traefik) and syslog/kern.log (read, never parsed), so they are replaced.
@@ -87,21 +70,108 @@
     line: "papi_url: {{ crowdsec_papi_url }}"
   notify: restart crowdsec
 
+- name: Override the apt config for the container
+  ansible.builtin.template:
+    src: config.yaml.local.j2
+    dest: /etc/crowdsec/config.yaml.local
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart crowdsec
+
+- name: Read the local machine credentials
+  ansible.builtin.slurp:
+    src: /etc/crowdsec/local_api_credentials.yaml
+  register: crowdsec_lapi_credentials
+  failed_when: false
+  no_log: true
+
+# A fresh host has no credentials yet; the image then registers its default name.
+- name: Keep the existing machine login
+  ansible.builtin.set_fact:
+    crowdsec_machine_login: >-
+      {{ (crowdsec_lapi_credentials.content | b64decode | from_yaml).login
+         if crowdsec_lapi_credentials.content is defined else 'localhost' }}
+  no_log: true
+
+- name: Look up the adm group
+  ansible.builtin.getent:
+    database: group
+    key: adm
+
+- name: Set the adm group id
+  ansible.builtin.set_fact:
+    crowdsec_adm_gid: "{{ ansible_facts.getent_group.adm[1] }}"
+
+- name: Create the compose directory
+  ansible.builtin.file:
+    path: "{{ crowdsec_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Template the compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ crowdsec_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+
+# Before the cutover below, so the gap without an engine does not include the download
+- name: Pull the crowdsec image
+  community.docker.docker_compose_v2_pull:
+    project_src: "{{ crowdsec_dir }}"
+    policy: missing
+
+- name: Gather service facts
+  ansible.builtin.service_facts:
+
+# The apt service holds 127.0.0.1:8080 and the database; it has to stop first
+- name: Stop the apt-installed engine
+  ansible.builtin.systemd:
+    name: crowdsec
+    state: stopped
+    enabled: false
+  when: "'crowdsec.service' in ansible_facts.services"
+
+- name: Start the crowdsec container
+  community.docker.docker_compose_v2:
+    project_src: "{{ crowdsec_dir }}"
+    state: present
+    pull: missing
+    remove_orphans: true
+    recreate: auto
+
+- name: Wait for the LAPI
+  ansible.builtin.uri:
+    url: http://127.0.0.1:8080/health
+    status_code: 200
+    timeout: 5
+  register: crowdsec_health
+  until: crowdsec_health.status == 200
+  retries: 24
+  delay: 5
+
+# Not purged: purge deletes /etc/crowdsec and /var/lib/crowdsec, which the
+# container now uses
+- name: Remove the apt-installed engine
+  ansible.builtin.apt:
+    name: crowdsec
+    state: absent
+    purge: false
+
 - name: Check console enrollment
-  ansible.builtin.command: cscli console status
+  ansible.builtin.command:
+    argv: "{{ crowdsec_cscli + ['console', 'status'] }}"
   register: crowdsec_console_status
   changed_when: false
   check_mode: false
 
 - name: Enroll in the console
   ansible.builtin.command:
-    argv:
-      - cscli
-      - console
-      - enroll
-      - --name
-      - "{{ crowdsec_console_name }}"
-      - "{{ crowdsec_enroll_key }}"
+    argv: "{{ crowdsec_cscli + ['console', 'enroll', '--name', crowdsec_console_name, crowdsec_enroll_key] }}"
   # cscli logs the enrollment state to stderr, not stdout
   when:
     - crowdsec_enroll_key | length > 0
@@ -111,17 +181,27 @@
   no_log: true
   notify: restart crowdsec
 
-- name: Ensure crowdsec is running
-  ansible.builtin.systemd:
-    name: crowdsec
-    state: started
-    enabled: true
+- name: List registered bouncers
+  ansible.builtin.command:
+    argv: "{{ crowdsec_cscli + ['bouncers', 'list', '-o', 'json'] }}"
+  register: crowdsec_bouncers
+  changed_when: false
+  check_mode: false
+
+# Valid API keys that nothing uses any more (nginx was replaced by Traefik)
+- name: Delete unused bouncers
+  ansible.builtin.command:
+    argv: "{{ crowdsec_cscli + ['bouncers', 'delete', item] }}"
+  loop:
+    - nginx-bouncer
+    - pangolin-traefik
+  when: item in (crowdsec_bouncers.stdout | from_json | default([], true) | map(attribute='name') | list)
 
 - name: Manage the firewall bouncer
   ansible.builtin.include_tasks: firewall-bouncer.yml
 
-# Runs last: the allowlist is written through the LAPI, which needs the service
-# up, and `cscli allowlists` only exists from 1.6.8 onwards.
+# Runs last: the allowlist is written through the LAPI, which needs the
+# container up, and `cscli allowlists` only exists from 1.6.8 onwards.
 - name: Manage the home network allowlist
   ansible.builtin.include_tasks: home-allowlist.yml
   when: crowdsec_home_allowlist_enabled | bool

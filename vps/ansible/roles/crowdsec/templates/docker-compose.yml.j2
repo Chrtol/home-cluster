@@ -1,0 +1,41 @@
+services:
+  crowdsec:
+    image: docker.io/crowdsecurity/crowdsec:{{ crowdsec_image_tag }}
+    container_name: {{ crowdsec_container_name }}
+    restart: unless-stopped
+    networks:
+      - crowdsec
+    # The Traefik plugin and the firewall bouncer both reach the LAPI here
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      # The host's existing config and database, so machine, enrollment and
+      # decisions carry over from the apt install
+      - /etc/crowdsec:/etc/crowdsec
+      - /var/lib/crowdsec/data:/var/lib/crowdsec/data
+      # The directory, not single files: logrotate renames them, and a file
+      # mount would keep reading the rotated-away inode
+      - /var/log:/var/log:ro
+    environment:
+      COLLECTIONS: "{{ crowdsec_collections | join(' ') }}"
+      # The existing machine login; the start script re-registers any other name
+      CUSTOM_HOSTNAME: "{{ crowdsec_machine_login }}"
+      PLUGIN_DIR: /usr/local/lib/crowdsec/plugins/
+      TZ: Europe/Oslo
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    # auth.log is syslog:adm 0640
+    group_add:
+      - "{{ crowdsec_adm_gid }}"
+    mem_limit: {{ crowdsec_memory_limit }}
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+networks:
+  crowdsec:
+    name: crowdsec

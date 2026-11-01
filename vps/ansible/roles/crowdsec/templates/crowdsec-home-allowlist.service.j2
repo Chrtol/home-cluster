@@ -2,8 +2,8 @@
 [Unit]
 Description=Sync the home network's public IP into a CrowdSec allowlist
 Documentation=https://docs.crowdsec.net/docs/next/cscli/cscli_allowlists/
-After=crowdsec.service
-Wants=crowdsec.service
+After=docker.service
+Wants=docker.service
 
 [Service]
 Type=oneshot

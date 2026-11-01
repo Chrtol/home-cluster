@@ -11,7 +11,7 @@
 
 - name: Check if vps-traefik-main bouncer exists
   become: true
-  command: cscli bouncers list -o json
+  command: "{{ traefik_cscli }} bouncers list -o json"
   register: bouncer_list
   changed_when: false
 
@@ -21,7 +21,7 @@
 
 - name: Create vps-traefik-main bouncer if it doesn't exist
   become: true
-  command: cscli bouncers add vps-traefik-main
+  command: "{{ traefik_cscli }} bouncers add vps-traefik-main"
   register: bouncer_creation
   when: not bouncer_exists
   no_log: true
@@ -119,11 +119,11 @@
   block:
     - name: Delete existing bouncer
       become: true
-      command: "cscli bouncers delete vps-traefik-main"
+      command: "{{ traefik_cscli }} bouncers delete vps-traefik-main"
 
     - name: Create new bouncer
       become: true
-      command: cscli bouncers add vps-traefik-main
+      command: "{{ traefik_cscli }} bouncers add vps-traefik-main"
       register: bouncer_recreation
       no_log: true
 

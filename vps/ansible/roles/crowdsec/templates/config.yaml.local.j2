@@ -1,0 +1,8 @@
+# Merged over the config.yaml the apt package left behind
+common:
+  # /var/log is mounted read-only; docker logs takes the output instead
+  log_media: stdout
+api:
+  server:
+    # Inside the container, so the published port can reach it
+    listen_uri: 0.0.0.0:8080

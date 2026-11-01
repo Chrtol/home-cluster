@@ -21,6 +21,7 @@ WG_PEER={{ crowdsec_home_allowlist_wg_peer | quote }}
 EXPIRATION={{ crowdsec_home_allowlist_expiration | quote }}
 RENEW_BEFORE_SECONDS={{ crowdsec_home_allowlist_renew_before_seconds }}
 COMMENT="home network (managed by Ansible)"
+CSCLI=({{ crowdsec_cscli | map('quote') | join(' ') }})
 
 log() { printf '%s %s\n' "$(date -Is)" "$*"; }
 
@@ -103,7 +104,7 @@ is_public_ip "$ip" || skip "peer endpoint $ip is not a public address; refusing 
 # Compare against what the allowlist actually holds. Anything that is not the
 # current endpoint is reported as STALE; the verdict says whether the wanted
 # entry is present with enough time left on it.
-inspect=$(cscli allowlists inspect "$ALLOWLIST" -o json 2>/dev/null) ||
+inspect=$("${CSCLI[@]}" allowlists inspect "$ALLOWLIST" -o json 2>/dev/null) ||
     skip "cannot read allowlist $ALLOWLIST"
 
 plan=$(
@@ -144,7 +145,7 @@ PY
 while read -r verdict value; do
     [[ $verdict == STALE ]] || continue
     log "removing stale entry $value from $ALLOWLIST"
-    cscli allowlists remove "$ALLOWLIST" "$value" >/dev/null 2>&1 || true
+    "${CSCLI[@]}" allowlists remove "$ALLOWLIST" "$value" >/dev/null 2>&1 || true
 done <<<"$plan"
 
 grep -q '^FRESH$' <<<"$plan" && exit 0
@@ -153,13 +154,13 @@ grep -q '^FRESH$' <<<"$plan" && exit 0
 # never extend an expiry -- renewing has to remove the entry first. A failure
 # between the two leaves a gap that the next run closes, which is why the timer
 # interval is short.
-cscli allowlists remove "$ALLOWLIST" "$ip" >/dev/null 2>&1 || true
-cscli allowlists add "$ALLOWLIST" "$ip" -e "$EXPIRATION" -d "$COMMENT" >/dev/null ||
+"${CSCLI[@]}" allowlists remove "$ALLOWLIST" "$ip" >/dev/null 2>&1 || true
+"${CSCLI[@]}" allowlists add "$ALLOWLIST" "$ip" -e "$EXPIRATION" -d "$COMMENT" >/dev/null ||
     skip "could not add $ip to allowlist $ALLOWLIST; will retry on the next run"
 
 # An allowlist stops new decisions but does not retract one already handed to the
 # firewall bouncer, so a ban taken in the window before this ran is cleared here.
 # This is what makes an IP change that races a ban self-healing.
-cscli decisions delete --ip "$ip" >/dev/null 2>&1 || true
+"${CSCLI[@]}" decisions delete --ip "$ip" >/dev/null 2>&1 || true
 
 log "allowlisted $ip in $ALLOWLIST (expires in $EXPIRATION)"

@@ -1,8 +1,21 @@
 ---
-- name: restart crowdsec
-  systemd:
-    name: crowdsec
+- name: restart the crowdsec container
+  community.docker.docker_compose_v2:
+    project_src: "{{ crowdsec_dir }}"
     state: restarted
+  listen: restart crowdsec
+
+# Later tasks call cscli right after a flush
+- name: wait for the crowdsec LAPI
+  ansible.builtin.uri:
+    url: http://127.0.0.1:8080/health
+    status_code: 200
+    timeout: 5
+  register: crowdsec_health
+  until: crowdsec_health.status == 200
+  retries: 24
+  delay: 5
+  listen: restart crowdsec
 
 - name: restart crowdsec firewall bouncer
   systemd:

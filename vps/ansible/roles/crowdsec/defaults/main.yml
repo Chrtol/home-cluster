@@ -1,5 +1,13 @@
 ---
-# Collections on top of what the installer set up (linux, sshd, base-http-scenarios...)
+# Not older than the database it opens: the schema does not migrate downwards
+# renovate: datasource=docker depName=crowdsecurity/crowdsec
+crowdsec_image_tag: v1.8.2
+crowdsec_dir: /opt/crowdsec
+crowdsec_container_name: crowdsec
+crowdsec_cscli: ["docker", "exec", "{{ crowdsec_container_name }}", "cscli"]
+crowdsec_memory_limit: 1g
+
+# Installed by the image at start (COLLECTIONS)
 crowdsec_collections:
   - crowdsecurity/linux
   - crowdsecurity/sshd

@@ -9,7 +9,8 @@
 # reached through, so the allowlist is load-bearing rather than a convenience.
 
 - name: Home allowlist -- check for centralized allowlist support
-  ansible.builtin.command: cscli allowlists list
+  ansible.builtin.command:
+    argv: "{{ crowdsec_cscli + ['allowlists', 'list'] }}"
   register: crowdsec_allowlist_support
   changed_when: false
   failed_when: false
@@ -39,13 +40,9 @@
 
 - name: Home allowlist -- create the allowlist
   ansible.builtin.command:
-    argv:
-      - cscli
-      - allowlists
-      - create
-      - "{{ crowdsec_home_allowlist_name }}"
-      - --description
-      - "Home network public IP, synced from the WireGuard peer endpoint"
+    argv: >-
+      {{ crowdsec_cscli + ['allowlists', 'create', crowdsec_home_allowlist_name,
+         '--description', 'Home network public IP, synced from the WireGuard peer endpoint'] }}
   register: crowdsec_allowlist_create
   changed_when: crowdsec_allowlist_create.rc == 0
   # Re-running is the normal case; only a genuine failure should stop the play.

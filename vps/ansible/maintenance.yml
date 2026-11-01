@@ -58,11 +58,28 @@
       until: maintenance_traefik.status == 200
       check_mode: false
 
-    - name: Verify CrowdSec and its firewall bouncer are running
-      ansible.builtin.command: systemctl is-active {{ item }}
-      loop:
-        - crowdsec
-        - crowdsec-firewall-bouncer
+    - name: Verify the CrowdSec container is running
+      ansible.builtin.command: docker inspect -f '{{ '{{' }}.State.Running{{ '}}' }}' crowdsec
+      register: maintenance_crowdsec
+      retries: 12
+      delay: 10
+      until: maintenance_crowdsec.stdout == 'true'
+      changed_when: false
+      check_mode: false
+
+    - name: Verify the CrowdSec LAPI answers
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8080/health
+        status_code: 200
+        timeout: 5
+      register: maintenance_crowdsec_lapi
+      retries: 12
+      delay: 10
+      until: maintenance_crowdsec_lapi.status == 200
+      check_mode: false
+
+    - name: Verify the CrowdSec firewall bouncer is running
+      ansible.builtin.command: systemctl is-active crowdsec-firewall-bouncer
       changed_when: false
       check_mode: false
 

@@ -40,10 +40,44 @@
         copytruncate
       }
 
+# This role runs before the crowdsec role, so on the deploy that moves the engine
+# into a container (and on a fresh host) the container is not there yet.
+- name: Check for the crowdsec container
+  ansible.builtin.command: docker inspect -f '{{ '{{' }}.State.Running{{ '}}' }}' crowdsec
+  register: traefik_crowdsec_container
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: traefik_crowdsec_enabled | default(true)
+
+- name: Check for a host cscli
+  ansible.builtin.command: which cscli
+  register: traefik_host_cscli
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: traefik_crowdsec_enabled | default(true)
+
+- name: Pick how to reach cscli
+  ansible.builtin.set_fact:
+    traefik_cscli: >-
+      {{ 'docker exec crowdsec cscli' if (traefik_crowdsec_container.stdout | default('')) == 'true'
+         else ('cscli' if (traefik_host_cscli.rc | default(1)) == 0 else '') }}
+  when: traefik_crowdsec_enabled | default(true)
+
+- name: Skip the bouncer check while no engine is running
+  ansible.builtin.debug:
+    msg: No crowdsec container or host cscli yet; the bouncer check runs on the next deploy.
+  when:
+    - traefik_crowdsec_enabled | default(true)
+    - traefik_cscli | length == 0
+
 # Manage CrowdSec bouncer for Traefik protection
 - name: Setup CrowdSec bouncer
   include_tasks: crowdsec-bouncer.yml
-  when: traefik_crowdsec_enabled | default(true)
+  when:
+    - traefik_crowdsec_enabled | default(true)
+    - traefik_cscli | length > 0
 
 - name: Template Traefik static configuration
   ansible.builtin.template:
