@@ -7,12 +7,10 @@ This document lists all the 1Password secrets required for VPS deployment via Gi
 ### 1. VPS Access (Vault: `Lab`, Item: `vps-wireguard`)
 - `VPS_IP` - VPS server IP address
 - `VPS_SSH_PORT` - SSH port (default: 22)
+- `VPS_SSH_PRIVATE_KEY` - SSH private key for VPS access
+- `VPS_SSH_USER` - SSH username
 
-### 2. VPS SSH Keys (Vault: `Lab`, Item: `pangolin`)
-- `PANGOLIN_VPS_SSH_PRIVATE_KEY` - SSH private key for VPS access
-- `PANGOLIN_VPS_SSH_USER` - SSH username (default: root)
-
-### 3. Traefik Proxy Configuration (Vault: `Lab`, Item: `vps-proxy`)
+### 2. Traefik Proxy Configuration (Vault: `Lab`, Item: `vps-proxy`)
 
 #### Required Fields:
 - `VPS_PROXY_DOMAIN` - Your domain name
@@ -54,12 +52,12 @@ Ping endpoint is served locally by the VPS at `https://deadman.${VPS_PROXY_DOMAI
 Set the cluster's 1Password `alertmanager.ALERTMANAGER_HEARTBEAT_URL` field to this URL so the
 Alertmanager `heartbeat` receiver pings it.
 
-### 4. Trivy Security Scanner (Vault: `Lab`, Item: `trivy-server`)
+### 3. Trivy Security Scanner (Vault: `Lab`, Item: `trivy-server`)
 - `TRIVY_SERVER_TOKEN` - Authentication token for Trivy server (generate with `openssl rand -hex 32`)
 
 The Trivy server URL is derived from your domain: `https://trivy.${SECRET_DOMAIN}`
 
-### 5. CrowdSec Bouncer API Key (Vault: `Lab`, Item: `crowdsec`)
+### 4. CrowdSec Bouncer API Key (Vault: `Lab`, Item: `crowdsec`)
 **This item must be created after setting up the CrowdSec bouncer on the VPS**
 
 #### Required Field:
