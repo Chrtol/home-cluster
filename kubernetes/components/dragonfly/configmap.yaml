@@ -13,7 +13,7 @@
 # apps consume redis config in incompatible shapes (URL vs host/port vs
 # celery broker), so the component does not template them.
 #
-# Apps not on app-template (homarr, authentik) cannot consume this fragment;
+# Apps not on app-template (authentik) cannot consume this fragment;
 # set the pod label through their own chart values instead.
 apiVersion: v1
 kind: ConfigMap

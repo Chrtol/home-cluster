@@ -23,7 +23,7 @@ resources:
   - ./smtp-relay/ks.yaml
   - ./reptile-tracker/ks.yaml
   - ./bentopdf/ks.yaml
-  - ./homarr/ks.yaml
+  - ./holm/ks.yaml
   - ./outline/ks.yaml
   - ./kan/ks.yaml
   - ./moocup/ks.yaml

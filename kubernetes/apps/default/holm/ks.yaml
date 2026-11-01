@@ -1,0 +1,51 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app holm
+  namespace: &namespace default
+spec:
+  targetNamespace: *namespace
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  interval: 1h
+  timeout: 5m
+  path: "./kubernetes/apps/default/holm/app"
+  # ceph-rbd         -> RWO PVC for the SQLite DB (per-user layouts + encrypted
+  #                     integration logins -- state git cannot recreate)
+  # oidc-application -> Authentik OIDC provider/app/group; creds land in
+  #                     holm-oidc-authentik-application, consumed via env
+  # kopiur           -> Kopia backup of that PVC
+  components:
+    - ../../../../components/ceph-rbd
+    - ../../../../components/oidc-application
+    - ../../../../components/kopiur
+  dependsOn:
+    - name: authentik
+      namespace: security
+    - name: kopiur-repository
+      namespace: kopiur-system
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  wait: false
+  postBuild:
+    substitute:
+      APP: *app
+      CEPH_RBD_CAPACITY: 1Gi
+      SUBDOMAIN: start
+      GROUP: "Default"
+      DISPLAY_NAME: Holm
+      DESCRIPTION: "Household start page"
+      REDIRECT_PATH: /auth/callback
+      # The household (Plex users synced by tautulli) gets in alongside
+      # bp-holm-users and authentik Admins.
+      OIDC_ACCESS_GROUP: media-users
+      OIDC_SECRET_NAMESPACE: default
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret

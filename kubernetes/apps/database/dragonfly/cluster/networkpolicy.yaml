@@ -38,7 +38,7 @@ spec:
     - Ingress
   ingress:
     - from:
-        # default: outline, homarr, reptile-tracker (+ its celery worker share the label)
+        # default: outline, reptile-tracker (+ its celery worker share the label)
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: default
@@ -46,7 +46,7 @@ spec:
             matchExpressions:
               - key: app.kubernetes.io/name
                 operator: In
-                values: [outline, homarr, reptile-tracker, paperless, postiz]
+                values: [outline, reptile-tracker, paperless, postiz]
         # media: tracearr, immich
         - namespaceSelector:
             matchLabels:

@@ -112,7 +112,7 @@ The app's own `values:` merge over the fragment, so anything it defines
   Note: the current postgres-init image ignores `INIT_POSTGRES_EXTENSIONS`
   entirely — immich's extensions exist from an older image; a from-scratch
   restore must create them manually.
-- **Apps not on app-template** (homarr, grafana) can use the ExternalSecret but
+- **Apps not on app-template** (grafana) can use the ExternalSecret but
   must wire the initContainer and pod label through their own chart values.
 - **Shared `app` role**: grafana/mealie/authentik/lldap historically connect as
   the shared `app` role (password = `POSTGRES_PASS` in the `cloudnative-pg`

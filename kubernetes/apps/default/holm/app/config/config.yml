@@ -1,0 +1,219 @@
+# Holm catalog. Schema: https://github.com/man15h/holm/blob/main/docs/configuration.md
+# Flux substitutes the domain. The doubled dollar on the OIDC client lines escapes
+# Flux, so Holm fills those from the pod env instead (an unset one stops it).
+# Holm may substitute before parsing YAML: never write a dollar-brace in a comment.
+# App ids are keys in every user's saved layout -- never rename one.
+
+branding:
+  name: "Home"
+  short_name: "home"
+  description: "Household start page"
+
+auth:
+  enabled: true
+  oidc:
+    issuer: "https://sso.${SECRET_DOMAIN}/application/o/holm/"
+    client_id: "$${OIDC_CLIENT_ID}"
+    client_secret: "$${OIDC_CLIENT_SECRET}"
+    # Authentik's stock profile mapping carries the groups claim.
+    scopes: "openid profile email"
+    redirect_base: "https://start.${SECRET_DOMAIN}"
+  registration:
+    enabled: false
+
+database:
+  enabled: true
+
+customization:
+  enabled: true
+
+apps:
+  # Household -- the old Homarr "Media" board.
+  - id: plex
+    name: "Plex"
+    url: "https://plex.${SECRET_DOMAIN}"
+    icon: "di:plex"
+    self_hosted: true
+    health: true
+    tags: ["media"]
+  - id: seerr
+    name: "Requests"
+    url: "https://request.${SECRET_DOMAIN}"
+    icon: "di:jellyseerr"
+    self_hosted: true
+    health: true
+    tags: ["media"]
+  - id: audiobookshelf
+    name: "Audiobooks"
+    url: "https://audiobooks.${SECRET_DOMAIN}"
+    icon: "di:audiobookshelf"
+    self_hosted: true
+    health: true
+    tags: ["media"]
+  - id: bentopdf
+    name: "BentoPDF"
+    url: "https://pdf.${SECRET_DOMAIN}"
+    icon: "di:bentopdf"
+    self_hosted: true
+    health: true
+    tags: ["tools"]
+  - id: it-tools
+    name: "IT Tools"
+    url: "https://tools.${SECRET_DOMAIN}"
+    icon: "di:it-tools"
+    self_hosted: true
+    health: true
+    tags: ["tools"]
+  - id: moocup
+    name: "Moocup"
+    url: "https://moocup.${SECRET_DOMAIN}"
+    icon: "https://moocup.${SECRET_DOMAIN}/favicon.svg"
+    self_hosted: true
+    health: true
+    tags: ["tools"]
+
+  # In the catalog but not placed by default; users add them, mainly to get
+  # search through the integrations below.
+  - id: immich
+    name: "Photos"
+    url: "https://photos.${SECRET_DOMAIN}"
+    icon: "di:immich"
+    self_hosted: true
+    default_visible: false
+    health: true
+    tags: ["media"]
+  - id: mealie
+    name: "Recipes"
+    url: "https://recipes.${SECRET_DOMAIN}"
+    icon: "di:mealie"
+    self_hosted: true
+    default_visible: false
+    health: true
+    tags: ["home"]
+  - id: paperless
+    name: "Paperless"
+    url: "https://paperless.${SECRET_DOMAIN}"
+    icon: "di:paperless-ngx"
+    self_hosted: true
+    default_visible: false
+    health: true
+    tags: ["home"]
+  - id: karakeep
+    name: "Bookmarks"
+    url: "https://karakeep.${SECRET_DOMAIN}"
+    icon: "di:karakeep"
+    self_hosted: true
+    default_visible: false
+    health: true
+    tags: ["home"]
+
+  # Admin -- the old Homarr "Homelab" board.
+  - id: sonarr
+    name: "Sonarr"
+    url: "https://sonarr.${SECRET_DOMAIN}"
+    icon: "di:sonarr"
+    groups: ["authentik Admins"]
+    health: true
+    tags: ["arr"]
+  - id: radarr
+    name: "Radarr"
+    url: "https://radarr.${SECRET_DOMAIN}"
+    icon: "di:radarr"
+    groups: ["authentik Admins"]
+    health: true
+    tags: ["arr"]
+  - id: prowlarr
+    name: "Prowlarr"
+    url: "https://prowlarr.${SECRET_DOMAIN}"
+    icon: "di:prowlarr"
+    groups: ["authentik Admins"]
+    health: true
+    tags: ["arr"]
+  - id: sabnzbd
+    name: "SABnzbd"
+    url: "https://sabnzbd.${SECRET_DOMAIN}"
+    icon: "di:sabnzbd"
+    groups: ["authentik Admins"]
+    health: true
+    tags: ["downloads"]
+  - id: qbittorrent
+    name: "qBittorrent Public"
+    url: "https://qbittorrent.${SECRET_DOMAIN}"
+    icon: "di:qbittorrent"
+    groups: ["authentik Admins"]
+    health: true
+    tags: ["downloads"]
+  - id: qbittorrent-private
+    name: "qBittorrent Private"
+    url: "https://qb-priv.${SECRET_DOMAIN}"
+    icon: "di:qbittorrent"
+    groups: ["authentik Admins"]
+    health: true
+    tags: ["downloads"]
+  - id: proxmox
+    name: "Proxmox"
+    url: "https://proxmox.${SECRET_DOMAIN}"
+    icon: "di:proxmox"
+    groups: ["authentik Admins"]
+    health: true
+    tags: ["infra"]
+  - id: truenas
+    name: "TrueNAS"
+    url: "https://nas.${SECRET_DOMAIN}"
+    icon: "di:truenas"
+    groups: ["authentik Admins"]
+    health: true
+    tags: ["infra"]
+  - id: opnsense
+    name: "OPNsense"
+    url: "https://opnsense.${SECRET_DOMAIN}"
+    icon: "di:opnsense"
+    groups: ["authentik Admins"]
+    health: true
+    tags: ["infra"]
+  - id: adguard
+    name: "AdGuard Home"
+    url: "https://adguard.${SECRET_DOMAIN}"
+    icon: "di:adguard-home"
+    groups: ["authentik Admins"]
+    health: true
+    tags: ["infra"]
+
+# Each user connects their own account (API key) in Configure. default_url pins
+# the server, so nobody can aim an integration at an arbitrary internal host.
+integrations:
+  plex:
+    default_url: "https://plex.${SECRET_DOMAIN}"
+    surfaces: { search: true, widgets: false }
+  seerr:
+    default_url: "https://request.${SECRET_DOMAIN}"
+    surfaces: { search: true, widgets: false }
+  audiobookshelf:
+    default_url: "https://audiobooks.${SECRET_DOMAIN}"
+    surfaces: { search: true, widgets: false }
+  immich:
+    default_url: "https://photos.${SECRET_DOMAIN}"
+    surfaces: { search: true, widgets: false }
+  mealie:
+    default_url: "https://recipes.${SECRET_DOMAIN}"
+    surfaces: { search: true, widgets: false }
+  paperless:
+    default_url: "https://paperless.${SECRET_DOMAIN}"
+    surfaces: { search: true, widgets: false }
+  karakeep:
+    default_url: "https://karakeep.${SECRET_DOMAIN}"
+    surfaces: { search: true, widgets: false }
+
+weather:
+  enabled: true
+
+# The stock onboarding and privacy texts make promises (backups, retention)
+# written for someone else's server; off until rewritten for this one.
+onboarding:
+  enabled: false
+privacy:
+  enabled: false
+
+# Renovate already tracks releases.
+update_check:
+  enabled: false
