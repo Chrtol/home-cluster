@@ -19,9 +19,9 @@ spec:
             matchType: =
       # Watchdog fires continuously by design. Route it to the heartbeat
       # receiver so it pings the out-of-cluster dead-man's-switch on the VPS on a
-      # steady cadence. If these pings stop (cluster/ingress/monitoring down), the
+      # steady cadence. If these pings stop (cluster/monitoring/home WAN down), the
       # VPS watcher notifies via Pushover — an independent failure domain from the
-      # n8n webhook path, which routes through Envoy Gateway ingress.
+      # in-cluster n8n path below.
       - receiver: heartbeat
         matchers:
           - name: alertname
@@ -96,7 +96,9 @@ spec:
             key: ALERTMANAGER_HEARTBEAT_URL
     - name: n8n-smart-routing
       webhookConfigs:
-        - url: "https://n8n-webhook.${SECRET_DOMAIN}/webhook/alerts"
+        # Service URL, not n8n-webhook.<domain>: that name resolves to the VPS,
+        # so VPS/tunnel alerts would be delivered through the outage itself.
+        - url: "http://n8n.default.svc.cluster.local:8080/webhook/alerts"
           sendResolved: true
           httpConfig:
             followRedirects: true

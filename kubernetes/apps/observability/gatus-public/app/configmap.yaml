@@ -25,7 +25,8 @@ data:
     endpoints: []
     alerting:
       custom:
-        url: https://n8n-webhook.${SECRET_DOMAIN}/webhook/gatus
+        # In-cluster URL so VPS/tunnel alerts don't depend on the VPS.
+        url: http://n8n.default.svc.cluster.local:8080/webhook/gatus
         method: POST
         headers:
           Content-Type: application/json
