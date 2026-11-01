@@ -40,6 +40,7 @@ traefik_envoy_gateway_ip: "{{ proxy_envoy_gateway_ip }}"
 
 # Metrics configuration
 traefik_enable_metrics: false
+traefik_metrics_interface: wg0
 traefik_metrics_user: ""  # VPS_METRICS_USER from 1Password
 traefik_metrics_password_hash: ""  # VPS_METRICS_PASSWORD_HASH (htpasswd hash) from 1Password
 

@@ -13,6 +13,22 @@
     comment: "Minecraft Bedrock"
   when: traefik_minecraft_ip | default('', true) | trim | length > 0
 
+# Prometheus in the cluster scrapes node-exporter and Traefik's metrics over the
+# tunnel. Both listen on every interface, so a tunnel that comes up after Docker
+# at boot cannot stop Traefik from binding; UFW is what keeps them off the public side.
+- name: Allow metrics scrapes over the WireGuard tunnel
+  community.general.ufw:
+    rule: allow
+    direction: in
+    interface: "{{ traefik_metrics_interface }}"
+    port: "{{ item.port }}"
+    proto: tcp
+    comment: "{{ item.comment }}"
+  loop:
+    - { port: "9100", comment: "node-exporter over WireGuard" }
+    - { port: "8082", comment: "Traefik metrics over WireGuard" }
+  when: traefik_enable_metrics | default(false)
+
 - name: Create Traefik directories
   ansible.builtin.file:
     path: "{{ item }}"

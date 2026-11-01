@@ -37,7 +37,7 @@ services:
     pid: host
     command:
       - '--path.rootfs=/host'
-      - '--web.listen-address=127.0.0.1:9100'
+      - '--web.listen-address=:9100'
     volumes:
       - /:/host:ro,rslave
 {% endif %}
