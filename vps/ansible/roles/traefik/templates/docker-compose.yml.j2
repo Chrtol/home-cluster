@@ -11,16 +11,13 @@ services:
         max-file: "3"
     network_mode: host  # Use host network for ports 80/443
     volumes:
-      # The directory, not the two files: a template write replaces dynamic.yml,
-      # and only a directory mount lets the running Traefik see the new file
+      # The directory, not single files: replaced files (template writes, the
+      # cert sync's rename) are only visible to the running Traefik this way.
+      # The certificate itself is inline in dynamic/tls.yml, so no cert mount.
       - {{ traefik_config_dir }}:/etc/traefik:ro
 
       # Access log, read by CrowdSec on the host
       - {{ traefik_access_log_dir }}:{{ traefik_access_log_dir }}
-
-      # Mount existing SSL certificates (read-only)
-      - {{ proxy_ssl_cert_path }}:{{ proxy_ssl_cert_path }}:ro
-      - {{ proxy_ssl_key_path }}:{{ proxy_ssl_key_path }}:ro
 
 {% if traefik_enable_metrics | default(false) %}
   node-exporter:

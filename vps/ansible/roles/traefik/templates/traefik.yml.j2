@@ -32,7 +32,7 @@ entryPoints:
 # Providers
 providers:
   file:
-    filename: /etc/traefik/dynamic.yml
+    directory: /etc/traefik/dynamic
     watch: true
 
 {% if traefik_crowdsec_enabled | default(true) %}
@@ -45,8 +45,8 @@ experimental:
       version: v1.8.1
 {% endif %}
 
-# Using existing certificates from 1Password configuration
-# No ACME/Let's Encrypt needed since certificates already exist
+# Certificates come from certbot on the host; dynamic/tls.yml carries them inline
+# (see templates/traefik-tls-sync.sh.j2)
 
 # OpenTelemetry Tracing Configuration (OTLP format for Traefik v3)
 tracing:

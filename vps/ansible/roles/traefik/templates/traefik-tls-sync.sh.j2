@@ -1,0 +1,36 @@
+#!/bin/sh
+# Writes the certificate and key inline into Traefik's tls.yml. Traefik skips a
+# reload when the parsed config is unchanged, so a renewed cert behind the same
+# path would never be picked up; inline contents make a renewal a config change,
+# applied live without a restart. Run by Ansible and by certbot's deploy hook.
+set -eu
+
+CERT={{ proxy_ssl_cert_path | quote }}
+KEY={{ proxy_ssl_key_path | quote }}
+OUT={{ (traefik_dynamic_dir ~ '/tls.yml') | quote }}
+
+indent() { sed "s/^/$1/" "$2"; }
+
+umask 077
+# Same directory, so the rename below is atomic; the suffix is not .yml, so
+# Traefik ignores the half-written file
+tmp=$(mktemp "$OUT.XXXXXX")
+trap 'rm -f "$tmp"' EXIT
+
+{
+    printf 'tls:\n  certificates:\n    - certFile: |\n'
+    indent '        ' "$CERT"
+    printf '      keyFile: |\n'
+    indent '        ' "$KEY"
+    printf '  stores:\n    default:\n      defaultCertificate:\n        certFile: |\n'
+    indent '          ' "$CERT"
+    printf '        keyFile: |\n'
+    indent '          ' "$KEY"
+} >"$tmp"
+
+if [ -f "$OUT" ] && cmp -s "$tmp" "$OUT"; then
+    echo unchanged
+else
+    mv "$tmp" "$OUT"
+    echo updated
+fi

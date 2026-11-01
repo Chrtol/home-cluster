@@ -37,6 +37,7 @@
   loop:
     - "{{ traefik_dir }}"
     - "{{ traefik_config_dir }}"
+    - "{{ traefik_dynamic_dir }}"
     - "{{ traefik_access_log_dir }}"
 
 # copytruncate: Traefik keeps the file open and only reopens it on USR1, which
@@ -105,8 +106,40 @@
 - name: Template Traefik dynamic configuration
   ansible.builtin.template:
     src: dynamic.yml.j2
-    dest: "{{ traefik_config_dir }}/dynamic.yml"
+    dest: "{{ traefik_dynamic_dir }}/dynamic.yml"
     mode: '0644'
+
+- name: Install the certificate sync script
+  ansible.builtin.template:
+    src: traefik-tls-sync.sh.j2
+    dest: "{{ traefik_tls_sync_script }}"
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create certbot's deploy hook directory
+  ansible.builtin.file:
+    path: /etc/letsencrypt/renewal-hooks/deploy
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+# certbot runs deploy hooks only after a successful renewal
+- name: Run the certificate sync after every certbot renewal
+  ansible.builtin.copy:
+    dest: /etc/letsencrypt/renewal-hooks/deploy/traefik-tls-sync
+    owner: root
+    group: root
+    mode: '0755'
+    content: |
+      #!/bin/sh
+      exec {{ traefik_tls_sync_script }}
+
+- name: Write the certificate into the dynamic config
+  ansible.builtin.command: "{{ traefik_tls_sync_script }}"
+  register: traefik_tls_sync
+  changed_when: traefik_tls_sync.stdout == 'updated'
 
 - name: Template docker-compose file
   ansible.builtin.template:
@@ -126,6 +159,12 @@
     remove_orphans: true
     recreate: "{{ 'always' if static_config_changed is changed else 'auto' }}"
   register: traefik_result
+
+# Only after the recreate: until then the running Traefik still serves from it
+- name: Remove the dynamic config from before the provider read a directory
+  ansible.builtin.file:
+    path: "{{ traefik_config_dir }}/dynamic.yml"
+    state: absent
 
 - name: Pause to let container initialize
   pause:

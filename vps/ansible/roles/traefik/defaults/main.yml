@@ -2,6 +2,9 @@
 # Traefik configuration defaults
 traefik_dir: "/opt/traefik"
 traefik_config_dir: "{{ traefik_dir }}/config"
+# Read by the file provider as a directory: dynamic.yml plus the generated tls.yml
+traefik_dynamic_dir: "{{ traefik_config_dir }}/dynamic"
+traefik_tls_sync_script: /usr/local/sbin/traefik-tls-sync
 
 # Domain configuration - set from VPS_PROXY_DOMAIN in 1Password
 traefik_domain: ""

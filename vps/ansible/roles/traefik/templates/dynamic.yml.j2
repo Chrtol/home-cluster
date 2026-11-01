@@ -157,14 +157,3 @@ udp:
         servers:
           - address: "{{ traefik_minecraft_ip }}:{{ traefik_minecraft_port | default(19132) }}"
 {% endif %}
-
-# TLS Configuration
-tls:
-  certificates:
-    - certFile: {{ proxy_ssl_cert_path }}
-      keyFile: {{ proxy_ssl_key_path }}
-  stores:
-    default:
-      defaultCertificate:
-        certFile: {{ proxy_ssl_cert_path }}
-        keyFile: {{ proxy_ssl_key_path }}
