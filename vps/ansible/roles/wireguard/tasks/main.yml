@@ -88,3 +88,26 @@
     name: wg-quick@{{ wireguard_interface }}
     enabled: true
     state: started
+
+# wg-quick adds a route per AllowedIPs entry only when the interface comes up,
+# and syncconf never touches routes. Without this, an added entry is accepted
+# inbound but its replies leave via the public interface until the next reboot.
+# `ip route` prints host routes without /32, hence the normalising.
+- name: WireGuard -- route exactly the AllowedIPs through the tunnel
+  ansible.builtin.shell: |
+    set -eu
+    want="{{ wireguard_home_allowed_ips | map('regex_replace', '/32$', '') | join(' ') }}"
+    changed=0
+    for dst in $want; do
+      if [ -z "$(ip -4 route show exact "$dst" dev {{ wireguard_interface }})" ]; then
+        ip -4 route replace "$dst" dev {{ wireguard_interface }}; changed=1
+      fi
+    done
+    for dst in $(ip -4 route show dev {{ wireguard_interface }} | awk '!/proto kernel/ {print $1}'); do
+      case " $want " in *" $dst "*) ;; *) ip -4 route del "$dst" dev {{ wireguard_interface }}; changed=1 ;; esac
+    done
+    echo "changed=$changed"
+  args:
+    executable: /bin/bash
+  register: wireguard_routes
+  changed_when: "'changed=1' in wireguard_routes.stdout"
