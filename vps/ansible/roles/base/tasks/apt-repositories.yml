@@ -32,26 +32,10 @@
     label: "{{ item.name }}"
   register: apt_repositories
 
-# CrowdSec now comes from a pinned image and release binary. The leftover "rc"
-# packages are not purged: purge would delete /etc/crowdsec, which the container uses.
-- name: Remove the CrowdSec repository and its key
-  deb822_repository:
-    name: crowdsec
-    state: absent
-  register: apt_crowdsec_source
-
-# Left by packagecloud's install script, before the repository moved to deb822
-- name: Remove the old CrowdSec repository keyring
-  file:
-    path: "{{ item }}"
-    state: absent
-  loop:
-    - /etc/apt/keyrings/crowdsec_crowdsec-archive-keyring.gpg
-    - /usr/share/keyrings/crowdsec_crowdsec-archive-keyring.gpg
-
-# Ubuntu's universe still carries crowdsec 1.4.6. Installed by accident, it would
-# fight the container for 127.0.0.1:8080 and open the 1.8 database with an older
-# schema, so no source may install it.
+# CrowdSec comes from a pinned image and release binary. Ubuntu's universe still
+# carries crowdsec 1.4.6; installed by accident, it would fight the container for
+# 127.0.0.1:8080 and open the 1.8 database with an older schema. The leftover "rc"
+# packages are not purged either: purge would delete /etc/crowdsec.
 - name: Never install CrowdSec from apt
   copy:
     dest: /etc/apt/preferences.d/crowdsec
@@ -62,21 +46,7 @@
       Pin-Priority: -1
   register: apt_crowdsec_pin
 
-# The same repositories in the old one-line format; left in place, apt warns
-# that every source is configured twice.
-- name: Remove the one-line sources they replace
-  file:
-    path: "/etc/apt/sources.list.d/{{ item }}"
-    state: absent
-  loop:
-    - docker.list
-    - crowdsec_crowdsec.list
-    - aquasecurity_github_io_trivy_repo_deb.list
-  register: apt_legacy_sources
-
 - name: Refresh the package index after a repository change
   apt:
     update_cache: true
-  when: >-
-    apt_repositories.changed or apt_crowdsec_source.changed or apt_crowdsec_pin.changed
-    or apt_legacy_sources.changed
+  when: apt_repositories.changed or apt_crowdsec_pin.changed
