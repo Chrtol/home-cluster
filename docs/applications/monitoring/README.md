@@ -240,7 +240,7 @@ Complete observability stack for cluster monitoring, alerting, and performance a
 receivers:
   - name: n8n-smart-routing
     webhookConfigs:
-      - url: "https://n8n-webhook.example.com/webhook/alerts"
+      - url: "http://n8n.default.svc.cluster.local:8080/webhook/alerts"
         sendResolved: true
 ```
 
@@ -257,7 +257,7 @@ receivers:
 # Service monitoring with webhook integration
 alerting:
   webhook:
-    url: https://n8n-webhook.example.com/webhook/gatus
+    url: http://n8n.default.svc.cluster.local:8080/webhook/gatus
     default-alert:
       send-on-resolved: true
 ```
