@@ -10,6 +10,20 @@ spec:
     name: gha-runner-scale-set
     namespace: flux-system
   interval: 1h
+  # A controller deletes any AutoscalingRunnerSet whose version label differs from
+  # its own. The two charts come from separate OCIRepositories, so a Renovate bump
+  # can upgrade this release first and the old controller deletes the new set.
+  # dependsOn holds it while the controller is mid-upgrade; the retries cover the
+  # case where this source updates before the controller's has even started.
+  dependsOn:
+    - name: actions-runner-controller
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
   values:
     githubConfigUrl: https://github.com/chrtol/home-cluster
     githubConfigSecret: home-cluster-runner-secret
