@@ -1,0 +1,7 @@
+---
+# Restart = remove then apply; the chain is open for that moment, never closed
+- name: reapply geoblock
+  ansible.builtin.systemd:
+    name: geoblock-apply.service
+    state: restarted
+    daemon_reload: true

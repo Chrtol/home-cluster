@@ -1,0 +1,13 @@
+[Unit]
+Description=Load the geo-block set from its cache and hook it into INPUT
+After=ufw.service docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile={{ geoblock_env_file }}
+ExecStart=/usr/bin/python3 -I {{ geoblock_dir }}/geoblock.py apply
+ExecStop=/usr/bin/python3 -I {{ geoblock_dir }}/geoblock.py remove
+
+[Install]
+WantedBy=multi-user.target

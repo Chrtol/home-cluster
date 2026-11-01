@@ -17,6 +17,7 @@ on:
       - 'vps/ansible/roles/deadman/**'
       - 'vps/ansible/roles/wireguard/**'
       - 'vps/ansible/roles/firewall/**'
+      - 'vps/ansible/roles/geoblock/**'
       - 'vps/ansible/reverse-proxy.yml'
       - '.github/workflows/vps-reverse-proxy-deploy.yml'
   workflow_dispatch:
@@ -93,6 +94,10 @@ jobs:
           # Must exist in 1Password -- load-secrets-action fails the whole job on any
           # unresolved op:// reference, taking every VPS deploy with it.
           VPS_MINECRAFT_LB_IP: "op://Lab/vps-proxy/VPS_MINECRAFT_LB_IP"
+
+          # Geo-block data (GeoLite2 Country), shared with tracearr
+          MAXMIND_ACCOUNT_ID: "op://Lab/maxmind/MAXMIND_ACCOUNT_ID"
+          MAXMIND_LICENSE_KEY: "op://Lab/maxmind/MAXMIND_LICENSE_KEY"
 
           # Feature Toggles
           PROXY_ENABLE_ECHO_TEST: "op://Lab/vps-proxy/VPS_ENABLE_ECHO_TEST"

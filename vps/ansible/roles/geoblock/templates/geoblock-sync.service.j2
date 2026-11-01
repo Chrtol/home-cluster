@@ -1,0 +1,9 @@
+[Unit]
+Description=Refresh the geo-block allow set from GeoLite2 Country
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile={{ geoblock_env_file }}
+ExecStart=/usr/bin/python3 -I {{ geoblock_dir }}/geoblock.py sync

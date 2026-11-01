@@ -40,6 +40,10 @@
     # Minecraft Bedrock UDP passthrough. Presence of the IP is the toggle.
     minecraft_lb_ip: "{{ lookup('env', 'VPS_MINECRAFT_LB_IP') | default('', true) }}"
 
+    # Geo-block data (GeoLite2 Country) from 1Password
+    geoblock_maxmind_account_id: "{{ lookup('env', 'MAXMIND_ACCOUNT_ID') }}"
+    geoblock_maxmind_license_key: "{{ lookup('env', 'MAXMIND_LICENSE_KEY') }}"
+
     # Feature toggles
     enable_echo_test: "{{ lookup('env', 'PROXY_ENABLE_ECHO_TEST') | default('true') | bool }}"
     enable_metrics: "{{ lookup('env', 'PROXY_ENABLE_METRICS') | default('true') | bool }}"
@@ -100,6 +104,11 @@
       include_role:
         name: crowdsec
       when: crowdsec_enabled
+
+    # After firewall (UFW's chains exist) and traefik (the Minecraft port is known)
+    - name: Ensure the geo-block is configured
+      include_role:
+        name: geoblock
 
     - name: Ensure trivy scanner is deployed
       include_role:

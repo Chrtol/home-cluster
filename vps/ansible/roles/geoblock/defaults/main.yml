@@ -1,0 +1,30 @@
+---
+# false removes the chain and its jump (the rollback); the set and cache stay
+geoblock_enabled: true
+
+# MaxMind continent codes and ISO country codes. A network's own location
+# decides; its registered country only when it has no location.
+geoblock_allowed_continents: [EU]
+geoblock_allowed_countries: [US]
+geoblock_denied_countries: [RU, BY]
+
+geoblock_tcp_ports: [80, 443]
+# 443/udp too, so it holds if HTTP/3 is ever opened in UFW
+geoblock_udp_ports: "{{ [443] + ([traefik_minecraft_port | default(19132)] if traefik_minecraft_ip | default('', true) | trim | length > 0 else []) }}"
+# Never matched: loopback and the tunnel that carries SSH and the cluster link
+geoblock_exempt_interfaces: [lo, wg0]
+
+# A real download allows over 200 000 networks; far fewer means a broken file
+geoblock_min_networks: 50000
+# GeoLite2 free accounts get 30 downloads a day, and deploys run far more often
+# than the data changes, so a deploy only syncs when the cache is older than this
+geoblock_sync_max_age_days: 6
+
+geoblock_maxmind_account_id: ""
+geoblock_maxmind_license_key: ""
+
+geoblock_dir: /usr/local/lib/geoblock
+geoblock_env_file: /etc/geoblock/geoblock.env
+geoblock_state_dir: /var/lib/geoblock
+geoblock_set: geo-allow-v4
+geoblock_chain: GEOBLOCK

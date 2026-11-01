@@ -1,0 +1,141 @@
+---
+# Drops inbound web and game traffic from outside the allowed countries, in a
+# chain of its own jumped from the top of INPUT, before UFW and Traefik. The
+# WireGuard port and the tunnel are never matched, so SSH works from anywhere.
+
+- name: Turn the geo-block off
+  when: not (geoblock_enabled | bool)
+  block:
+    - name: Check for the apply unit
+      ansible.builtin.stat:
+        path: /etc/systemd/system/geoblock-apply.service
+      register: geoblock_apply_unit
+
+    - name: Stop the geo-block (removes the chain and its jump)
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop:
+        - geoblock-sync.timer
+        - geoblock-apply.service
+      when: geoblock_apply_unit.stat.exists
+
+- name: Set up the geo-block
+  when: geoblock_enabled | bool
+  block:
+    - name: Require the MaxMind credentials
+      ansible.builtin.assert:
+        that:
+          - geoblock_maxmind_account_id | length > 0
+          - geoblock_maxmind_license_key | length > 0
+        fail_msg: MAXMIND_ACCOUNT_ID and MAXMIND_LICENSE_KEY must be set.
+        quiet: true
+
+    # Only an IPv4 set is built, so a public IPv6 address would be an open door
+    - name: Refuse a host with a public IPv6 address
+      ansible.builtin.assert:
+        that:
+          - >-
+            ansible_facts.all_ipv6_addresses | default([])
+            | reject('match', '(?i)^(fe[89ab][0-9a-f]:|f[cd][0-9a-f]{2}:|::1$)') | list | length == 0
+        fail_msg: >-
+          This host has a global IPv6 address, but the geo-block only has an IPv4
+          set. Add an IPv6 set before enabling IPv6.
+        quiet: true
+
+    - name: Install ipset
+      ansible.builtin.apt:
+        name: ipset
+        state: present
+
+    - name: Create the geo-block directories
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "{{ item.mode }}"
+      loop:
+        - { path: "{{ geoblock_dir }}", mode: "0755" }
+        - { path: "{{ geoblock_env_file | dirname }}", mode: "0700" }
+        - { path: "{{ geoblock_state_dir }}", mode: "0700" }
+
+    - name: Install the geo-block script
+      ansible.builtin.copy:
+        src: geoblock.py
+        dest: "{{ geoblock_dir }}/geoblock.py"
+        owner: root
+        group: root
+        mode: "0755"
+      notify: reapply geoblock
+
+    - name: Write the geo-block environment
+      ansible.builtin.template:
+        src: geoblock.env.j2
+        dest: "{{ geoblock_env_file }}"
+        owner: root
+        group: root
+        mode: "0600"
+      no_log: true
+      diff: false
+      notify: reapply geoblock
+
+    - name: Install the geo-block units
+      ansible.builtin.template:
+        src: "{{ item }}.j2"
+        dest: "/etc/systemd/system/{{ item }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop:
+        - geoblock-sync.service
+        - geoblock-sync.timer
+        - geoblock-apply.service
+      notify: reapply geoblock
+
+    - name: Reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: Check the age of the cached set
+      ansible.builtin.stat:
+        path: "{{ geoblock_state_dir }}/allow-v4.txt"
+      register: geoblock_cache
+
+    - name: Refresh the set now
+      ansible.builtin.systemd:
+        name: geoblock-sync.service
+        state: started
+      when: >-
+        not geoblock_cache.stat.exists
+        or (now().timestamp() - geoblock_cache.stat.mtime) > geoblock_sync_max_age_days | int * 86400
+      notify: reapply geoblock
+
+    - name: Enable the geo-block units
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      loop:
+        - geoblock-apply.service
+        - geoblock-sync.timer
+
+    - name: Apply a pending geo-block change
+      ansible.builtin.meta: flush_handlers
+
+    - name: Count the allowed networks and chain rules
+      ansible.builtin.shell: |
+        set -o pipefail
+        printf 'networks=%s rules=%s\n' \
+          "$(ipset list -t {{ geoblock_set }} 2>/dev/null | awk -F': ' '/^Number of entries/ {print $2}')" \
+          "$(iptables -S {{ geoblock_chain }} 2>/dev/null | grep -c -- '^-A' || true)"
+      args:
+        executable: /bin/bash
+      register: geoblock_counts
+      changed_when: false
+      check_mode: false
+
+    - name: Report the geo-block
+      ansible.builtin.debug:
+        msg: "{{ geoblock_counts.stdout }}"
