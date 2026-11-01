@@ -1,7 +1,7 @@
 services:
   traefik:
     # renovate: datasource=docker depName=traefik
-    image: docker.io/library/traefik:v3.7.1
+    image: docker.io/library/traefik:v3.7.17
     container_name: traefik
     restart: unless-stopped
     network_mode: host  # Use host network for ports 80/443
