@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/refs/heads/main/helmrelease-helm-v2.json
+# yaml-language-server: $schema=https://chrtol-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 # Required variables : APP, GROUP, SUBDOMAIN, DESCRIPTION
 # Optional variables : DISPLAY_NAME (defaults to APP if not provided)
 #                      PROXY_ADMIN_GROUP - existing group to bind for admin access (for proxy auth apps)

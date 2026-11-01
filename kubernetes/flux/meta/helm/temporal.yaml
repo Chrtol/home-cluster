@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/source.toolkit.fluxcd.io/helmrepository_v1.json
+# yaml-language-server: $schema=https://chrtol-schemas.pages.dev/source.toolkit.fluxcd.io/helmrepository_v1.json
 # Temporal publishes only to a classic Helm index (gh-pages), not to an OCI
 # registry, and home-operations/charts-mirror does not carry it -- so this is a
 # HelmRepository despite the repo's OCI-first preference.

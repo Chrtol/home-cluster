@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+# yaml-language-server: $schema=https://chrtol-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
 # A silently-failing backup is worse than no backup: it looks like coverage but
 # restores nothing. The first run of this CronJob failed outright (stale system
 # tables from an un-upgraded MariaDB) and produced no signal anywhere -- these

@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+# yaml-language-server: $schema=https://chrtol-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
 # Modelled on database/mariadb-operator/backup/prometheusrule.yaml, for the same
 # reason: a silently-failing backup is worse than no backup, because it looks like
 # coverage and restores nothing. OPNsense makes that worse than usual -- you only

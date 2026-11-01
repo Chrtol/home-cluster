@@ -43,7 +43,7 @@ spec:
 ---
 # Restic credentials for the pre-kopiur repository at backup/karakeep-meilisearch. Nothing
 # backs up with them any more; kept so that history stays restorable until it is retired.
-# yaml-language-server: $schema=https://crd.movishell.pl/external-secrets.io/externalsecret_v1.json
+# yaml-language-server: $schema=https://chrtol-schemas.pages.dev/external-secrets.io/externalsecret_v1.json
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:

@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.networking.k8s.io/httproute_v1.json
+# yaml-language-server: $schema=https://chrtol-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
 # Authenticated route for the konflate UI. The SecurityPolicy (securitypolicy.yaml)
 # targets THIS route by name and applies Authentik forwardAuth to it. The
 # /outpost.goauthentik.io rule carries the Authentik callback to the embedded

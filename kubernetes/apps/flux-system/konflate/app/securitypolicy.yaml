@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+# yaml-language-server: $schema=https://chrtol-schemas.pages.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
 # Authentik forward-auth for the konflate UI. Targets ONLY the "konflate"
 # HTTPRoute — the "konflate-hooks" route (GitHub webhooks) is deliberately left
 # unauthenticated. Mirrors components/ext-auth/securitypolicy.yaml.

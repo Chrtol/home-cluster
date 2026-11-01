@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/source.toolkit.fluxcd.io/ocirepository_v1.json
+# yaml-language-server: $schema=https://chrtol-schemas.pages.dev/source.toolkit.fluxcd.io/ocirepository_v1.json
 #
 # Deliberately NOT in kubernetes/flux/meta/oci/ with every other chart source.
 # cluster-meta reconciles that directory with `wait: true` and cluster-apps

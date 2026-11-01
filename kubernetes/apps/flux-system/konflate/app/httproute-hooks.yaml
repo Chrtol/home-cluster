@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.networking.k8s.io/httproute_v1.json
+# yaml-language-server: $schema=https://chrtol-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
 # Unauthenticated route for GitHub App webhooks: konflate verifies the payload
 # HMAC with KONFLATE_WEBHOOK_SECRET, so this endpoint must NOT sit behind
 # Authentik forwardAuth (a login redirect would turn GitHub's POST into a 302).
