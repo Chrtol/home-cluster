@@ -17,16 +17,7 @@
     state: present
     update_cache: true
 
-- name: Add Trivy GPG key
-  ansible.builtin.apt_key:
-    url: https://aquasecurity.github.io/trivy-repo/deb/public.key
-    state: present
-
-- name: Add Trivy repository
-  ansible.builtin.apt_repository:
-    repo: "deb https://aquasecurity.github.io/trivy-repo/deb {{ ansible_facts['distribution_release'] }} main"
-    state: present
-
+# The Trivy apt repository comes from the base role.
 - name: Install Trivy
   ansible.builtin.apt:
     name: trivy

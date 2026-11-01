@@ -9,12 +9,19 @@ wireguard_listen_port: 51820
 wireguard_private_key: ""
 wireguard_home_public_key: ""
 
+# Home hosts (CIDRs) that SSH to the VPS over the tunnel; set from 1Password.
+# Only lets the VPS reply: OPNsense has no WG0 rule toward them, so the VPS can
+# never open a connection.
+wireguard_ssh_clients: []
+
 # Everything the VPS may send into the tunnel. Traffic to any other home
 # address leaves via the public interface instead, so a cluster or LAN source
-# outside this list never gets a reply over the tunnel.
-wireguard_home_allowed_ips:
-  - 10.100.0.2/32
-  - "{{ proxy_envoy_gateway_ip }}/32"
+# outside this list never gets a reply over the tunnel. Minecraft follows the
+# same VPS_MINECRAFT_LB_IP toggle as its Traefik entrypoint and UFW rule.
+wireguard_home_allowed_ips: >-
+  {{ ['10.100.0.2/32', proxy_envoy_gateway_ip ~ '/32']
+     + wireguard_ssh_clients
+     + ([minecraft_lb_ip | trim ~ '/32'] if (minecraft_lb_ip | default('', true) | trim) else []) }}
 
 wireguard_home_keepalive: 25
 

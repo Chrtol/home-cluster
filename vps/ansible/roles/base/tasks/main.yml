@@ -14,6 +14,9 @@
       - chrony
     state: present
 
+- name: Configure third-party apt repositories
+  include_tasks: apt-repositories.yml
+
 # What the VPS already runs; keeps its log and timer times in the owner's local time.
 - name: Configure timezone
   timezone:

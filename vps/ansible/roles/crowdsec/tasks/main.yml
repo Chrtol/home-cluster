@@ -9,20 +9,11 @@
   failed_when: false
   check_mode: false
 
-# Bootstrap only: the live VPS already has crowdsec, so these never run in CI.
+# Bootstrap only: the live VPS already has crowdsec, so this never runs in CI.
+# The crowdsec apt repository comes from the base role.
 - name: Install crowdsec
   when: cscli_path.rc != 0
   block:
-    - name: Add crowdsec GPG key
-      ansible.builtin.apt_key:
-        url: https://packagecloud.io/crowdsec/crowdsec/gpgkey
-        state: present
-
-    - name: Add crowdsec repository
-      ansible.builtin.apt_repository:
-        repo: "deb https://packagecloud.io/crowdsec/crowdsec/ubuntu/ {{ ansible_facts['distribution_release'] }} main"
-        state: present
-
     - name: Install crowdsec and the firewall bouncer
       ansible.builtin.apt:
         name:

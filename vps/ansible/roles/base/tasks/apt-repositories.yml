@@ -1,0 +1,73 @@
+---
+# Third-party apt repositories, in deb822 format with per-repository keys.
+# Lives in base (not in each app role) because maintenance.yml upgrades from
+# these right after base runs; the app roles only install their packages.
+
+- name: Install deb822_repository's dependency
+  apt:
+    name: python3-debian
+    state: present
+
+- name: Configure third-party apt repositories
+  deb822_repository:
+    name: "{{ item.name }}"
+    uris: "{{ item.uris }}"
+    suites: "{{ item.suites }}"
+    components: "{{ item.components }}"
+    architectures: "{{ item.architectures | default(omit) }}"
+    signed_by: "{{ item.key }}"
+  loop:
+    - name: docker
+      uris: https://download.docker.com/linux/ubuntu
+      suites: "{{ ansible_facts['distribution_release'] }}"
+      components: stable
+      architectures: amd64
+      key: https://download.docker.com/linux/ubuntu/gpg
+    # packagecloud publishes one distribution-independent suite named "any".
+    - name: crowdsec
+      uris: https://packagecloud.io/crowdsec/crowdsec/any/
+      suites: any
+      components: main
+      key: https://packagecloud.io/crowdsec/crowdsec/gpgkey
+    - name: trivy
+      uris: https://aquasecurity.github.io/trivy-repo/deb
+      suites: "{{ ansible_facts['distribution_release'] }}"
+      components: main
+      key: https://aquasecurity.github.io/trivy-repo/deb/public.key
+  loop_control:
+    label: "{{ item.name }}"
+  register: apt_repositories
+
+# The same repositories in the old one-line format; left in place, apt warns
+# that every source is configured twice.
+- name: Remove the one-line sources they replace
+  file:
+    path: "/etc/apt/sources.list.d/{{ item }}"
+    state: absent
+  loop:
+    - docker.list
+    - crowdsec_crowdsec.list
+    - aquasecurity_github_io_trivy_repo_deb.list
+  register: apt_legacy_sources
+
+# Left over from pushing VPS metrics with Alloy; its remote_write has been failing
+# since the tunnel moved to OPNsense, and node-exporter is scraped instead.
+- name: Remove Grafana Alloy
+  apt:
+    name: alloy
+    state: absent
+    purge: true
+
+- name: Remove the Grafana repository and its key
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/apt/sources.list.d/grafana.list
+    - /etc/apt/keyrings/grafana.gpg
+  register: apt_grafana_source
+
+- name: Refresh the package index after a repository change
+  apt:
+    update_cache: true
+  when: apt_repositories.changed or apt_legacy_sources.changed or apt_grafana_source.changed

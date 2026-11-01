@@ -31,6 +31,11 @@ on:
         required: false
         type: boolean
         default: false
+      allow_routing_change:
+        description: 'Allow this run to change WireGuard AllowedIPs'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   deploy-traefik:
@@ -53,10 +58,12 @@ jobs:
           VPS_SSH_PORT: "op://Lab/vps-wireguard/VPS_SSH_PORT"
           VPS_SSH_KEY: "op://Lab/pangolin/PANGOLIN_VPS_SSH_PRIVATE_KEY"
           VPS_SSH_USER: "op://Lab/pangolin/PANGOLIN_VPS_SSH_USER"
+          VPS_SSH_HOST_KEY: "op://Lab/vps-wireguard/VPS_SSH_HOST_KEY"
 
           # WireGuard tunnel (the home private key belongs to OPNsense; not loaded here)
           VPS_WG_PRIVATE_KEY: "op://Lab/vps-wireguard/VPS_WIREGUARD_PRIVATE_KEY"
           VPS_WG_HOME_PUBLIC_KEY: "op://Lab/vps-wireguard/VPS_WG_HOME_PUBLIC_KEY"
+          VPS_WG_SSH_CLIENTS: "op://Lab/vps-wireguard/VPS_WG_SSH_CLIENTS"
 
           # Traefik Configuration
           PROXY_DOMAIN: "op://Lab/vps-proxy/VPS_PROXY_DOMAIN"
@@ -111,10 +118,12 @@ jobs:
           mkdir -p ~/.ssh
           echo "$VPS_SSH_KEY" > ~/.ssh/vps_key
           chmod 600 ~/.ssh/vps_key
+          # Pin the VPS host key so the SSH key is only ever offered to the real VPS.
+          printf '[%s]:%s %s\n' "$VPS_HOST" "${VPS_SSH_PORT:-22}" "$VPS_SSH_HOST_KEY" > ~/.ssh/known_hosts
 
       - name: Test SSH connection
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/vps_key -p ${VPS_SSH_PORT:-22} ${VPS_SSH_USER:-root}@$VPS_HOST "echo 'SSH connection successful'"
+          ssh -o StrictHostKeyChecking=yes -i ~/.ssh/vps_key -p ${VPS_SSH_PORT:-22} ${VPS_SSH_USER:-root}@$VPS_HOST "echo 'SSH connection successful'"
 
       - name: Install Ansible
         run: |
@@ -134,7 +143,6 @@ jobs:
       - name: Run Ansible Playbook
         working-directory: ./vps/ansible
         env:
-          ANSIBLE_HOST_KEY_CHECKING: False
           VPS_SSH_KEY_PATH: /home/runner/.ssh/vps_key
           VPS_SSH_USER: ${{ env.VPS_SSH_USER }}
           VPS_SSH_PORT: ${{ env.VPS_SSH_PORT }}
@@ -143,7 +151,8 @@ jobs:
           ansible-playbook reverse-proxy.yml \
             -i inventory.yml \
             ${{ github.event.inputs.dry_run == 'true' && '--check --diff' || '' }} \
-            ${{ github.event.inputs.debug == 'true' && '-vvv' || '' }}
+            ${{ github.event.inputs.debug == 'true' && '-vvv' || '' }} \
+            ${{ github.event.inputs.allow_routing_change == 'true' && '-e wireguard_allow_routing_change=true' || '' }}
 
       - name: Cleanup
         if: always()

@@ -34,6 +34,8 @@
     # WireGuard tunnel keys from 1Password
     wireguard_private_key: "{{ lookup('env', 'VPS_WG_PRIVATE_KEY') }}"
     wireguard_home_public_key: "{{ lookup('env', 'VPS_WG_HOME_PUBLIC_KEY') }}"
+    # Comma-separated CIDRs; kept out of the repo like DESKTOP_LAN_IP in cluster-secrets.
+    wireguard_ssh_clients: "{{ lookup('env', 'VPS_WG_SSH_CLIENTS').split(',') | map('trim') | select | list }}"
 
     # Minecraft Bedrock UDP passthrough. Presence of the IP is the toggle.
     minecraft_lb_ip: "{{ lookup('env', 'VPS_MINECRAFT_LB_IP') | default('', true) }}"
