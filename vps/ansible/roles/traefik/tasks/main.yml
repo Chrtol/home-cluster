@@ -66,20 +66,17 @@
     mode: '0644'
   register: compose_changed
 
-# ALWAYS recreate container to ensure it uses the latest config
-# This is idempotent - the desired state is a running container with current config
-- name: Stop and remove existing Traefik container
-  community.docker.docker_compose_v2:
-    project_src: "{{ traefik_dir }}"
-    state: absent
-    remove_orphans: true
-
-- name: Start Traefik container with current configuration
+# Compose recreates on its own when the compose file or an image tag changes. The
+# config files are single-file bind mounts: a template write replaces the file, and
+# the container keeps reading the old one, so those changes need an explicit
+# recreate. That includes dynamic.yml, even though Traefik watches it.
+- name: Start Traefik, recreating it only when its configuration changed
   community.docker.docker_compose_v2:
     project_src: "{{ traefik_dir }}"
     state: present
-    pull: always
-    recreate: always  # Force recreation to pick up config changes
+    pull: missing
+    remove_orphans: true
+    recreate: "{{ 'always' if (static_config_changed is changed or dynamic_config_changed is changed) else 'auto' }}"
   register: traefik_result
 
 - name: Pause to let container initialize

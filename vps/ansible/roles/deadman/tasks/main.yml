@@ -28,20 +28,15 @@
         mode: "0644"
       register: deadman_compose
 
-    # Recreate to guarantee the container runs the current script + env.
-    # Idempotent: desired state is a running container with current config.
-    - name: Stop and remove existing deadman container
-      community.docker.docker_compose_v2:
-        project_src: "{{ deadman_dir }}"
-        state: absent
-        remove_orphans: true
-
-    - name: Start deadman container with current configuration
+    # Compose handles compose-file, env and image changes. watch.sh is a single-file
+    # bind mount read once at start, so a script change needs an explicit recreate.
+    - name: Start deadman, recreating it only when its configuration changed
       community.docker.docker_compose_v2:
         project_src: "{{ deadman_dir }}"
         state: present
-        pull: always
-        recreate: always
+        pull: missing
+        remove_orphans: true
+        recreate: "{{ 'always' if deadman_script is changed else 'auto' }}"
       register: deadman_result
 
     - name: Pause to let container initialize

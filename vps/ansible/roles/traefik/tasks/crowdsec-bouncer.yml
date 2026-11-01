@@ -195,7 +195,7 @@
 
 - name: Verify CrowdSec LAPI is accessible
   uri:
-    url: http://127.0.0.1:8080/v1/info
+    url: http://127.0.0.1:8080/health
     method: GET
     timeout: 5
   register: crowdsec_api_check
