@@ -11,10 +11,10 @@ on:
       - main
     paths:
       - .github/workflows/schemas.yaml
-      - scripts/builtin-schemas.py
 
 env:
-  UV_SYSTEM_PYTHON: "1"
+  # renovate: datasource=github-releases depName=sholdee/crd-schema-publisher
+  CRD_SCHEMA_PUBLISHER_VERSION: v2026.1023.52824
 
 permissions:
   contents: read
@@ -23,71 +23,48 @@ jobs:
   main:
     name: Extract and Publish Schemas
     runs-on: home-cluster
-    permissions:
-      contents: read
-      packages: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Install kubectl
+      - name: Install crd-schema-publisher
         run: |
-          if ! command -v kubectl &> /dev/null; then
-            echo "Installing kubectl..."
-            curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-            chmod +x kubectl
-            sudo mv kubectl /usr/local/bin/
-          else
-            echo "kubectl already installed"
-          fi
+          cd "$RUNNER_TEMP"
+          base="https://github.com/sholdee/crd-schema-publisher/releases/download/${CRD_SCHEMA_PUBLISHER_VERSION}"
+          curl -fsSLO "$base/crd-schema-publisher-linux-amd64"
+          curl -fsSL "$base/checksums-sha256.txt" | grep ' crd-schema-publisher-linux-amd64$' | sha256sum -c -
+          install -m 0755 crd-schema-publisher-linux-amd64 "$RUNNER_TEMP/crd-schema-publisher"
 
-      - name: Install uv (Python package manager)
-        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-        with:
-          enable-cache: false
+      - name: Extract Schemas
+        id: extract
+        run: |
+          "$RUNNER_TEMP/crd-schema-publisher" extract --include-builtins --include-kustomize -o "$RUNNER_TEMP/schemas"
+          echo "dir=$(realpath "$RUNNER_TEMP/schemas/current")" >> "$GITHUB_OUTPUT"
 
       - name: Setup Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: 3.15.x
 
+      # The extractor types Quantity as string only, but the API server accepts
+      # numbers too (cpu: 1, gpu.intel.com/i915: 1); without this, kubeconform
+      # rejects valid workloads.
+      - name: Allow Numeric Quantities
+        env:
+          SCHEMA_DIR: ${{ steps.extract.outputs.dir }}
+        shell: python
+        run: |
+          import json, os, pathlib
+          quantity = {"oneOf": [{"type": "string"}, {"type": "number"}]}
+          for path in pathlib.Path(os.environ["SCHEMA_DIR"]).rglob("*.json"):
+              schema = json.loads(path.read_text())
+              definitions = schema.get("definitions") if isinstance(schema, dict) else None
+              key = "io.k8s.apimachinery.pkg.api.resource.Quantity"
+              if definitions and key in definitions:
+                  definitions[key] = {"description": definitions[key].get("description", ""), **quantity}
+                  path.write_text(json.dumps(schema, indent=2) + "\n")
+
       - name: Setup Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 26.x
-
-      - name: Install Python Dependencies
-        run: uv pip install pyyaml
-
-      - name: Extract CRD Schemas
-        run: |
-          # Create directory for schemas
-          mkdir -p /tmp/crdSchemas
-          cd /tmp/crdSchemas
-
-          # Download both required files from the CRDs-catalog utilities
-          curl -fsSL -o crd-extractor.sh https://raw.githubusercontent.com/datreeio/CRDs-catalog/3eb90d47aba8d61919d4419dd38301536e32a94b/Utilities/crd-extractor.sh
-          curl -fsSL -o openapi2jsonschema.py https://raw.githubusercontent.com/datreeio/CRDs-catalog/3eb90d47aba8d61919d4419dd38301536e32a94b/Utilities/openapi2jsonschema.py
-          chmod +x crd-extractor.sh
-
-          # Run the CRD extractor
-          ./crd-extractor.sh
-
-          # The script creates schemas in ~/.datree/crdSchemas
-          # Move them to our working directory
-          cp -r ~/.datree/crdSchemas/* /tmp/crdSchemas/ || true
-
-          # Clean up utility scripts before publishing
-          rm -f crd-extractor.sh openapi2jsonschema.py
-
-          # List what we extracted
-          echo "Extracted schemas:"
-          ls -la /tmp/crdSchemas/
-
-      - name: Extract Built-in Schemas
-        run: python scripts/builtin-schemas.py /tmp/crdSchemas
 
       - name: Create Cloudflare Pages Project
         continue-on-error: true
@@ -102,5 +79,5 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_PAGES_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: /tmp/crdSchemas
+          workingDirectory: ${{ steps.extract.outputs.dir }}
           command: pages deploy --project-name=chrtol-schemas --branch main .

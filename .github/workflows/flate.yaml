@@ -17,6 +17,10 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # renovate: datasource=github-releases depName=yannh/kubeconform
+  KUBECONFORM_VERSION: v0.8.0
+
 jobs:
   pre-job:
     name: Flate Pre-Job
@@ -59,6 +63,58 @@ jobs:
 
       - name: Run flate test
         run: flate test all --path ./kubernetes/flux/cluster
+
+  validate:
+    name: Flate Validate
+    needs: pre-job
+    runs-on: ubuntu-latest
+    if: ${{ needs.pre-job.outputs.any_changed == 'true' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup flate
+        uses: home-operations/flate/action@631b76b69c4e58c6f4d1cb01e23616fa61aebafa # v0.6.5
+        with:
+          cache: true
+          base: ""
+
+      - name: Install kubeconform
+        run: |
+          cd "$RUNNER_TEMP"
+          base="https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}"
+          curl -fsSLO "$base/kubeconform-linux-amd64.tar.gz"
+          curl -fsSL "$base/CHECKSUMS" | grep ' kubeconform-linux-amd64.tar.gz$' | sha256sum -c -
+          tar xzf kubeconform-linux-amd64.tar.gz kubeconform
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      # Offline, Helm's .Capabilities lacks the Gateway API, so app-template
+      # falls back to rendering HTTPRoutes as v1alpha2, which the cluster no
+      # longer serves.
+      - name: Render manifests
+        run: |
+          flate build all --path ./kubernetes/flux/cluster \
+            --api-versions gateway.networking.k8s.io/v1,gateway.networking.k8s.io/v1/HTTPRoute,gateway.networking.k8s.io/v1/GRPCRoute \
+            > rendered.yaml
+
+      # flate wipes SOPS values to ..PLACEHOLDER_<key>.., which fails hostname
+      # and IP patterns. Reserved names (.invalid, TEST-NET) stand in for them.
+      - name: Fill cluster-secrets placeholders
+        run: |
+          sed -i \
+            -e 's/\.\.PLACEHOLDER_SECRET_DOMAIN\.\./example.invalid/g' \
+            -e 's/\.\.PLACEHOLDER_SECRET_DOMAIN_NAME\.\./example/g' \
+            -e 's/\.\.PLACEHOLDER_SECRET_TIMEZONE\.\./Etc\/UTC/g' \
+            -e 's/\.\.PLACEHOLDER_[A-Z_]*_IP\.\./192.0.2.1/g' \
+            rendered.yaml
+
+      # Core types are published under core/, but kubeconform passes "v1" as
+      # their group.
+      - name: Run kubeconform
+        run: |
+          kubeconform -strict -summary -output text \
+            -schema-location 'https://chrtol-schemas.pages.dev/{{if eq .Group "v1"}}core{{else}}{{.Group}}{{end}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            rendered.yaml
 
   diff:
     name: Flate Diff
@@ -141,7 +197,7 @@ jobs:
 
   flate-status:
     name: Flate Success
-    needs: ["test", "diff"]
+    needs: ["test", "validate", "diff"]
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
