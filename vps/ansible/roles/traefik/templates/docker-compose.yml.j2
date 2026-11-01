@@ -20,7 +20,7 @@ services:
 {% if traefik_enable_metrics | default(false) %}
   node-exporter:
     # renovate: datasource=docker depName=quay.io/prometheus/node-exporter
-    image: quay.io/prometheus/node-exporter:v1.9.0
+    image: quay.io/prometheus/node-exporter:v1.12.1
     container_name: node-exporter
     restart: unless-stopped
     network_mode: host
