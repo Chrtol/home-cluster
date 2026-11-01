@@ -40,7 +40,10 @@ on:
 jobs:
   deploy-traefik:
     name: Deploy Traefik Configuration
-    runs-on: ubuntu-latest
+    # In-cluster runner: SSH goes over the WireGuard tunnel, so the VPS needs no public SSH.
+    runs-on: home-cluster
+    env:
+      VPS_HOST: 10.100.0.1
 
     steps:
       - name: Checkout repository
@@ -54,7 +57,6 @@ jobs:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
 
           # VPS Access
-          VPS_HOST: "op://Lab/vps-wireguard/VPS_IP"
           VPS_SSH_PORT: "op://Lab/vps-wireguard/VPS_SSH_PORT"
           VPS_SSH_KEY: "op://Lab/pangolin/PANGOLIN_VPS_SSH_PRIVATE_KEY"
           VPS_SSH_USER: "op://Lab/pangolin/PANGOLIN_VPS_SSH_USER"
@@ -119,16 +121,20 @@ jobs:
           echo "$VPS_SSH_KEY" > ~/.ssh/vps_key
           chmod 600 ~/.ssh/vps_key
           # Pin the VPS host key so the SSH key is only ever offered to the real VPS.
-          printf '[%s]:%s %s\n' "$VPS_HOST" "${VPS_SSH_PORT:-22}" "$VPS_SSH_HOST_KEY" > ~/.ssh/known_hosts
+          printf '[%s]:%s %s\n' "$VPS_HOST" "$VPS_SSH_PORT" "$VPS_SSH_HOST_KEY" > ~/.ssh/known_hosts
 
       - name: Test SSH connection
         run: |
-          ssh -o StrictHostKeyChecking=yes -i ~/.ssh/vps_key -p ${VPS_SSH_PORT:-22} ${VPS_SSH_USER:-root}@$VPS_HOST "echo 'SSH connection successful'"
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 -i ~/.ssh/vps_key -p ${VPS_SSH_PORT:-22} ${VPS_SSH_USER:-root}@$VPS_HOST "echo 'SSH connection successful'"
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: false
+
+      # The runner image has python3 but no pip.
       - name: Install Ansible
-        run: |
-          python3 -m pip install --upgrade pip setuptools wheel
-          pip install ansible ansible-lint
+        run: uv tool install ansible-core
 
       - name: Install Ansible collections
         working-directory: ./vps/ansible
