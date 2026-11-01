@@ -17,7 +17,7 @@ deadman_data_dir: "{{ deadman_dir }}/data"
 
 # Container image (Alpine + curl + a tiny shell HTTP server)
 # renovate: datasource=docker depName=alpine
-deadman_image: docker.io/library/alpine:3.21
+deadman_image: docker.io/library/alpine:3.24
 deadman_container_name: "deadman"
 
 # Port the watcher listens on (localhost only; Traefik fronts TLS + routing).
