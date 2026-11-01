@@ -1,0 +1,27 @@
+[Unit]
+Description=The firewall bouncer for CrowdSec
+After=syslog.target network.target remote-fs.target nss-lookup.target crowdsec.service
+
+[Service]
+Type=notify
+ExecStart={{ crowdsec_firewall_bouncer_bin }} -c {{ crowdsec_firewall_bouncer_config }}
+ExecStartPre={{ crowdsec_firewall_bouncer_bin }} -c {{ crowdsec_firewall_bouncer_config }} -t
+ExecStartPost=/bin/sleep 0.1
+# Also covers a boot where the LAPI is not up yet
+Restart=always
+RestartSec=10
+LimitNOFILE=65536
+# The iptables backend runs ipset several times on shutdown; only the main
+# process gets the stop signal so those children can finish
+KillMode=mixed
+
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+# /var/log for its own log file, /run for the xtables lock
+ReadWritePaths=/var/log /run
+
+[Install]
+WantedBy=multi-user.target

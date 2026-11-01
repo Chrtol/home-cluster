@@ -1,0 +1,120 @@
+---
+# Firewall bouncer from the pinned upstream release instead of apt, so its
+# version moves only through a Renovate PR. It keeps the config (and API key)
+# the apt package left behind.
+
+- name: Check the installed firewall bouncer version
+  ansible.builtin.command: "{{ crowdsec_firewall_bouncer_bin }} -V"
+  register: crowdsec_firewall_bouncer_installed
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Install the firewall bouncer binary
+  when: >-
+    crowdsec_firewall_bouncer_installed.stdout | default('')
+    is not search('^version: ' ~ (crowdsec_firewall_bouncer_version | regex_escape) ~ '(-|\s|$)', multiline=True)
+  block:
+    # The release publishes no checksum file; GitHub's asset digest stands in.
+    # It catches a corrupt or swapped download, not a compromised release.
+    - name: Look up the release asset
+      ansible.builtin.uri:
+        url: "https://api.github.com/repos/crowdsecurity/cs-firewall-bouncer/releases/tags/{{ crowdsec_firewall_bouncer_version }}"
+        headers:
+          Accept: application/vnd.github+json
+      register: crowdsec_firewall_bouncer_release
+
+    - name: Pick the linux-amd64 archive
+      ansible.builtin.set_fact:
+        crowdsec_firewall_bouncer_asset: >-
+          {{ crowdsec_firewall_bouncer_release.json.assets
+             | selectattr('name', 'equalto', 'crowdsec-firewall-bouncer-linux-amd64.tgz')
+             | first | default({}) }}
+
+    - name: Require a digest for the archive
+      ansible.builtin.assert:
+        that:
+          - crowdsec_firewall_bouncer_asset.digest | default('') is match('sha256:[0-9a-f]{64}$')
+        fail_msg: "No sha256 digest for the {{ crowdsec_firewall_bouncer_version }} linux-amd64 archive"
+        quiet: true
+
+    - name: Create a download directory
+      ansible.builtin.tempfile:
+        state: directory
+      register: crowdsec_firewall_bouncer_tmp
+
+    - name: Download and unpack the release
+      block:
+        - name: Download the release archive
+          ansible.builtin.get_url:
+            url: "{{ crowdsec_firewall_bouncer_asset.browser_download_url }}"
+            dest: "{{ crowdsec_firewall_bouncer_tmp.path }}/bouncer.tgz"
+            checksum: "{{ crowdsec_firewall_bouncer_asset.digest }}"
+            mode: "0600"
+
+        - name: Unpack the release archive
+          ansible.builtin.unarchive:
+            src: "{{ crowdsec_firewall_bouncer_tmp.path }}/bouncer.tgz"
+            dest: "{{ crowdsec_firewall_bouncer_tmp.path }}"
+            remote_src: true
+
+        - name: Install the binary
+          ansible.builtin.copy:
+            src: "{{ crowdsec_firewall_bouncer_tmp.path }}/crowdsec-firewall-bouncer-{{ crowdsec_firewall_bouncer_version }}/crowdsec-firewall-bouncer"
+            dest: "{{ crowdsec_firewall_bouncer_bin }}"
+            remote_src: true
+            owner: root
+            group: root
+            mode: "0755"
+          notify: restart crowdsec firewall bouncer
+      always:
+        - name: Remove the download directory
+          ansible.builtin.file:
+            path: "{{ crowdsec_firewall_bouncer_tmp.path }}"
+            state: absent
+
+# The deb pulled these in as dependencies; once it is gone an autoremove would
+# take ipset with it, and the bouncer cannot work without it.
+- name: Keep the bouncer's runtime tools installed
+  ansible.builtin.apt:
+    name:
+      - iptables
+      - ipset
+      - gettext-base
+    state: present
+
+# Before the unit is templated: the package's prerm stops and disables the unit
+# by name. Not purged: purge would delete the config and its API key.
+- name: Remove the apt-installed firewall bouncer
+  ansible.builtin.apt:
+    name: crowdsec-firewall-bouncer-iptables
+    state: absent
+    purge: false
+
+- name: Install the firewall bouncer unit
+  ansible.builtin.template:
+    src: crowdsec-firewall-bouncer.service.j2
+    dest: /etc/systemd/system/crowdsec-firewall-bouncer.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart crowdsec firewall bouncer
+
+- name: Ensure the firewall bouncer is running
+  ansible.builtin.systemd:
+    name: crowdsec-firewall-bouncer
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Apply a pending bouncer restart
+  ansible.builtin.meta: flush_handlers
+
+- name: Check the bouncer has its firewall chain in place
+  ansible.builtin.command: iptables -S CROWDSEC_CHAIN
+  register: crowdsec_firewall_bouncer_chain
+  until: crowdsec_firewall_bouncer_chain.rc == 0
+  retries: 6
+  delay: 5
+  changed_when: false
+  check_mode: false
