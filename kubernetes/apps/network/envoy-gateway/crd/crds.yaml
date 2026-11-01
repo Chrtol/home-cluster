@@ -1,0 +1,36 @@
+---
+# yaml-language-server: $schema=https://chrtol-schemas.pages.dev/source.toolkit.fluxcd.io/gitrepository_v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: envoy-gateway-crd
+  namespace: flux-system
+spec:
+  interval: 30m
+  url: https://github.com/envoyproxy/gateway
+  ref:
+    # renovate: datasource=github-releases depName=envoyproxy/gateway
+    tag: v1.9.3
+  # Envoy's own CRDs only. Gateway API comes from the gateway-api Kustomization;
+  # the copy envoy bundles beside these is older.
+  ignore: |
+    /*
+    !charts/gateway-helm/charts/crds/crds/generated
+---
+# yaml-language-server: $schema=https://chrtol-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: envoy-gateway-crds
+  namespace: flux-system
+spec:
+  path: ./charts/gateway-helm/charts/crds/crds/generated
+  # A CRD that disappears upstream must not take every object of its kind with it.
+  prune: false
+  sourceRef:
+    kind: GitRepository
+    name: envoy-gateway-crd
+  wait: true
+  interval: 15m
+  retryInterval: 1m
+  timeout: 5m

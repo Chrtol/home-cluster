@@ -10,8 +10,6 @@ spec:
     kind: OCIRepository
     name: *app
     namespace: flux-system
-  dependsOn:
-    - name: envoy-gateway-crds
   driftDetection:
     ignore:
       - paths: [/spec/replicas]
