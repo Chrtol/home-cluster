@@ -3,9 +3,9 @@
 
 # Configuration
 DEPLOY_USER="${1:-deploy}"
-SSH_PUB_KEY_FILE="${2:-~/.ssh/vps-pangolin-deploy.pub}"
+SSH_PUB_KEY_FILE="${2:-~/.ssh/vps-deploy.pub}"
 
-echo "=== Creating Deployment User for Pangolin ==="
+echo "=== Creating the VPS deployment user ==="
 echo ""
 echo "This script will create user: $DEPLOY_USER"
 echo "Using SSH public key from: $SSH_PUB_KEY_FILE"
@@ -13,7 +13,7 @@ echo ""
 
 if [ ! -f "$SSH_PUB_KEY_FILE" ]; then
     echo "❌ SSH public key file not found: $SSH_PUB_KEY_FILE"
-    echo "   Generate it first with: ssh-keygen -t ed25519 -f ~/.ssh/vps-pangolin-deploy"
+    echo "   Generate it first with: ssh-keygen -t ed25519 -f ~/.ssh/vps-deploy"
     exit 1
 fi
 
@@ -47,12 +47,13 @@ echo 'deploy ALL=(ALL) NOPASSWD: ALL' | sudo tee /etc/sudoers.d/deploy
 
 # Test the connection (from your local machine)
 EOF
-echo "ssh -i ~/.ssh/vps-pangolin-deploy $DEPLOY_USER@YOUR_VPS_IP 'docker --version'"
+echo "ssh -i ~/.ssh/vps-deploy $DEPLOY_USER@YOUR_VPS_IP 'docker --version'"
 echo "=========================================="
 echo ""
 echo "After running these commands:"
-echo "1. Update 1Password 'pangolin' item:"
-echo "   - PANGOLIN_VPS_SSH_USER = $DEPLOY_USER"
+echo "1. Update the 1Password item Lab/vps-wireguard:"
+echo "   - VPS_SSH_USER = $DEPLOY_USER"
+echo "   - VPS_SSH_PRIVATE_KEY = the private key ~/.ssh/vps-deploy"
 echo ""
 echo "2. Test the connection from your local machine:"
-echo "   ssh -i ~/.ssh/vps-pangolin-deploy $DEPLOY_USER@YOUR_VPS_IP"
+echo "   ssh -i ~/.ssh/vps-deploy $DEPLOY_USER@YOUR_VPS_IP"

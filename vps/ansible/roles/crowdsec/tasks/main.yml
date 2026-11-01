@@ -188,22 +188,6 @@
   no_log: true
   notify: restart crowdsec
 
-- name: List registered bouncers
-  ansible.builtin.command:
-    argv: "{{ crowdsec_cscli + ['bouncers', 'list', '-o', 'json'] }}"
-  register: crowdsec_bouncers
-  changed_when: false
-  check_mode: false
-
-# Valid API keys that nothing uses any more (nginx was replaced by Traefik)
-- name: Delete unused bouncers
-  ansible.builtin.command:
-    argv: "{{ crowdsec_cscli + ['bouncers', 'delete', item] }}"
-  loop:
-    - nginx-bouncer
-    - pangolin-traefik
-  when: item in (crowdsec_bouncers.stdout | from_json | default([], true) | map(attribute='name') | list)
-
 - name: Manage the firewall bouncer
   ansible.builtin.include_tasks: firewall-bouncer.yml
 

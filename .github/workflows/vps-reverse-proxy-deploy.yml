@@ -59,8 +59,8 @@ jobs:
 
           # VPS Access
           VPS_SSH_PORT: "op://Lab/vps-wireguard/VPS_SSH_PORT"
-          VPS_SSH_KEY: "op://Lab/pangolin/PANGOLIN_VPS_SSH_PRIVATE_KEY"
-          VPS_SSH_USER: "op://Lab/pangolin/PANGOLIN_VPS_SSH_USER"
+          VPS_SSH_KEY: "op://Lab/vps-wireguard/VPS_SSH_PRIVATE_KEY"
+          VPS_SSH_USER: "op://Lab/vps-wireguard/VPS_SSH_USER"
           VPS_SSH_HOST_KEY: "op://Lab/vps-wireguard/VPS_SSH_HOST_KEY"
 
           # WireGuard tunnel (the home private key belongs to OPNsense; not loaded here)
