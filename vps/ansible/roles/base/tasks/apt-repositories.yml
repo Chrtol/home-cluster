@@ -23,12 +23,6 @@
       components: stable
       architectures: amd64
       key: https://download.docker.com/linux/ubuntu/gpg
-    # packagecloud publishes one distribution-independent suite named "any".
-    - name: crowdsec
-      uris: https://packagecloud.io/crowdsec/crowdsec/any/
-      suites: any
-      components: main
-      key: https://packagecloud.io/crowdsec/crowdsec/gpgkey
     - name: trivy
       uris: https://aquasecurity.github.io/trivy-repo/deb
       suites: "{{ ansible_facts['distribution_release'] }}"
@@ -37,6 +31,14 @@
   loop_control:
     label: "{{ item.name }}"
   register: apt_repositories
+
+# CrowdSec now comes from a pinned image and release binary. The leftover "rc"
+# packages are not purged: purge would delete /etc/crowdsec, which the container uses.
+- name: Remove the CrowdSec repository and its key
+  deb822_repository:
+    name: crowdsec
+    state: absent
+  register: apt_crowdsec_source
 
 # The same repositories in the old one-line format; left in place, apt warns
 # that every source is configured twice.
@@ -70,4 +72,6 @@
 - name: Refresh the package index after a repository change
   apt:
     update_cache: true
-  when: apt_repositories.changed or apt_legacy_sources.changed or apt_grafana_source.changed
+  when: >-
+    apt_repositories.changed or apt_crowdsec_source.changed
+    or apt_legacy_sources.changed or apt_grafana_source.changed
