@@ -151,7 +151,7 @@
 
     - name: Test health endpoint
       uri:
-        url: "http://localhost/health"
+        url: "http://localhost/ping"
         method: GET
         timeout: 5
       register: health_test
