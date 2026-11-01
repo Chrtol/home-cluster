@@ -1,0 +1,22 @@
+---
+# yaml-language-server: $schema=https://chrtol-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: envoy-gateway-crds
+  namespace: network
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: envoy-gateway-crds
+    namespace: flux-system
+  # Envoy's CRDs only: Gateway API comes from the cilium crd Kustomization, and
+  # the copy bundled here is older. This chart ships CRDs as templates, so Helm
+  # upgrades them with the chart.
+  values:
+    crds:
+      gatewayAPI:
+        enabled: false
+      envoyGateway:
+        enabled: true

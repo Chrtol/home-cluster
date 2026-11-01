@@ -145,6 +145,21 @@
       },
     },
     {
+      // The controller chart and its CRD chart must move together, or the
+      // controller runs against CRDs from another release.
+      description: 'Envoy Gateway Group (controller + CRD charts in lockstep)',
+      groupName: 'Envoy Gateway',
+      matchDatasources: [
+        'docker',
+      ],
+      matchPackageNames: [
+        '/envoyproxy/gateway-(crds-)?helm$/',
+      ],
+      group: {
+        commitMessageTopic: '{{{groupName}}} group',
+      },
+    },
+    {
       description: 'Cert-Manager Group',
       groupName: 'Cert-Manager',
       matchDatasources: [

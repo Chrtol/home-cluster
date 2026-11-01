@@ -18,6 +18,7 @@ resources:
   - ./qui.yaml
   - ./outline.yaml
   - ./envoy-gateway.yaml
+  - ./envoy-gateway-crds.yaml
   - ./authentik-application.yaml
   - ./gha-runner-scale-set.yaml
   - ./gha-runner-scale-set-controller.yaml
