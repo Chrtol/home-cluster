@@ -15,6 +15,8 @@ on:
       - 'vps/ansible/roles/crowdsec/**'
       - 'vps/ansible/roles/trivy/**'
       - 'vps/ansible/roles/deadman/**'
+      - 'vps/ansible/roles/wireguard/**'
+      - 'vps/ansible/roles/firewall/**'
       - 'vps/ansible/reverse-proxy.yml'
       - '.github/workflows/vps-reverse-proxy-deploy.yml'
   workflow_dispatch:
@@ -51,6 +53,10 @@ jobs:
           VPS_SSH_PORT: "op://Lab/vps-wireguard/VPS_SSH_PORT"
           VPS_SSH_KEY: "op://Lab/pangolin/PANGOLIN_VPS_SSH_PRIVATE_KEY"
           VPS_SSH_USER: "op://Lab/pangolin/PANGOLIN_VPS_SSH_USER"
+
+          # WireGuard tunnel (the home private key belongs to OPNsense; not loaded here)
+          VPS_WG_PRIVATE_KEY: "op://Lab/vps-wireguard/VPS_WIREGUARD_PRIVATE_KEY"
+          VPS_WG_HOME_PUBLIC_KEY: "op://Lab/vps-wireguard/VPS_WG_HOME_PUBLIC_KEY"
 
           # Traefik Configuration
           PROXY_DOMAIN: "op://Lab/vps-proxy/VPS_PROXY_DOMAIN"

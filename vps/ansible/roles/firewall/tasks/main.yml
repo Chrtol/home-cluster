@@ -12,6 +12,14 @@
     - { direction: incoming, policy: deny }
     - { direction: outgoing, policy: allow }
 
+# Without the real port the play would open a port nothing listens on, while
+# leaving the hand-added rule for the one it is connected through.
+- name: Require the SSH port
+  assert:
+    that: firewall_ssh_port | string | length > 0
+    fail_msg: VPS_SSH_PORT must be set.
+    quiet: true
+
 - name: Configure UFW rules
   ufw:
     rule: allow
@@ -19,20 +27,10 @@
     proto: "{{ item.proto }}"
     comment: "{{ item.comment }}"
   loop:
-    - { port: "22", proto: tcp, comment: "SSH" }
+    - { port: "{{ firewall_ssh_port }}", proto: tcp, comment: "SSH" }
     - { port: "80", proto: tcp, comment: "HTTP" }
     - { port: "443", proto: tcp, comment: "HTTPS" }
     - { port: "51820", proto: udp, comment: "WireGuard" }
-
-# Dropping a port from the list above leaves its rule live on the host.
-- name: Remove UFW rules for retired services
-  ufw:
-    rule: allow
-    port: "{{ item.port }}"
-    proto: "{{ item.proto }}"
-    delete: true
-  loop:
-    - { port: "21820", proto: udp }  # Pangolin's Gerbil
 
 - name: Enable UFW
   ufw:

@@ -1,0 +1,7 @@
+---
+# syncconf applies peer and key changes without taking the interface down.
+# It does NOT apply Address changes; those need a manual wg-quick restart.
+- name: sync wireguard
+  ansible.builtin.shell: wg syncconf {{ wireguard_interface }} <(wg-quick strip {{ wireguard_interface }})
+  args:
+    executable: /bin/bash

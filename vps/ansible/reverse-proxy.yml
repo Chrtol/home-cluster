@@ -32,6 +32,10 @@
     crowdsec_log_level: "{{ lookup('env', 'CROWDSEC_LOG_LEVEL') | default('INFO') }}"
     crowdsec_enroll_key: "{{ lookup('env', 'CROWDSEC_ENROLL_KEY') | default('', true) }}"
 
+    # WireGuard tunnel keys from 1Password
+    wireguard_private_key: "{{ lookup('env', 'VPS_WG_PRIVATE_KEY') }}"
+    wireguard_home_public_key: "{{ lookup('env', 'VPS_WG_HOME_PUBLIC_KEY') }}"
+
     # Minecraft Bedrock UDP passthrough. Presence of the IP is the toggle.
     minecraft_lb_ip: "{{ lookup('env', 'VPS_MINECRAFT_LB_IP') | default('', true) }}"
 
@@ -85,6 +89,15 @@
           Metrics: {{ 'Enabled' if enable_metrics else 'Disabled' }}
 
   tasks:
+    - name: Ensure firewall is configured
+      include_role:
+        name: firewall
+
+    # Before traefik: its upstream and the crowdsec home allowlist both depend on wg0.
+    - name: Ensure wireguard tunnel is configured
+      include_role:
+        name: wireguard
+
     - name: Ensure traefik is deployed
       include_role:
         name: traefik

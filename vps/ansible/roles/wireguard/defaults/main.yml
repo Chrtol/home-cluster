@@ -1,0 +1,22 @@
+---
+# WireGuard tunnel to the home network (OPNsense initiates; this end listens).
+
+wireguard_interface: wg0
+wireguard_address: 10.100.0.1/24
+wireguard_listen_port: 51820
+
+# From 1Password Lab/vps-wireguard (VPS_WIREGUARD_PRIVATE_KEY / VPS_WG_HOME_PUBLIC_KEY).
+wireguard_private_key: ""
+wireguard_home_public_key: ""
+
+# Everything the VPS may send into the tunnel. Traffic to any other home
+# address leaves via the public interface instead, so a cluster or LAN source
+# outside this list never gets a reply over the tunnel.
+wireguard_home_allowed_ips:
+  - 10.100.0.2/32
+  - "{{ proxy_envoy_gateway_ip }}/32"
+
+wireguard_home_keepalive: 25
+
+# Guard against rewriting AllowedIPs by accident; see tasks/main.yml.
+wireguard_allow_routing_change: false

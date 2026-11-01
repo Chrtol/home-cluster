@@ -1,0 +1,11 @@
+# {{ ansible_managed }}
+[Interface]
+Address = {{ wireguard_address }}
+ListenPort = {{ wireguard_listen_port }}
+PrivateKey = {{ wireguard_private_key }}
+
+# Home (OPNsense)
+[Peer]
+PublicKey = {{ wireguard_home_public_key }}
+AllowedIPs = {{ wireguard_home_allowed_ips | join(', ') }}
+PersistentKeepalive = {{ wireguard_home_keepalive }}

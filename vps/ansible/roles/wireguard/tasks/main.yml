@@ -1,0 +1,94 @@
+---
+# Every external request reaches the cluster through this tunnel, so a wrong
+# key here is an outage. The checks below compare 1Password against the live
+# interface and stop before writing anything if they disagree.
+
+- name: WireGuard -- require keys from 1Password
+  ansible.builtin.assert:
+    that:
+      - wireguard_private_key | length > 0
+      - wireguard_home_public_key | length > 0
+    fail_msg: VPS_WG_PRIVATE_KEY and VPS_WG_HOME_PUBLIC_KEY must be set.
+    quiet: true
+
+- name: WireGuard -- install tools
+  ansible.builtin.apt:
+    name: wireguard-tools
+    state: present
+
+- name: WireGuard -- read the live interface
+  ansible.builtin.command: wg show {{ wireguard_interface }} dump
+  register: wireguard_live
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  no_log: true  # first line carries the private key
+
+- name: WireGuard -- derive the public key of the 1Password private key
+  ansible.builtin.command: wg pubkey
+  args:
+    stdin: "{{ wireguard_private_key }}"
+  register: wireguard_derived_pubkey
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+# dump format: line 1 = interface (private, public, port, fwmark),
+# then one line per peer (public, psk, endpoint, allowed-ips, ...).
+- name: WireGuard -- summarise the live interface
+  ansible.builtin.set_fact:
+    wireguard_live_pubkey: "{{ wireguard_live.stdout_lines[0].split()[1] }}"
+    wireguard_live_peers: >-
+      {{ wireguard_live.stdout_lines[1:] | map('split') | map('first') | list }}
+    wireguard_live_allowed_ips: >-
+      {{ (wireguard_live.stdout_lines[1:] | map('split') | map(attribute=3)
+         | first | default('')).split(',') | sort }}
+  when: wireguard_live.rc == 0
+
+- name: WireGuard -- refuse keys that do not match the running tunnel
+  ansible.builtin.assert:
+    that:
+      - wireguard_derived_pubkey.stdout == wireguard_live_pubkey
+      - wireguard_home_public_key in wireguard_live_peers
+    fail_msg: >-
+      1Password (Lab/vps-wireguard) does not match the running
+      {{ wireguard_interface }}: either VPS_WIREGUARD_PRIVATE_KEY is not this
+      VPS's key, or VPS_WG_HOME_PUBLIC_KEY is not the current home peer. Deploying would cut the tunnel; nothing was
+      changed.
+    quiet: true
+  when: wireguard_live.rc == 0
+
+- name: WireGuard -- show AllowedIPs, live vs desired
+  ansible.builtin.debug:
+    msg:
+      live: "{{ wireguard_live_allowed_ips | default('interface not up') }}"
+      desired: "{{ wireguard_home_allowed_ips | sort }}"
+
+# A routing change can silently strand the cluster, so it has to be asked for.
+- name: WireGuard -- refuse an unrequested AllowedIPs change
+  ansible.builtin.assert:
+    that: wireguard_live_allowed_ips == (wireguard_home_allowed_ips | sort)
+    fail_msg: >-
+      AllowedIPs would change (see the task above). Set
+      wireguard_allow_routing_change=true for the deploy that intends it.
+    quiet: true
+  when:
+    - wireguard_live.rc == 0
+    - not (wireguard_allow_routing_change | bool)
+
+- name: WireGuard -- write config
+  ansible.builtin.template:
+    src: wg.conf.j2
+    dest: /etc/wireguard/{{ wireguard_interface }}.conf
+    owner: root
+    group: root
+    mode: "0600"
+    backup: true
+  diff: false  # --diff would print the private key into the CI log
+  notify: sync wireguard
+
+- name: WireGuard -- keep the interface enabled and up
+  ansible.builtin.systemd:
+    name: wg-quick@{{ wireguard_interface }}
+    enabled: true
+    state: started
