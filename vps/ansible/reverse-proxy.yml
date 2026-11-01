@@ -73,8 +73,6 @@
     traefik_envoy_gateway_ip: "{{ proxy_envoy_gateway_ip }}"
     traefik_minecraft_ip: "{{ minecraft_lb_ip }}"
     traefik_enable_metrics: "{{ enable_metrics }}"
-    traefik_metrics_user: "{{ lookup('env', 'VPS_METRICS_USER') }}"
-    traefik_metrics_password_hash: "{{ lookup('env', 'VPS_METRICS_PASSWORD_HASH') }}"
 
   pre_tasks:
     - name: Display configuration summary

@@ -107,7 +107,6 @@
     src: dynamic.yml.j2
     dest: "{{ traefik_config_dir }}/dynamic.yml"
     mode: '0644'
-  register: dynamic_config_changed
 
 - name: Template docker-compose file
   ansible.builtin.template:
@@ -116,17 +115,16 @@
     mode: '0644'
   register: compose_changed
 
-# Compose recreates on its own when the compose file or an image tag changes. The
-# config files are single-file bind mounts: a template write replaces the file, and
-# the container keeps reading the old one, so those changes need an explicit
-# recreate. That includes dynamic.yml, even though Traefik watches it.
+# Compose recreates on its own when the compose file or an image tag changes.
+# dynamic.yml is reloaded live (file provider watch on a directory mount), so open
+# connections such as Plex streams survive it; only static config needs a recreate.
 - name: Start Traefik, recreating it only when its configuration changed
   community.docker.docker_compose_v2:
     project_src: "{{ traefik_dir }}"
     state: present
     pull: missing
     remove_orphans: true
-    recreate: "{{ 'always' if (static_config_changed is changed or dynamic_config_changed is changed) else 'auto' }}"
+    recreate: "{{ 'always' if static_config_changed is changed else 'auto' }}"
   register: traefik_result
 
 - name: Pause to let container initialize

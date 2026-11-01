@@ -7,20 +7,19 @@ metadata:
   labels:
     prometheus: kube-prometheus-stack
 spec:
+  # The VPS end of the WireGuard tunnel; UFW opens these ports on wg0 only
   staticConfigs:
     - labels:
         job: vps-node-exporter
         instance: vps
       targets:
-        - vps.${SECRET_DOMAIN}
-  metricsPath: /metrics/node
-  scheme: https
-  basicAuth:
-    username:
-      name: vps-metrics-secret
-      key: PROMETHEUS_USER
-    password:
-      name: vps-metrics-secret
-      key: PROMETHEUS_PASS
+        - 10.100.0.1:9100
+    - labels:
+        job: vps-traefik
+        instance: vps
+      targets:
+        - 10.100.0.1:8082
+  metricsPath: /metrics
+  scheme: http
   scrapeInterval: 30s
   scrapeTimeout: 10s

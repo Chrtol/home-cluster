@@ -34,12 +34,7 @@ This document lists all the 1Password secrets required for VPS deployment via Gi
 
 #### Feature Toggles:
 - `VPS_ENABLE_ECHO_TEST` - Enable echo test endpoint (true/false, default: true)
-- `VPS_ENABLE_METRICS` - Enable metrics endpoints (true/false, default: true)
-
-#### Metrics Authentication (required if VPS_ENABLE_METRICS is true):
-- `VPS_METRICS_USER` - Username for metrics basic auth (e.g., `prometheus`)
-- `VPS_METRICS_PASSWORD` - Plaintext password for metrics auth (used by Prometheus scraper)
-- `VPS_METRICS_PASSWORD_HASH` - bcrypt hash for metrics auth, used by Traefik (generate with `htpasswd -nB prometheus`)
+- `VPS_ENABLE_METRICS` - Expose node-exporter (9100) and Traefik metrics (8082) to the cluster over WireGuard; no credentials (true/false, default: true)
 
 #### Dead-man's-switch Watcher (out-of-cluster monitoring backstop):
 The cluster's only real alert path (n8n webhook) routes through Envoy Gateway ingress, so
@@ -94,10 +89,7 @@ op item edit "vps-proxy" --vault="Lab" \
   "VPS_AUTHENTIK_ENABLED[text]=false" \
   "VPS_AUTHENTIK_DOMAIN[text]=authentik.{domain}" \
   "VPS_ENABLE_ECHO_TEST[text]=true" \
-  "VPS_ENABLE_METRICS[text]=true" \
-  "VPS_METRICS_USER[text]=prometheus" \
-  "VPS_METRICS_PASSWORD[text]={your password}" \
-  "VPS_METRICS_PASSWORD_HASH[text]=$(htpasswd -nB prometheus {your password} | cut -d: -f2)"
+  "VPS_ENABLE_METRICS[text]=true"
 
 # Configure CrowdSec settings
 op item edit "vps-proxy" --vault="Lab" \
