@@ -1,6 +1,7 @@
 services:
   traefik:
-    image: traefik:v3.7.1
+    # renovate: datasource=docker depName=traefik
+    image: docker.io/library/traefik:v3.7.1
     container_name: traefik
     restart: unless-stopped
     network_mode: host  # Use host network for ports 80/443
@@ -18,6 +19,7 @@ services:
 
 {% if traefik_enable_metrics | default(false) %}
   node-exporter:
+    # renovate: datasource=docker depName=quay.io/prometheus/node-exporter
     image: quay.io/prometheus/node-exporter:v1.9.0
     container_name: node-exporter
     restart: unless-stopped

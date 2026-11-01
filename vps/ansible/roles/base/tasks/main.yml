@@ -1,11 +1,5 @@
 ---
-- name: Update system packages
-  apt:
-    update_cache: yes
-    upgrade: dist
-    autoremove: yes
-    autoclean: yes
-
+# Package upgrades and reboots happen in maintenance.yml, not here.
 - name: Install essential packages
   apt:
     name:
@@ -46,8 +40,8 @@
       Unattended-Upgrade::MinimalSteps "true";
       Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
       Unattended-Upgrade::Remove-Unused-Dependencies "true";
-      Unattended-Upgrade::Automatic-Reboot "true";
-      Unattended-Upgrade::Automatic-Reboot-Time "03:00";
+      // The weekly maintenance workflow reboots when needed, at a known time.
+      Unattended-Upgrade::Automatic-Reboot "false";
     dest: /etc/apt/apt.conf.d/50unattended-upgrades
 
 - name: Configure kernel parameters for WireGuard

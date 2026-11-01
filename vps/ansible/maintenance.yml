@@ -1,0 +1,69 @@
+---
+# Weekly maintenance: full package upgrade (including Docker and CrowdSec, which
+# unattended-upgrades does not cover), a reboot only when one is pending, then
+# checks that external traffic still flows. A failed check fails the workflow run.
+
+- name: Upgrade, reboot if needed, verify
+  hosts: vps
+  become: true
+
+  roles:
+    - base
+
+  tasks:
+    - name: Upgrade all packages
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: dist
+        autoremove: true
+        autoclean: true
+      register: maintenance_upgrade
+
+    - name: Check whether a reboot is pending
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: maintenance_reboot_required
+
+    - name: Reboot
+      ansible.builtin.reboot:
+        msg: Weekly maintenance reboot
+        reboot_timeout: 600
+      when: maintenance_reboot_required.stat.exists
+
+    # OPNsense re-handshakes within a couple of minutes of the VPS coming back.
+    - name: Verify the WireGuard tunnel has a fresh handshake
+      ansible.builtin.shell: |
+        set -o pipefail
+        last=$(wg show wg0 latest-handshakes | awk '{print $2}')
+        [ -n "$last" ] && [ $(( $(date +%s) - last )) -lt 180 ]
+      args:
+        executable: /bin/bash
+      register: maintenance_wg
+      retries: 18
+      delay: 10
+      until: maintenance_wg.rc == 0
+      changed_when: false
+
+    - name: Verify Traefik answers
+      ansible.builtin.uri:
+        url: http://127.0.0.1/ping
+        status_code: 200
+        timeout: 5
+      register: maintenance_traefik
+      retries: 12
+      delay: 10
+      until: maintenance_traefik.status == 200
+
+    - name: Verify CrowdSec and its firewall bouncer are running
+      ansible.builtin.command: systemctl is-active {{ item }}
+      loop:
+        - crowdsec
+        - crowdsec-firewall-bouncer
+      changed_when: false
+
+    - name: Summary
+      ansible.builtin.debug:
+        msg: >-
+          Packages {{ 'upgraded' if maintenance_upgrade.changed else 'already current' }};
+          {{ 'rebooted' if maintenance_reboot_required.stat.exists else 'no reboot needed' }};
+          tunnel, Traefik and CrowdSec healthy.

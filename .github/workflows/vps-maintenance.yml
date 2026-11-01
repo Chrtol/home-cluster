@@ -1,0 +1,70 @@
+name: VPS Weekly Maintenance
+
+permissions:
+  contents: read
+
+# Shares the deploy's group so an upgrade and a config deploy never overlap.
+concurrency:
+  group: vps-reverse-proxy-deploy
+  cancel-in-progress: false
+
+on:
+  schedule:
+    # 04:00 UTC = 05:00 CET / 06:00 CEST (cron cannot follow DST). Tuesdays.
+    - cron: '0 4 * * 2'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in check mode (no changes)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  maintenance:
+    name: Upgrade, reboot if needed, verify
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Load secrets from 1Password
+        uses: 1password/load-secrets-action@70062d7a876d3eb6334754fa26efd2fbd90c32f2 # v5.0.1
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          VPS_HOST: "op://Lab/vps-wireguard/VPS_IP"
+          VPS_SSH_PORT: "op://Lab/vps-wireguard/VPS_SSH_PORT"
+          VPS_SSH_KEY: "op://Lab/pangolin/PANGOLIN_VPS_SSH_PRIVATE_KEY"
+          VPS_SSH_USER: "op://Lab/pangolin/PANGOLIN_VPS_SSH_USER"
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "$VPS_SSH_KEY" > ~/.ssh/vps_key
+          chmod 600 ~/.ssh/vps_key
+
+      - name: Install Ansible
+        run: |
+          python3 -m pip install --upgrade pip setuptools wheel
+          pip install ansible
+
+      - name: Install Ansible collections
+        working-directory: ./vps/ansible
+        run: ansible-galaxy collection install -r requirements.yml
+
+      - name: Run maintenance playbook
+        working-directory: ./vps/ansible
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: False
+          VPS_SSH_KEY_PATH: /home/runner/.ssh/vps_key
+        run: |
+          ansible-playbook maintenance.yml \
+            -i inventory.yml \
+            ${{ github.event.inputs.dry_run == 'true' && '--check --diff' || '' }}
+
+      - name: Cleanup
+        if: always()
+        run: rm -rf ~/.ssh/vps_key
