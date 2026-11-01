@@ -1,7 +1,7 @@
 ---
 # Firewall bouncer from the pinned upstream release instead of apt, so its
-# version moves only through a Renovate PR. It keeps the config (and API key)
-# the apt package left behind.
+# version moves only through a Renovate PR. Runs after the engine is up: the
+# key check below talks to the LAPI.
 
 - name: Check the installed firewall bouncer version
   ansible.builtin.command: "{{ crowdsec_firewall_bouncer_bin }} -V"
@@ -73,23 +73,47 @@
             path: "{{ crowdsec_firewall_bouncer_tmp.path }}"
             state: absent
 
-# The deb pulled these in as dependencies; once it is gone an autoremove would
-# take ipset with it, and the bouncer cannot work without it.
-- name: Keep the bouncer's runtime tools installed
+- name: Install the bouncer's runtime tools
   ansible.builtin.apt:
     name:
       - iptables
       - ipset
-      - gettext-base
     state: present
 
-# Before the unit is templated: the package's prerm stops and disables the unit
-# by name. Not purged: purge would delete the config and its API key.
-- name: Remove the apt-installed firewall bouncer
-  ansible.builtin.apt:
-    name: crowdsec-firewall-bouncer-iptables
-    state: absent
-    purge: false
+- name: Require the firewall bouncer API key
+  ansible.builtin.assert:
+    that: crowdsec_firewall_bouncer_api_key | length > 0
+    fail_msg: CROWDSEC_FIREWALL_BOUNCER_API_KEY must be set.
+    quiet: true
+
+# The key lives in 1Password, so a rebuilt host registers the same one. On the
+# live host the LAPI already knows it (from the old apt install) and this is a no-op.
+- name: Check the LAPI accepts the firewall bouncer key
+  ansible.builtin.uri:
+    url: http://127.0.0.1:8080/v1/decisions
+    headers:
+      X-Api-Key: "{{ crowdsec_firewall_bouncer_api_key }}"
+    status_code: [200, 403]
+    timeout: 5
+  register: crowdsec_firewall_bouncer_auth
+  no_log: true
+
+- name: Register the firewall bouncer key
+  ansible.builtin.command:
+    argv: "{{ crowdsec_cscli + ['bouncers', 'add', 'vps-firewall-bouncer', '--key', crowdsec_firewall_bouncer_api_key] }}"
+  when: crowdsec_firewall_bouncer_auth.status == 403
+  no_log: true
+
+- name: Write the firewall bouncer config
+  ansible.builtin.template:
+    src: crowdsec-firewall-bouncer.yaml.j2
+    dest: "{{ crowdsec_firewall_bouncer_config }}"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  diff: false
+  notify: restart crowdsec firewall bouncer
 
 - name: Install the firewall bouncer unit
   ansible.builtin.template:

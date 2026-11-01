@@ -30,6 +30,7 @@
     crowdsec_lapi_host: "{{ lookup('env', 'CROWDSEC_LAPI_HOST') | default('127.0.0.1:8080') }}"
     crowdsec_log_level: "{{ lookup('env', 'CROWDSEC_LOG_LEVEL') | default('INFO') }}"
     crowdsec_enroll_key: "{{ lookup('env', 'CROWDSEC_ENROLL_KEY') | default('', true) }}"
+    crowdsec_firewall_bouncer_api_key: "{{ lookup('env', 'CROWDSEC_FIREWALL_BOUNCER_API_KEY') }}"
 
     # WireGuard tunnel keys from 1Password
     wireguard_private_key: "{{ lookup('env', 'VPS_WG_PRIVATE_KEY') }}"
