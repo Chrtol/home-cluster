@@ -20,6 +20,24 @@
     fail_msg: VPS_SSH_PORT must be set.
     quiet: true
 
+# Every SSH client (CI runner, desktop, cluster nodes) comes in over the tunnel.
+# Recovery when the tunnel is down is the provider's web console.
+- name: Allow SSH only from the WireGuard tunnel
+  ufw:
+    rule: allow
+    direction: in
+    interface: "{{ firewall_ssh_interface }}"
+    port: "{{ firewall_ssh_port }}"
+    proto: tcp
+    comment: "SSH over WireGuard"
+
+- name: Remove the SSH rule open on every interface
+  ufw:
+    rule: allow
+    port: "{{ firewall_ssh_port }}"
+    proto: tcp
+    delete: true
+
 - name: Configure UFW rules
   ufw:
     rule: allow
@@ -27,7 +45,6 @@
     proto: "{{ item.proto }}"
     comment: "{{ item.comment }}"
   loop:
-    - { port: "{{ firewall_ssh_port }}", proto: tcp, comment: "SSH" }
     - { port: "80", proto: tcp, comment: "HTTP" }
     - { port: "443", proto: tcp, comment: "HTTPS" }
     - { port: "51820", proto: udp, comment: "WireGuard" }
@@ -36,3 +53,16 @@
   ufw:
     state: enabled
     logging: on
+
+# sshd keeps the first value it reads and loads drop-ins in name order, so this
+# file has to sort before 50-cloud-init.conf, which turns password login back on.
+- name: Harden sshd
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/00-hardening.conf
+    mode: "0644"
+    content: |
+      PermitRootLogin no
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+    validate: sshd -t -f %s
+  notify: reload sshd

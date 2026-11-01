@@ -1,3 +1,4 @@
 ---
 # Same variable Ansible connects with (inventory.yml), so the rule follows the port.
 firewall_ssh_port: "{{ lookup('env', 'VPS_SSH_PORT') }}"
+firewall_ssh_interface: wg0
