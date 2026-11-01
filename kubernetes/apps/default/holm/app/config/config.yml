@@ -3,6 +3,11 @@
 # Flux, so Holm fills those from the pod env instead (an unset one stops it).
 # Holm may substitute before parsing YAML: never write a dollar-brace in a comment.
 # App ids are keys in every user's saved layout -- never rename one.
+#
+# There are no per-group layouts. groups: decides who can see an app; a user's
+# first page (and edit mode's Reset) places every app they can see that isn't
+# default_visible: false, in the order listed here. After that the page is theirs.
+# groups match Authentik group NAMES from the claim, read at login.
 
 branding:
   name: "Home"
@@ -28,11 +33,12 @@ customization:
   enabled: true
 
 apps:
-  # Household -- the old Homarr "Media" board.
+  # ── Household: everyone tautulli syncs into media-users ──────────
   - id: plex
     name: "Plex"
     url: "https://plex.${SECRET_DOMAIN}"
     icon: "di:plex"
+    groups: ["media-users"]
     self_hosted: true
     health: true
     tags: ["media"]
@@ -40,6 +46,7 @@ apps:
     name: "Requests"
     url: "https://request.${SECRET_DOMAIN}"
     icon: "di:jellyseerr"
+    groups: ["media-users"]
     self_hosted: true
     health: true
     tags: ["media"]
@@ -47,6 +54,24 @@ apps:
     name: "Audiobooks"
     url: "https://audiobooks.${SECRET_DOMAIN}"
     icon: "di:audiobookshelf"
+    groups: ["media-users"]
+    self_hosted: true
+    health: true
+    tags: ["media"]
+  - id: shelfmark
+    name: "Book requests"
+    url: "https://bookrequest.${SECRET_DOMAIN}"
+    # Dashboard Icons has no SVG for shelfmark, and di: only fetches SVGs.
+    icon: "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/shelfmark.png"
+    groups: ["media-users"]
+    self_hosted: true
+    health: true
+    tags: ["media"]
+  - id: owncast
+    name: "Owncast"
+    url: "https://owncast.${SECRET_DOMAIN}"
+    icon: "di:owncast"
+    groups: ["media-users"]
     self_hosted: true
     health: true
     tags: ["media"]
@@ -54,6 +79,7 @@ apps:
     name: "BentoPDF"
     url: "https://pdf.${SECRET_DOMAIN}"
     icon: "di:bentopdf"
+    groups: ["media-users"]
     self_hosted: true
     health: true
     tags: ["tools"]
@@ -61,6 +87,7 @@ apps:
     name: "IT Tools"
     url: "https://tools.${SECRET_DOMAIN}"
     icon: "di:it-tools"
+    groups: ["media-users"]
     self_hosted: true
     health: true
     tags: ["tools"]
@@ -68,46 +95,56 @@ apps:
     name: "Moocup"
     url: "https://moocup.${SECRET_DOMAIN}"
     icon: "https://moocup.${SECRET_DOMAIN}/favicon.svg"
+    groups: ["media-users"]
     self_hosted: true
     health: true
     tags: ["tools"]
 
-  # In the catalog but not placed by default; users add them, mainly to get
-  # search through the integrations below.
+  # ── Admin ────────────────────────────────────────────────────────
+  # Apps with a search integration below share its id, so the integration
+  # takes this tile's icon.
   - id: immich
     name: "Photos"
     url: "https://photos.${SECRET_DOMAIN}"
     icon: "di:immich"
-    self_hosted: true
-    default_visible: false
+    groups: ["authentik Admins"]
     health: true
     tags: ["media"]
   - id: mealie
     name: "Recipes"
     url: "https://recipes.${SECRET_DOMAIN}"
     icon: "di:mealie"
-    self_hosted: true
-    default_visible: false
+    groups: ["authentik Admins"]
     health: true
     tags: ["home"]
   - id: paperless
     name: "Paperless"
     url: "https://paperless.${SECRET_DOMAIN}"
     icon: "di:paperless-ngx"
-    self_hosted: true
-    default_visible: false
+    groups: ["authentik Admins"]
     health: true
     tags: ["home"]
   - id: karakeep
     name: "Bookmarks"
     url: "https://karakeep.${SECRET_DOMAIN}"
     icon: "di:karakeep"
-    self_hosted: true
-    default_visible: false
+    groups: ["authentik Admins"]
     health: true
     tags: ["home"]
-
-  # Admin -- the old Homarr "Homelab" board.
+  - id: home-assistant
+    name: "Home Assistant"
+    url: "https://hass.${SECRET_DOMAIN}"
+    icon: "di:home-assistant"
+    groups: ["authentik Admins"]
+    health: true
+    tags: ["home"]
+  - id: files
+    name: "Files"
+    url: "https://files.${SECRET_DOMAIN}"
+    icon: "di:filebrowser-quantum"
+    groups: ["authentik Admins"]
+    health: true
+    tags: ["home"]
   - id: sonarr
     name: "Sonarr"
     url: "https://sonarr.${SECRET_DOMAIN}"
@@ -129,6 +166,27 @@ apps:
     groups: ["authentik Admins"]
     health: true
     tags: ["arr"]
+  - id: bazarr
+    name: "Bazarr"
+    url: "https://bazarr.${SECRET_DOMAIN}"
+    icon: "di:bazarr"
+    groups: ["authentik Admins"]
+    health: true
+    tags: ["arr"]
+  - id: tautulli
+    name: "Tautulli"
+    url: "https://tautulli.${SECRET_DOMAIN}"
+    icon: "di:tautulli"
+    groups: ["authentik Admins"]
+    health: true
+    tags: ["media"]
+  - id: maintainerr
+    name: "Maintainerr"
+    url: "https://maintainerr.${SECRET_DOMAIN}"
+    icon: "di:maintainerr"
+    groups: ["authentik Admins"]
+    health: true
+    tags: ["media"]
   - id: sabnzbd
     name: "SABnzbd"
     url: "https://sabnzbd.${SECRET_DOMAIN}"
@@ -150,6 +208,20 @@ apps:
     groups: ["authentik Admins"]
     health: true
     tags: ["downloads"]
+  - id: frigate
+    name: "Frigate"
+    url: "https://frigate.${SECRET_DOMAIN}"
+    icon: "di:frigate"
+    groups: ["authentik Admins"]
+    health: true
+    tags: ["home"]
+  - id: grafana
+    name: "Grafana"
+    url: "https://grafana.${SECRET_DOMAIN}"
+    icon: "di:grafana"
+    groups: ["authentik Admins"]
+    health: true
+    tags: ["infra"]
   - id: proxmox
     name: "Proxmox"
     url: "https://proxmox.${SECRET_DOMAIN}"
@@ -179,12 +251,15 @@ apps:
     health: true
     tags: ["infra"]
 
-# Each user connects their own account (API key) in Configure. default_url pins
-# the server, so nobody can aim an integration at an arbitrary internal host.
+# Each user connects their own account in Configure → Integrations; searches
+# then run as that user. Unlike apps, integrations ignore groups: every
+# signed-in user sees every card. default_url pins the server, so nobody can aim
+# one at an arbitrary internal host.
 integrations:
   plex:
     default_url: "https://plex.${SECRET_DOMAIN}"
     surfaces: { search: true, widgets: false }
+  # Connects on its own for anyone who connected Plex first.
   seerr:
     default_url: "https://request.${SECRET_DOMAIN}"
     surfaces: { search: true, widgets: false }
