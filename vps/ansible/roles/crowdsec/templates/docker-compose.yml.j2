@@ -27,6 +27,11 @@ services:
       - ALL
     security_opt:
       - no-new-privileges:true
+    # Everything the engine writes is under the two state mounts above
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
     # auth.log is syslog:adm 0640
     group_add:
       - "{{ crowdsec_adm_gid }}"
