@@ -10,5 +10,9 @@ spec:
     name: gha-runner-scale-set-controller
     namespace: flux-system
   interval: 1h
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
   values:
     fullnameOverride: *name
