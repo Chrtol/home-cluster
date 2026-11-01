@@ -167,7 +167,6 @@ http:
   serversTransports:
     envoy-gateway-transport:
       serverName: "envoy.{{ traefik_domain }}"
-      insecureSkipVerify: true
       maxIdleConnsPerHost: 25
       forwardingTimeouts:
         dialTimeout: 30s
