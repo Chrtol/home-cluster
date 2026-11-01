@@ -9,6 +9,10 @@ spec:
     kind: OCIRepository
     name: goldilocks
     namespace: flux-system
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
   values:
     vpa:
       enabled: true

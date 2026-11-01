@@ -10,6 +10,10 @@ spec:
     kind: OCIRepository
     name: grafana-operator
     namespace: flux-system
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
   values:
     dashboard:
       enabled: true
