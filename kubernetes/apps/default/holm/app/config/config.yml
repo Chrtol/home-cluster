@@ -189,7 +189,7 @@ apps:
     tags: ["media"]
   - id: sabnzbd
     name: "SABnzbd"
-    url: "https://sabnzbd.${SECRET_DOMAIN}"
+    url: "https://sab.${SECRET_DOMAIN}"
     icon: "di:sabnzbd"
     groups: ["authentik Admins"]
     health: true

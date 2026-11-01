@@ -10,6 +10,12 @@ crowdsec_traefik_access_log: /var/log/traefik/access.log
 
 crowdsec_papi_url: https://papi.api.crowdsec.net/
 
+# renovate: datasource=github-releases depName=crowdsecurity/cs-firewall-bouncer
+crowdsec_firewall_bouncer_version: v0.0.36
+crowdsec_firewall_bouncer_bin: /usr/local/bin/crowdsec-firewall-bouncer
+# Written by the old apt package and kept on removal: it holds the bouncer's API key
+crowdsec_firewall_bouncer_config: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
+
 # Console enrollment runs only when the instance is not enrolled yet.
 # The key comes from 1Password; an empty key skips enrollment.
 crowdsec_console_name: vps1
