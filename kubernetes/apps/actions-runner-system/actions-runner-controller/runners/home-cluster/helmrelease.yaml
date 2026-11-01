@@ -10,6 +10,11 @@ spec:
     name: gha-runner-scale-set
     namespace: flux-system
   interval: 1h
+  # Helm diffs custom resources against the previous release manifest, not the
+  # live object, so a field the API server dropped (listenerConfig, before the
+  # CRD was replaced) is never re-sent. Drift detection compares against live.
+  driftDetection:
+    mode: enabled
   # A controller deletes any AutoscalingRunnerSet whose version label differs from
   # its own. The two charts come from separate OCIRepositories, so a Renovate bump
   # can upgrade this release first and the old controller deletes the new set.
