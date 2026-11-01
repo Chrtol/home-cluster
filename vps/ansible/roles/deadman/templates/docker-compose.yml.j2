@@ -3,6 +3,11 @@ services:
     image: {{ deadman_image }}
     container_name: {{ deadman_container_name }}
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
     # Bind only to localhost — Traefik (host network) fronts TLS + routing.
     ports:
       - "127.0.0.1:{{ deadman_listen_port }}:{{ deadman_listen_port }}"

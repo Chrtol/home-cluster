@@ -4,6 +4,11 @@ services:
     image: docker.io/library/traefik:v3.7.17
     container_name: traefik
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
     network_mode: host  # Use host network for ports 80/443
     volumes:
       # Configuration files
@@ -23,6 +28,11 @@ services:
     image: quay.io/prometheus/node-exporter:v1.12.1
     container_name: node-exporter
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
     network_mode: host
     pid: host
     command:
