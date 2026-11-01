@@ -72,13 +72,6 @@
     traefik_metrics_password_hash: "{{ lookup('env', 'VPS_METRICS_PASSWORD_HASH') }}"
 
   pre_tasks:
-    - name: Create backup of current configuration
-      archive:
-        path: /opt/traefik
-        dest: "/tmp/traefik-backup-{{ ansible_facts['date_time']['epoch'] }}.tar.gz"
-        format: gz
-      ignore_errors: true
-
     - name: Display configuration summary
       debug:
         msg: |
