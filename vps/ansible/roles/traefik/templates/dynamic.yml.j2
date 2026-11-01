@@ -111,7 +111,17 @@ http:
           defaultDecisionSeconds: 60
           httpTimeoutSeconds: 10
           crowdsecLapiTlsInsecureVerify: true
-          crowdsecAppsecEnabled: false
+          crowdsecAppsecEnabled: {{ traefik_crowdsec_appsec_enabled | bool | lower }}
+          crowdsecAppsecHost: {{ traefik_crowdsec_appsec_host }}
+          # Fail open: an engine that is down or erroring lets requests through
+          # uninspected; IP bans still apply from the stream cache
+          crowdsecAppsecFailureBlock: false
+          crowdsecAppsecUnreachableBlock: false
+          # Headers only, so uploads stream straight through. The unreadable-body
+          # check runs before the body limit and would otherwise drop HTTP/2 and
+          # HTTP/3 uploads sent without a Content-Length
+          crowdsecAppsecBodyLimit: 0
+          crowdsecAppsecUnreadableBodyBlock: false
           forwardedHeadersTrustedIPs:
             - 10.0.0.0/8
             - 172.16.0.0/12

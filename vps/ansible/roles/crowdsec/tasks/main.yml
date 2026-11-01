@@ -50,6 +50,13 @@
         type: traefik
   notify: restart crowdsec
 
+- name: Write AppSec acquisition
+  ansible.builtin.template:
+    src: acquis-appsec.yaml.j2
+    dest: /etc/crowdsec/acquis.d/appsec.yaml
+    mode: "0644"
+  notify: restart crowdsec
+
 - name: Remove superseded acquisition files
   ansible.builtin.file:
     path: "/etc/crowdsec/acquis.d/{{ item }}"

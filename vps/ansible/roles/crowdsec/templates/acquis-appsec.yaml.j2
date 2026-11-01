@@ -1,0 +1,7 @@
+# Managed by Ansible (vps/ansible/roles/crowdsec)
+source: appsec
+# Inside the container; published on the host's loopback only
+listen_addr: 0.0.0.0:7422
+appsec_config: crowdsecurity/virtual-patching
+labels:
+  type: appsec

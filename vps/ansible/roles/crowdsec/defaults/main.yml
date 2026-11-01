@@ -12,6 +12,8 @@ crowdsec_collections:
   - crowdsecurity/linux
   - crowdsecurity/sshd
   - crowdsecurity/traefik
+  # AppSec rules, plus the scenario that bans an IP for repeated exploit attempts
+  - crowdsecurity/appsec-virtual-patching
 
 # Traefik writes its access log here (see the traefik role)
 crowdsec_traefik_access_log: /var/log/traefik/access.log

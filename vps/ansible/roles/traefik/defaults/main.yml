@@ -31,6 +31,9 @@ traefik_crowdsec_enabled: true
 traefik_crowdsec_api_key: ""  # Will be provided from 1Password
 traefik_crowdsec_lapi_host: "127.0.0.1:8080"  # System CrowdSec LAPI
 traefik_crowdsec_log_level: "INFO"
+# Virtual-patching WAF in the crowdsec container; false is the rollback
+traefik_crowdsec_appsec_enabled: true
+traefik_crowdsec_appsec_host: "127.0.0.1:7422"
 
 # Envoy Gateway configuration
 traefik_envoy_gateway_ip: "{{ proxy_envoy_gateway_ip }}"

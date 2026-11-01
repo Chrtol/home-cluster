@@ -5,9 +5,10 @@ services:
     restart: unless-stopped
     networks:
       - crowdsec
-    # The Traefik plugin and the firewall bouncer both reach the LAPI here
+    # LAPI (Traefik plugin and firewall bouncer), then AppSec (Traefik plugin)
     ports:
       - "127.0.0.1:8080:8080"
+      - "127.0.0.1:7422:7422"
     volumes:
       # The host's existing config and database, so machine, enrollment and
       # decisions carry over from the apt install
