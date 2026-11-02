@@ -4,7 +4,7 @@ templates:
     sync_mode: sync
     collection_order: alpha
     collection_mode: hide
-    schedule: monthly(10)
+    schedule: weekly(monday)
   Smart:
     sort_title: "!03_<<collection_name>>"
     collection_mode: hide
@@ -18,14 +18,12 @@ templates:
   Theme:
     plex_all: true
     filters:
-      imdb_keyword:
-        keywords: <<keywords>>
-        minimum_relevant: 2
+      imdb_keyword: <<keywords>>
     sort_title: "!04_<<collection_name>>"
     sync_mode: sync
     collection_order: random
     collection_mode: hide
-    schedule: weekly(friday)
+    schedule: daily
 
 collections:
   My Favorites:
@@ -57,7 +55,7 @@ collections:
     template: {name: Smart}
     smart_filter:
       all:
-        unplayed: true
+        plays.lt: 1
         user_rating.gte: 8
     summary: IMDb 8+ shows you have not started yet.
   Critically Acclaimed Shows:
@@ -72,6 +70,7 @@ collections:
       all:
         country: [Norway, Sweden, Denmark, Finland, Iceland]
         genre: [Crime, Mystery, Drama]
+      validate: false
   Emmy Winners:
     template: {name: Custom}
     imdb_search:

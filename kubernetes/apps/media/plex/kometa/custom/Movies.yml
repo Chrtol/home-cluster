@@ -4,7 +4,7 @@ templates:
     sync_mode: sync
     collection_order: alpha
     collection_mode: hide
-    schedule: monthly(10)
+    schedule: weekly(monday)
   Oscars:
     sort_title: "!02_<<collection_name>>"
     sync_mode: sync
@@ -30,7 +30,7 @@ templates:
     collection_order: custom
     collection_mode: hide
     summary: A collection of <<keyword>> movies from <<year_min>> to now, with a minimum rating of <<rating_min>> and at least <<votes_min>> votes from IMDb. Sorted by rating.
-    schedule: weekly(friday)
+    schedule: weekly(monday)
   Library Filter:
     sort_title: "!07_<<collection_name>>"
     sync_mode: sync
@@ -46,14 +46,12 @@ templates:
   Theme:
     plex_all: true
     filters:
-      imdb_keyword:
-        keywords: <<keywords>>
-        minimum_relevant: 2
+      imdb_keyword: <<keywords>>
     sort_title: "!04_<<collection_name>>"
     sync_mode: sync
     collection_order: random
     collection_mode: hide
-    schedule: weekly(friday)
+    schedule: daily
   Smart:
     sort_title: "!03_<<collection_name>>"
     collection_mode: hide
@@ -66,7 +64,7 @@ templates:
     sync_mode: sync
     collection_order: release.desc
     collection_mode: hide
-    schedule: monthly(10)
+    schedule: weekly(monday)
   Award Nominees:
     imdb_search:
       type: movie
@@ -76,7 +74,7 @@ templates:
     sync_mode: sync
     collection_order: release.desc
     collection_mode: hide
-    schedule: monthly(10)
+    schedule: weekly(monday)
 
 collections:
   Critically Acclaimed:
@@ -129,6 +127,8 @@ collections:
     smart_filter:
       all:
         country: [Norway, Sweden, Denmark, Finland, Iceland]
+      # Plex rejects a country tag no item has yet; skip those instead of failing the row.
+      validate: false
 
   # Mood and theme rows. Each one only appears once 5 owned movies carry the keyword on IMDb.
   Twist Endings:
