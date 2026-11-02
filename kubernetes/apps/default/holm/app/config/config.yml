@@ -251,6 +251,67 @@ apps:
     health: true
     tags: ["infra"]
 
+  # ── Local copies ─────────────────────────────────────────────────
+  # The same apps on their internal-gateway hostnames, for use at home.
+  # Holm has one url per tile, so an admin swaps the public tile for one of
+  # these in their own layout; nobody gets them placed automatically.
+  - id: plex-local
+    name: "Plex (local)"
+    url: "https://plex-local.${SECRET_DOMAIN}"
+    icon: "di:plex"
+    groups: ["authentik Admins"]
+    default_visible: false
+    health: true
+    tags: ["media"]
+  - id: seerr-local
+    name: "Requests (local)"
+    url: "https://seerr.${SECRET_DOMAIN}"
+    icon: "di:jellyseerr"
+    groups: ["authentik Admins"]
+    default_visible: false
+    health: true
+    tags: ["media"]
+  - id: audiobookshelf-local
+    name: "Audiobooks (local)"
+    url: "https://audiobookshelf.${SECRET_DOMAIN}"
+    icon: "di:audiobookshelf"
+    groups: ["authentik Admins"]
+    default_visible: false
+    health: true
+    tags: ["media"]
+  - id: shelfmark-local
+    name: "Book requests (local)"
+    url: "https://shelfmark.${SECRET_DOMAIN}"
+    icon: "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/shelfmark.png"
+    groups: ["authentik Admins"]
+    default_visible: false
+    health: true
+    tags: ["media"]
+  - id: immich-local
+    name: "Photos (local)"
+    url: "https://immich.${SECRET_DOMAIN}"
+    icon: "di:immich"
+    groups: ["authentik Admins"]
+    default_visible: false
+    health: true
+    tags: ["media"]
+  - id: mealie-local
+    name: "Recipes (local)"
+    url: "https://mealie.${SECRET_DOMAIN}"
+    icon: "di:mealie"
+    groups: ["authentik Admins"]
+    default_visible: false
+    health: true
+    tags: ["home"]
+  - id: home-assistant-local
+    name: "Home Assistant (local)"
+    url: "https://home-assistant.${SECRET_DOMAIN}"
+    icon: "di:home-assistant"
+    groups: ["authentik Admins"]
+    default_visible: false
+    health: true
+    tags: ["home"]
+
 # Each user connects their own account in Configure → Integrations; searches
 # then run as that user. Unlike apps, integrations ignore groups: every
 # signed-in user sees every card. default_url pins the server, so nobody can aim
