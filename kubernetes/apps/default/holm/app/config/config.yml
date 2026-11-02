@@ -278,6 +278,11 @@ integrations:
   karakeep:
     default_url: "https://karakeep.${SECRET_DOMAIN}"
     surfaces: { search: true, widgets: false }
+  # Holm follows iCloud's redirect to the account's own pNN-caldav.icloud.com.
+  # Widgets are the on-page reminders and the next-event line under the clock.
+  caldav:
+    default_url: "https://caldav.icloud.com"
+    surfaces: { search: true, widgets: true }
 
 weather:
   enabled: true
