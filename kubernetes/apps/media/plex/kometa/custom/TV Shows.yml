@@ -20,17 +20,19 @@ templates:
     tmdb_discover:
       with_keywords: <<keywords>>
       sort_by: popularity.desc
-      limit: 1000
+      limit: 300
     sort_title: "!04_<<collection_name>>"
     sync_mode: sync
     collection_order: random
     collection_mode: hide
     schedule: daily
-  Genre Mix:
-    tmdb_discover:
-      with_genres: <<genres>>
-      sort_by: popularity.desc
-      limit: 1000
+  # Plex already holds each show's genres, so pairs are filtered locally instead of via TMDb.
+  Genre Pair:
+    plex_search:
+      all:
+        genre: <<first>>
+    filters:
+      genre: <<second>>
     sort_title: "!05_<<collection_name>>"
     sync_mode: sync
     collection_order: random
@@ -41,7 +43,7 @@ templates:
       with_genres: <<genres>>
       with_keywords: <<keywords>>
       sort_by: popularity.desc
-      limit: 1000
+      limit: 300
     sort_title: "!05_<<collection_name>>"
     sync_mode: sync
     collection_order: random
@@ -117,14 +119,14 @@ collections:
       vote_average.gte: 8.2
       vote_count.gte: 300
       sort_by: vote_average.desc
-      limit: 1000
+      limit: 300
     collection_order: random
   Emmy Winners:
     template: {name: Custom}
     imdb_search:
       type: tv_series,tv_mini_series
       event.winning: emmy
-      limit: 1000
+      limit: 300
     collection_order: alpha
 
   # Format and status.
@@ -244,39 +246,31 @@ collections:
 
   # Microgenres, the way streaming services slice their catalogues.
   Crime Dramas:
-    template: {name: Genre Mix, genres: "80,18"}
+    template: {name: Genre Pair, first: "Crime", second: "Drama"}
   Crime Mysteries:
-    template: {name: Genre Mix, genres: "80,9648"}
+    template: {name: Genre Pair, first: "Crime", second: "Mystery"}
   Mystery Dramas:
-    template: {name: Genre Mix, genres: "9648,18"}
+    template: {name: Genre Pair, first: "Mystery", second: "Drama"}
   Sci-Fi & Fantasy Dramas:
-    template: {name: Genre Mix, genres: "10765,18"}
+    template: {name: Genre Pair, first: "Sci-Fi & Fantasy", second: "Drama"}
   Mystery Sci-Fi:
-    template: {name: Genre Mix, genres: "9648,10765"}
+    template: {name: Genre Pair, first: "Mystery", second: "Sci-Fi & Fantasy"}
   Action Dramas:
-    template: {name: Genre Mix, genres: "10759,18"}
+    template: {name: Genre Pair, first: "Action & Adventure", second: "Drama"}
   Action Sci-Fi & Fantasy:
-    template: {name: Genre Mix, genres: "10759,10765"}
+    template: {name: Genre Pair, first: "Action & Adventure", second: "Sci-Fi & Fantasy"}
   Dramedies:
-    template: {name: Genre Mix, genres: "35,18"}
+    template: {name: Genre Pair, first: "Comedy", second: "Drama"}
   Crime Comedies:
-    template: {name: Genre Mix, genres: "35,80"}
+    template: {name: Genre Pair, first: "Comedy", second: "Crime"}
   Sci-Fi Comedies:
-    template: {name: Genre Mix, genres: "35,10765"}
+    template: {name: Genre Pair, first: "Comedy", second: "Sci-Fi & Fantasy"}
   Animated Comedies:
-    template: {name: Genre Mix, genres: "16,35"}
+    template: {name: Genre Pair, first: "Animation", second: "Comedy"}
   Animated Adventures:
-    template: {name: Genre Mix, genres: "16,10759"}
+    template: {name: Genre Pair, first: "Animation", second: "Action & Adventure"}
   Family Comedies:
-    template: {name: Genre Mix, genres: "10751,35"}
-  Kids TV:
-    template: {name: Genre Mix, genres: "10762"}
-  War & Politics:
-    template: {name: Genre Mix, genres: "10768"}
-  Westerns:
-    template: {name: Genre Mix, genres: "37"}
-  Soaps:
-    template: {name: Genre Mix, genres: "10766"}
+    template: {name: Genre Pair, first: "Family", second: "Comedy"}
 
   Twisty Mysteries:
     template: {name: Mood, genres: "9648", keywords: "326438|275311"}
