@@ -11,26 +11,6 @@ templates:
     collection_order: release.desc
     collection_mode: hide
     schedule: yearly(03/01)
-  IMDb Keywords:
-    default:
-      type: movie
-      year_min: 1980
-      rating_min: 7
-      votes_min: 50000
-      limit: 100
-    imdb_search:
-      type: <<type>>
-      keyword: <<keyword>>
-      release.after: <<year_min>>-01-01
-      rating.gte: <<rating_min>>
-      votes.gte: <<votes_min>>
-      limit: <<limit>>
-    sort_title: "!09_<<collection_name>>"
-    sync_mode: sync
-    collection_order: custom
-    collection_mode: hide
-    summary: A collection of <<keyword>> movies from <<year_min>> to now, with a minimum rating of <<rating_min>> and at least <<votes_min>> votes from IMDb. Sorted by rating.
-    schedule: weekly(monday)
   Library Filter:
     sort_title: "!07_<<collection_name>>"
     sync_mode: sync
@@ -44,9 +24,10 @@ templates:
     collection_mode: hide
     schedule: daily
   Theme:
-    plex_all: true
-    filters:
-      imdb_keyword: <<keywords>>
+    tmdb_discover:
+      with_keywords: <<keywords>>
+      sort_by: popularity.desc
+      limit: 1000
     sort_title: "!04_<<collection_name>>"
     sync_mode: sync
     collection_order: random
@@ -132,131 +113,131 @@ collections:
 
   # Mood and theme rows. Each one only appears once 5 owned movies carry the keyword on IMDb.
   Twist Endings:
-    template: {name: Theme, keywords: [twist-ending, surprise-ending]}
+    template: {name: Theme, keywords: "326438|275311"}
   Time Travel:
-    template: {name: Theme, keywords: [time-travel]}
+    template: {name: Theme, keywords: "4379"}
   Time Loops:
-    template: {name: Theme, keywords: [time-loop]}
+    template: {name: Theme, keywords: "10854"}
   Parallel Worlds:
-    template: {name: Theme, keywords: [parallel-universe, multiverse, alternate-reality]}
+    template: {name: Theme, keywords: "243230|336874"}
   Lost in Space:
-    template: {name: Theme, keywords: [outer-space, space-travel, astronaut]}
+    template: {name: Theme, keywords: "252634|3801"}
   Aliens:
-    template: {name: Theme, keywords: [alien, alien-invasion, extraterrestrial]}
+    template: {name: Theme, keywords: "9951|14909"}
   Robots & AI:
-    template: {name: Theme, keywords: [artificial-intelligence, robot, android]}
+    template: {name: Theme, keywords: "310|14544"}
   Cyberpunk:
-    template: {name: Theme, keywords: [cyberpunk]}
+    template: {name: Theme, keywords: "12190"}
   Dystopian & Post-Apocalyptic:
-    template: {name: Theme, keywords: [dystopia, post-apocalypse, apocalypse]}
+    template: {name: Theme, keywords: "4565|4458"}
   Zombies:
-    template: {name: Theme, keywords: [zombie, zombie-apocalypse]}
+    template: {name: Theme, keywords: "12377"}
   Vampires & Werewolves:
-    template: {name: Theme, keywords: [vampire, werewolf]}
+    template: {name: Theme, keywords: "3133|12564"}
   Ghosts & Haunted Houses:
-    template: {name: Theme, keywords: [ghost, haunted-house]}
+    template: {name: Theme, keywords: "162846|3358"}
   Demons & Possession:
-    template: {name: Theme, keywords: [demonic-possession, exorcism, demon]}
+    template: {name: Theme, keywords: "161261|2626"}
   Witches:
-    template: {name: Theme, keywords: [witch, witchcraft]}
+    template: {name: Theme, keywords: "616"}
   Monsters & Creatures:
-    template: {name: Theme, keywords: [monster, creature-feature, giant-monster]}
+    template: {name: Theme, keywords: "1299|13031"}
   Slashers:
-    template: {name: Theme, keywords: [slasher]}
+    template: {name: Theme, keywords: "12339"}
   Found Footage:
-    template: {name: Theme, keywords: [found-footage]}
+    template: {name: Theme, keywords: "163053"}
   Serial Killers:
-    template: {name: Theme, keywords: [serial-killer]}
+    template: {name: Theme, keywords: "10714"}
   Psychological Thrillers:
-    template: {name: Theme, keywords: [psychological-thriller]}
+    template: {name: Theme, keywords: "12565"}
   Conspiracies:
-    template: {name: Theme, keywords: [conspiracy]}
+    template: {name: Theme, keywords: "10410"}
   Kidnappings & Hostages:
-    template: {name: Theme, keywords: [kidnapping, hostage]}
+    template: {name: Theme, keywords: "1930|1562"}
   Spies & Espionage:
-    template: {name: Theme, keywords: [spy, espionage, secret-agent]}
+    template: {name: Theme, keywords: "470|5265"}
   Assassins & Hitmen:
-    template: {name: Theme, keywords: [assassin, hitman, contract-killer]}
+    template: {name: Theme, keywords: "782|2708"}
   Gangsters & Mafia:
-    template: {name: Theme, keywords: [mafia, gangster, organized-crime]}
+    template: {name: Theme, keywords: "10391|3149|10291"}
   Cops & Detectives:
-    template: {name: Theme, keywords: [detective, police-detective, police-investigation]}
+    template: {name: Theme, keywords: "703|15167"}
   Courtroom Dramas:
-    template: {name: Theme, keywords: [courtroom, trial, lawyer]}
+    template: {name: Theme, keywords: "33519|10909"}
   Prison & Escapes:
-    template: {name: Theme, keywords: [prison, prison-escape]}
+    template: {name: Theme, keywords: "378|9777"}
   Hackers:
-    template: {name: Theme, keywords: [hacker, computer-hacker]}
+    template: {name: Theme, keywords: "2157"}
   Martial Arts:
-    template: {name: Theme, keywords: [martial-arts, kung-fu]}
+    template: {name: Theme, keywords: "779|780"}
   Car Chases & Racing:
-    template: {name: Theme, keywords: [car-chase, car-racing, street-racing]}
+    template: {name: Theme, keywords: "382327|830"}
   World War II:
-    template: {name: Theme, keywords: [world-war-two]}
+    template: {name: Theme, keywords: "1956"}
   Soldiers & War:
-    template: {name: Theme, keywords: [soldier, military, battle]}
+    template: {name: Theme, keywords: "13065|162365"}
   Disasters:
-    template: {name: Theme, keywords: [disaster, natural-disaster]}
+    template: {name: Theme, keywords: "10617|5096"}
   Survival:
-    template: {name: Theme, keywords: [survival, wilderness-survival]}
+    template: {name: Theme, keywords: "10349"}
   Revenge:
-    template: {name: Theme, keywords: [revenge]}
+    template: {name: Theme, keywords: "9748"}
   Road Trips:
-    template: {name: Theme, keywords: [road-trip, road-movie]}
+    template: {name: Theme, keywords: "7312"}
   Treasure Hunts:
-    template: {name: Theme, keywords: [treasure-hunt, treasure]}
+    template: {name: Theme, keywords: "6956"}
   Into the Ocean:
-    template: {name: Theme, keywords: [ocean, shark, submarine]}
+    template: {name: Theme, keywords: "270|15097|339"}
   Dinosaurs:
-    template: {name: Theme, keywords: [dinosaur]}
+    template: {name: Theme, keywords: "12616"}
   Dragons:
-    template: {name: Theme, keywords: [dragon]}
+    template: {name: Theme, keywords: "12554"}
   Magic & Wizards:
-    template: {name: Theme, keywords: [magic, wizard, sorcery]}
+    template: {name: Theme, keywords: "2343|177912"}
   Fairy Tales:
-    template: {name: Theme, keywords: [fairy-tale]}
+    template: {name: Theme, keywords: "3205"}
   Knights & Kingdoms:
-    template: {name: Theme, keywords: [medieval-times, knight, king]}
+    template: {name: Theme, keywords: "161257|10466"}
   Pirates:
-    template: {name: Theme, keywords: [pirate]}
+    template: {name: Theme, keywords: "12988"}
   Underdogs:
-    template: {name: Theme, keywords: [underdog]}
+    template: {name: Theme, keywords: "240"}
   Sports Stories:
-    template: {name: Theme, keywords: [sport, sports-team, coach]}
+    template: {name: Theme, keywords: "6075"}
   Coming of Age:
-    template: {name: Theme, keywords: [coming-of-age]}
+    template: {name: Theme, keywords: "10683"}
   High School:
-    template: {name: Theme, keywords: [high-school, teenager]}
+    template: {name: Theme, keywords: "6270|296608"}
   Friendship:
-    template: {name: Theme, keywords: [friendship, best-friend]}
+    template: {name: Theme, keywords: "6054"}
   Family Ties:
-    template: {name: Theme, keywords: [father-son-relationship, mother-daughter-relationship, dysfunctional-family]}
+    template: {name: Theme, keywords: "10235|10041"}
   Strong Female Leads:
-    template: {name: Theme, keywords: [female-protagonist]}
+    template: {name: Theme, keywords: "11322"}
   Mind & Madness:
-    template: {name: Theme, keywords: [mental-illness, insanity, psychiatrist]}
+    template: {name: Theme, keywords: "41329"}
   Addiction:
-    template: {name: Theme, keywords: [drug-addiction, addiction, alcoholism]}
+    template: {name: Theme, keywords: "1803|7464"}
   Small Towns:
-    template: {name: Theme, keywords: [small-town]}
+    template: {name: Theme, keywords: "1415"}
   New York Stories:
-    template: {name: Theme, keywords: [new-york-city]}
+    template: {name: Theme, keywords: "242"}
   Nonlinear Stories:
-    template: {name: Theme, keywords: [nonlinear-timeline, flashback]}
+    template: {name: Theme, keywords: "157171"}
   Ensemble Casts:
-    template: {name: Theme, keywords: [ensemble-cast]}
+    template: {name: Theme, keywords: "374743"}
   Dark Comedies:
-    template: {name: Theme, keywords: [dark-comedy, black-comedy]}
+    template: {name: Theme, keywords: "10123"}
   Satire & Parody:
-    template: {name: Theme, keywords: [satire, parody, spoof]}
+    template: {name: Theme, keywords: "8201|9755|11931"}
   Musicals & Musicians:
-    template: {name: Theme, keywords: [musical, musician, singer]}
+    template: {name: Theme, keywords: "4344|4048"}
   Remakes:
-    template: {name: Theme, keywords: [remake]}
+    template: {name: Theme, keywords: "9714"}
   Cult Classics:
-    template: {name: Theme, keywords: [cult-film]}
+    template: {name: Theme, keywords: "374649"}
   Feel-Good Movies:
-    template: {name: Theme, keywords: [feel-good]}
+    template: {name: Theme, keywords: "383896"}
 
   Best Picture Winners:
     template: {name: Award Winners, event: oscar_picture}
@@ -330,7 +311,7 @@ collections:
     template: {name: Custom}
     imdb_list: https://www.imdb.com/list/ls574663351
   Superhero:
-    template: {name: IMDb Keywords, keyword: superhero}
+    template: {name: Theme, keywords: "9715"}
 
   Best Cinematography:
     template: {name: Oscars}

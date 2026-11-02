@@ -16,9 +16,10 @@ templates:
     collection_mode: hide
     schedule: daily
   Theme:
-    plex_all: true
-    filters:
-      imdb_keyword: <<keywords>>
+    tmdb_discover:
+      with_keywords: <<keywords>>
+      sort_by: popularity.desc
+      limit: 1000
     sort_title: "!04_<<collection_name>>"
     sync_mode: sync
     collection_order: random
@@ -81,48 +82,48 @@ collections:
 
   # Only appears once 5 owned shows carry the keyword on IMDb.
   Twist & Turns:
-    template: {name: Theme, keywords: [twist-ending, plot-twist, mystery]}
+    template: {name: Theme, keywords: "326438|275311"}
   Time Travel:
-    template: {name: Theme, keywords: [time-travel, time-loop]}
+    template: {name: Theme, keywords: "4379|10854"}
   Sci-Fi Worlds:
-    template: {name: Theme, keywords: [outer-space, spaceship, alien, dystopia]}
+    template: {name: Theme, keywords: "252634|3801|9951|4565"}
   Post-Apocalyptic:
-    template: {name: Theme, keywords: [post-apocalypse, zombie, apocalypse]}
+    template: {name: Theme, keywords: "4458|12377"}
   Supernatural:
-    template: {name: Theme, keywords: [supernatural, ghost, vampire, witch]}
+    template: {name: Theme, keywords: "6152|162846|3133|616"}
   Superheroes:
-    template: {name: Theme, keywords: [superhero, based-on-comic, based-on-comic-book]}
+    template: {name: Theme, keywords: "9715"}
   Serial Killers & True Crime:
-    template: {name: Theme, keywords: [serial-killer, true-crime]}
+    template: {name: Theme, keywords: "10714|33722"}
   Detectives & Investigators:
-    template: {name: Theme, keywords: [detective, police-detective, investigation]}
+    template: {name: Theme, keywords: "703|15167|5340"}
   Spies & Conspiracies:
-    template: {name: Theme, keywords: [spy, espionage, conspiracy]}
+    template: {name: Theme, keywords: "470|5265|10410"}
   Crime Families & Gangsters:
-    template: {name: Theme, keywords: [mafia, gangster, drug-cartel, organized-crime]}
+    template: {name: Theme, keywords: "10391|3149|10175|10291"}
   Lawyers & Courtrooms:
-    template: {name: Theme, keywords: [lawyer, courtroom, law-firm]}
+    template: {name: Theme, keywords: "10909|33519|162813"}
   Medical Dramas:
-    template: {name: Theme, keywords: [hospital, doctor, surgeon]}
+    template: {name: Theme, keywords: "11612|13005"}
   Power & Politics:
-    template: {name: Theme, keywords: [politics, politician, power-struggle]}
+    template: {name: Theme, keywords: "6078"}
   Family Sagas:
-    template: {name: Theme, keywords: [family-relationships, dysfunctional-family, family-business]}
+    template: {name: Theme, keywords: "10235|10041|5683"}
   Workplace Comedies:
-    template: {name: Theme, keywords: [workplace, office, coworker]}
+    template: {name: Theme, keywords: "6282|1438"}
   Sitcoms:
-    template: {name: Theme, keywords: [sitcom]}
+    template: {name: Theme, keywords: "193171"}
   Dark Comedies:
-    template: {name: Theme, keywords: [dark-comedy, black-comedy, satire]}
+    template: {name: Theme, keywords: "10123|8201"}
   Teen Drama:
-    template: {name: Theme, keywords: [teenager, high-school, coming-of-age]}
+    template: {name: Theme, keywords: "296608|6270|10683"}
   Fantasy Epics:
-    template: {name: Theme, keywords: [dragon, magic, sword-and-sorcery, medieval-times]}
+    template: {name: Theme, keywords: "12554|2343|234213|161257"}
   War & Military:
-    template: {name: Theme, keywords: [military, soldier, world-war-two]}
+    template: {name: Theme, keywords: "162365|13065|1956"}
   Survival:
-    template: {name: Theme, keywords: [survival, island, wilderness]}
+    template: {name: Theme, keywords: "10349|2041"}
   Anthologies:
-    template: {name: Theme, keywords: [anthology, anthology-series]}
+    template: {name: Theme, keywords: "9706"}
   Animated for Adults:
-    template: {name: Theme, keywords: [adult-animation]}
+    template: {name: Theme, keywords: "161919"}
