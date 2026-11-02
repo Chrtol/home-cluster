@@ -33,6 +33,27 @@ templates:
     collection_order: random
     collection_mode: hide
     schedule: daily
+  Genre Mix:
+    tmdb_discover:
+      with_genres: <<genres>>
+      sort_by: popularity.desc
+      limit: 1000
+    sort_title: "!05_<<collection_name>>"
+    sync_mode: sync
+    collection_order: random
+    collection_mode: hide
+    schedule: daily
+  Mood:
+    tmdb_discover:
+      with_genres: <<genres>>
+      with_keywords: <<keywords>>
+      sort_by: popularity.desc
+      limit: 1000
+    sort_title: "!05_<<collection_name>>"
+    sync_mode: sync
+    collection_order: random
+    collection_mode: hide
+    schedule: daily
   Smart:
     sort_title: "!03_<<collection_name>>"
     collection_mode: hide
@@ -110,6 +131,65 @@ collections:
         country: [Norway, Sweden, Denmark, Finland, Iceland]
       # Plex rejects a country tag no item has yet; skip those instead of failing the row.
       validate: false
+
+  # Microgenres. TMDb genre ids joined with "," match all, with "|" match any.
+  Action Comedies:
+    template: {name: Genre Mix, genres: "28,35"}
+  Action Thrillers:
+    template: {name: Genre Mix, genres: "28,53"}
+  Sci-Fi Action:
+    template: {name: Genre Mix, genres: "878,28"}
+  Sci-Fi Thrillers:
+    template: {name: Genre Mix, genres: "878,53"}
+  Crime Thrillers:
+    template: {name: Genre Mix, genres: "80,53"}
+  Crime Dramas:
+    template: {name: Genre Mix, genres: "80,18"}
+  Mystery Thrillers:
+    template: {name: Genre Mix, genres: "9648,53"}
+  Horror Thrillers:
+    template: {name: Genre Mix, genres: "27,53"}
+  Horror Comedies:
+    template: {name: Genre Mix, genres: "27,35"}
+  Romantic Comedies:
+    template: {name: Genre Mix, genres: "10749,35"}
+  Romantic Dramas:
+    template: {name: Genre Mix, genres: "10749,18"}
+  Fantasy Adventures:
+    template: {name: Genre Mix, genres: "14,12"}
+  Family Adventures:
+    template: {name: Genre Mix, genres: "10751,12"}
+  Animated Adventures:
+    template: {name: Genre Mix, genres: "16,12"}
+  Animated Comedies:
+    template: {name: Genre Mix, genres: "16,35"}
+  Historical Dramas:
+    template: {name: Genre Mix, genres: "36,18"}
+  War Dramas:
+    template: {name: Genre Mix, genres: "10752,18"}
+  Westerns:
+    template: {name: Genre Mix, genres: "37"}
+  Music & Musicals:
+    template: {name: Genre Mix, genres: "10402"}
+
+  Mind-Bending Sci-Fi:
+    template: {name: Mood, genres: "878", keywords: "4379|243230|336874|10854"}
+  Dark Psychological Thrillers:
+    template: {name: Mood, genres: "53|80", keywords: "12565|6259|6844"}
+  Gritty Crime Sagas:
+    template: {name: Mood, genres: "80", keywords: "10391|3149|10291|33421"}
+  Epic Fantasy:
+    template: {name: Mood, genres: "14", keywords: "211227|12554|161257|234213|177895"}
+  Heartfelt Family Dramas:
+    template: {name: Mood, genres: "18", keywords: "10235|10041|380|240303"}
+  Underdog Sports Stories:
+    template: {name: Mood, genres: "18|35", keywords: "240|6075"}
+  Feel-Good Comedies:
+    template: {name: Mood, genres: "35", keywords: "383896|9713|6054"}
+  Supernatural Horror:
+    template: {name: Mood, genres: "27", keywords: "6152|162846|161261|2626"}
+  Space Adventures:
+    template: {name: Mood, genres: "878|12", keywords: "161176|9882|252937|3801"}
 
   # Mood and theme rows. Each one only appears once 5 owned movies carry the keyword on IMDb.
   Twist Endings:

@@ -15,6 +15,7 @@ templates:
     collection_order: random
     collection_mode: hide
     schedule: daily
+  # TMDb ids: keywords and genres joined with "|" match any, with "," match all.
   Theme:
     tmdb_discover:
       with_keywords: <<keywords>>
@@ -25,12 +26,108 @@ templates:
     collection_order: random
     collection_mode: hide
     schedule: daily
+  Genre Mix:
+    tmdb_discover:
+      with_genres: <<genres>>
+      sort_by: popularity.desc
+      limit: 1000
+    sort_title: "!05_<<collection_name>>"
+    sync_mode: sync
+    collection_order: random
+    collection_mode: hide
+    schedule: daily
+  Mood:
+    tmdb_discover:
+      with_genres: <<genres>>
+      with_keywords: <<keywords>>
+      sort_by: popularity.desc
+      limit: 1000
+    sort_title: "!05_<<collection_name>>"
+    sync_mode: sync
+    collection_order: random
+    collection_mode: hide
+    schedule: daily
 
 collections:
   My Favorites:
     template: {name: Custom}
     tmdb_list: https://www.themoviedb.org/list/7111217
 
+  # What's happening now. Plex re-evaluates smart rows per viewer, so play state is personal.
+  New Episodes This Week:
+    template: {name: Smart}
+    smart_filter:
+      all:
+        episode_air_date: 7
+      sort_by: episode_added.desc
+  New Seasons of Shows You Watch:
+    template: {name: Smart}
+    smart_filter:
+      all:
+        episode_added: 30
+        plays.gte: 1
+        unplayed_episodes: true
+      sort_by: episode_added.desc
+  Pick Back Up:
+    template: {name: Smart}
+    smart_filter:
+      all:
+        plays.gte: 1
+        unplayed_episodes: true
+        last_played.notlast: 60
+    summary: Shows you started and drifted away from.
+  Start Something New:
+    template: {name: Smart}
+    smart_filter:
+      all:
+        plays.lt: 1
+        user_rating.gte: 7
+      limit: 25
+    summary: A fresh random handful of unstarted shows every time you look.
+  Highly Rated, Not Started:
+    template: {name: Smart}
+    smart_filter:
+      all:
+        plays.lt: 1
+        user_rating.gte: 8
+    summary: IMDb 8+ shows you have not started yet.
+
+  # Quality.
+  Must-Watch TV:
+    template: {name: Smart}
+    smart_filter:
+      all:
+        user_rating.gte: 8.5
+      sort_by: user_rating.desc
+  Audience Favorites:
+    template: {name: Smart}
+    smart_filter:
+      all:
+        audience_rating.gte: 8.5
+      sort_by: audience_rating.desc
+  Critically Acclaimed Shows:
+    template: {name: Smart}
+    smart_filter:
+      all:
+        critic_rating.gte: 8
+      sort_by: critic_rating.desc
+  Top Rated on TMDb:
+    template: {name: Custom}
+    tmdb_discover:
+      vote_average.gte: 8.2
+      vote_count.gte: 300
+      sort_by: vote_average.desc
+      limit: 1000
+    collection_order: random
+  Emmy Winners:
+    template: {name: Custom}
+    imdb_search:
+      type: tv_series,tv_mini_series
+      event.winning: emmy
+      limit: 1000
+    collection_order: alpha
+
+  # Format and status.
   Binge-Worthy Miniseries:
     template: {name: Status}
     filters:
@@ -44,6 +141,46 @@ collections:
     template: {name: Status}
     filters:
       tmdb_status: returning
+  New Series This Year:
+    template: {name: Status}
+    filters:
+      first_episode_aired: 365
+  Recently Concluded:
+    template: {name: Status}
+    filters:
+      tmdb_status: [ended, canceled]
+      last_episode_aired: 730
+  Gone Too Soon:
+    template: {name: Status}
+    filters:
+      tmdb_status: canceled
+    summary: Cancelled before their time.
+  Long Runners:
+    template: {name: Status}
+    filters:
+      seasons:
+        count: 5
+        added.before: today
+    summary: Five seasons or more to sink into.
+  Half-Hour Comedies:
+    template: {name: Status}
+    filters:
+      genre: Comedy
+      duration.lte: 35
+  Quick Episodes:
+    template: {name: Status}
+    filters:
+      duration.lte: 25
+  Hour-Long Dramas:
+    template: {name: Status}
+    filters:
+      genre: Drama
+      duration.gte: 45
+  Classic TV:
+    template: {name: Smart}
+    smart_filter:
+      all:
+        year.lte: 1999
   Reality TV:
     template: {name: Status}
     filters:
@@ -52,19 +189,25 @@ collections:
     template: {name: Status}
     filters:
       tmdb_type: documentary
-  Highly Rated, Not Started:
+  Talk & Late Night:
+    template: {name: Status}
+    filters:
+      tmdb_type: talk_show
+  Kids & Family TV:
     template: {name: Smart}
     smart_filter:
       all:
-        plays.lt: 1
-        user_rating.gte: 8
-    summary: IMDb 8+ shows you have not started yet.
-  Critically Acclaimed Shows:
+        content_rating: [TV-Y, TV-Y7, TV-G, TV-PG]
+      validate: false
+  After Dark:
     template: {name: Smart}
     smart_filter:
       all:
-        critic_rating.gte: 8
-      sort_by: critic_rating.desc
+        content_rating: TV-MA
+      validate: false
+    summary: Rated TV-MA. Not for the kids.
+
+  # Around the world.
   Nordic Noir:
     template: {name: Smart}
     smart_filter:
@@ -72,58 +215,222 @@ collections:
         country: [Norway, Sweden, Denmark, Finland, Iceland]
         genre: [Crime, Mystery, Drama]
       validate: false
-  Emmy Winners:
-    template: {name: Custom}
-    imdb_search:
-      type: tv_series,tv_mini_series
-      event.winning: emmy
-      limit: 1000
-    collection_order: alpha
+  Scandinavian TV:
+    template: {name: Status}
+    filters:
+      origin_country: ["no", "se", "dk", "fi", "is"]
+  British TV:
+    template: {name: Status}
+    filters:
+      origin_country: gb
+  K-Dramas:
+    template: {name: Status}
+    filters:
+      original_language: ko
+  Anime:
+    template: {name: Status}
+    filters:
+      original_language: ja
+      genre: Animation
+  Spanish-Language TV:
+    template: {name: Status}
+    filters:
+      original_language: es
+  International TV:
+    template: {name: Status}
+    filters:
+      original_language.not: en
+    summary: Everything not originally in English.
 
-  # Only appears once 5 owned shows carry the keyword on IMDb.
+  # Microgenres, the way streaming services slice their catalogues.
+  Crime Dramas:
+    template: {name: Genre Mix, genres: "80,18"}
+  Crime Mysteries:
+    template: {name: Genre Mix, genres: "80,9648"}
+  Mystery Dramas:
+    template: {name: Genre Mix, genres: "9648,18"}
+  Sci-Fi & Fantasy Dramas:
+    template: {name: Genre Mix, genres: "10765,18"}
+  Mystery Sci-Fi:
+    template: {name: Genre Mix, genres: "9648,10765"}
+  Action Dramas:
+    template: {name: Genre Mix, genres: "10759,18"}
+  Action Sci-Fi & Fantasy:
+    template: {name: Genre Mix, genres: "10759,10765"}
+  Dramedies:
+    template: {name: Genre Mix, genres: "35,18"}
+  Crime Comedies:
+    template: {name: Genre Mix, genres: "35,80"}
+  Sci-Fi Comedies:
+    template: {name: Genre Mix, genres: "35,10765"}
+  Animated Comedies:
+    template: {name: Genre Mix, genres: "16,35"}
+  Animated Adventures:
+    template: {name: Genre Mix, genres: "16,10759"}
+  Family Comedies:
+    template: {name: Genre Mix, genres: "10751,35"}
+  Kids TV:
+    template: {name: Genre Mix, genres: "10762"}
+  War & Politics:
+    template: {name: Genre Mix, genres: "10768"}
+  Westerns:
+    template: {name: Genre Mix, genres: "37"}
+  Soaps:
+    template: {name: Genre Mix, genres: "10766"}
+
+  Twisty Mysteries:
+    template: {name: Mood, genres: "9648", keywords: "326438|275311"}
+  Gritty Cop Dramas:
+    template: {name: Mood, genres: "18", keywords: "6149|15167|703|1752"}
+  Dark Psychological Thrillers:
+    template: {name: Mood, genres: "18|80|9648", keywords: "12565|6259|6844"}
+  Witty Workplace Comedies:
+    template: {name: Mood, genres: "35", keywords: "6282|1438|210605|11923"}
+  Cop Comedies:
+    template: {name: Mood, genres: "35", keywords: "6149|15167"}
+  Mind-Bending Sci-Fi:
+    template: {name: Mood, genres: "10765", keywords: "4379|243230|336874|10854"}
+  Epic Fantasy:
+    template: {name: Mood, genres: "10765", keywords: "211227|12554|161257|234213|177895"}
+  Heartfelt Family Dramas:
+    template: {name: Mood, genres: "18", keywords: "10235|10041|380|14768|240303"}
+  Small-Town Mysteries:
+    template: {name: Mood, genres: "9648|80", keywords: "1415"}
+  Royal & Period Dramas:
+    template: {name: Mood, genres: "18", keywords: "15060|9920|192772"}
+  Teen Mysteries:
+    template: {name: Mood, genres: "9648", keywords: "296608|6270|193400"}
+  Space Adventures:
+    template: {name: Mood, genres: "10765|10759", keywords: "161176|9882|252937|3801"}
+
+  # Themes from TMDb keywords. A row appears once 5 owned shows carry one of its keywords.
   Twist & Turns:
     template: {name: Theme, keywords: "326438|275311"}
   Time Travel:
     template: {name: Theme, keywords: "4379|10854"}
+  Parallel Worlds:
+    template: {name: Theme, keywords: "243230|336874"}
   Sci-Fi Worlds:
     template: {name: Theme, keywords: "252634|3801|9951|4565"}
+  Space Opera:
+    template: {name: Theme, keywords: "161176|9882|252937"}
+  Hackers & Cyber:
+    template: {name: Theme, keywords: "2157|12190|4563"}
   Post-Apocalyptic:
-    template: {name: Theme, keywords: "4458|12377"}
+    template: {name: Theme, keywords: "4458|12377|359337"}
+  Pandemics & Outbreaks:
+    template: {name: Theme, keywords: "188973"}
   Supernatural:
-    template: {name: Theme, keywords: "6152|162846|3133|616"}
+    template: {name: Theme, keywords: "6152|162846|3133|616|12564"}
+  Horror Series:
+    template: {name: Theme, keywords: "295907|209568|215959|33505|283085|12339|3358"}
   Superheroes:
-    template: {name: Theme, keywords: "9715"}
+    template: {name: Theme, keywords: "9715|33637|155030"}
+  Vigilantes & Antiheroes:
+    template: {name: Theme, keywords: "7002|2095"}
   Serial Killers & True Crime:
     template: {name: Theme, keywords: "10714|33722"}
+  Murder Mysteries:
+    template: {name: Theme, keywords: "9826|12570"}
   Detectives & Investigators:
-    template: {name: Theme, keywords: "703|15167|5340"}
+    template: {name: Theme, keywords: "703|15167|5340|1752"}
+  Forensics:
+    template: {name: Theme, keywords: "160313"}
+  Undercover:
+    template: {name: Theme, keywords: "1568|1812"}
+  Psychopaths & Stalkers:
+    template: {name: Theme, keywords: "6259|6844"}
+  Heists & Cons:
+    template: {name: Theme, keywords: "10051|10453"}
   Spies & Conspiracies:
-    template: {name: Theme, keywords: "470|5265|10410"}
-  Crime Families & Gangsters:
-    template: {name: Theme, keywords: "10391|3149|10175|10291"}
-  Lawyers & Courtrooms:
-    template: {name: Theme, keywords: "10909|33519|162813"}
-  Medical Dramas:
-    template: {name: Theme, keywords: "11612|13005"}
+    template: {name: Theme, keywords: "470|5265|10410|383851"}
+  Secret Societies & Cults:
+    template: {name: Theme, keywords: "2908|6158"}
+  Political Thrillers:
+    template: {name: Theme, keywords: "209817"}
   Power & Politics:
     template: {name: Theme, keywords: "6078"}
+  Crime Families & Gangsters:
+    template: {name: Theme, keywords: "10391|3149|10175|10291|33421"}
+  Drug Trade:
+    template: {name: Theme, keywords: "10175|2231"}
+  Lawyers & Courtrooms:
+    template: {name: Theme, keywords: "10909|33519|162813"}
+  Prison Dramas:
+    template: {name: Theme, keywords: "378|355148"}
+  First Responders:
+    template: {name: Theme, keywords: "192094|6149"}
+  Medical Dramas:
+    template: {name: Theme, keywords: "11612|13005"}
+  Newsrooms & Journalism:
+    template: {name: Theme, keywords: "917"}
+  Startups & Big Business:
+    template: {name: Theme, keywords: "185507|5683"}
   Family Sagas:
     template: {name: Theme, keywords: "10235|10041|5683"}
+  Sibling Stories:
+    template: {name: Theme, keywords: "380"}
+  Friend Groups:
+    template: {name: Theme, keywords: "9713|6054"}
+  Love & Romance:
+    template: {name: Theme, keywords: "9840|128"}
+  LGBTQ+ Stories:
+    template: {name: Theme, keywords: "158718"}
   Workplace Comedies:
-    template: {name: Theme, keywords: "6282|1438"}
+    template: {name: Theme, keywords: "6282|1438|210605|11923"}
+  Mockumentaries:
+    template: {name: Theme, keywords: "11800"}
   Sitcoms:
     template: {name: Theme, keywords: "193171"}
+  Sketch & Stand-Up:
+    template: {name: Theme, keywords: "156203|9716"}
   Dark Comedies:
     template: {name: Theme, keywords: "10123|8201"}
   Teen Drama:
-    template: {name: Theme, keywords: "296608|6270|10683"}
+    template: {name: Theme, keywords: "296608|6270|10683|193400|6271"}
+  College Life:
+    template: {name: Theme, keywords: "3616"}
+  Small Town Secrets:
+    template: {name: Theme, keywords: "1415"}
   Fantasy Epics:
-    template: {name: Theme, keywords: "12554|2343|234213|161257"}
+    template: {name: Theme, keywords: "12554|2343|234213|161257|211227"}
+  Dark Fantasy & Gothic:
+    template: {name: Theme, keywords: "177895|33505"}
+  Period Dramas:
+    template: {name: Theme, keywords: "15060|192772"}
+  Royals & Royalty:
+    template: {name: Theme, keywords: "9920"}
+  Vikings & Warriors:
+    template: {name: Theme, keywords: "363879|1462|198754"}
+  Ancient Worlds:
+    template: {name: Theme, keywords: "5049"}
   War & Military:
-    template: {name: Theme, keywords: "162365|13065|1956"}
+    template: {name: Theme, keywords: "162365|13065|1956|2504"}
+  Cold War:
+    template: {name: Theme, keywords: "2106"}
+  Westerns & Outlaws:
+    template: {name: Theme, keywords: "305941|155291|9503"}
+  80s & 90s Nostalgia:
+    template: {name: Theme, keywords: "208289|210608|164246"}
   Survival:
-    template: {name: Theme, keywords: "10349|2041"}
+    template: {name: Theme, keywords: "10349|9743|2041"}
+  Road Trips & Travel:
+    template: {name: Theme, keywords: "7312|9935"}
+  Food & Cooking:
+    template: {name: Theme, keywords: "1918|222083"}
+  Competition Shows:
+    template: {name: Theme, keywords: "271|250845|8290"}
+  Dating Shows:
+    template: {name: Theme, keywords: "215119|13043"}
+  Nature & Wildlife:
+    template: {name: Theme, keywords: "221355"}
+  Sports TV:
+    template: {name: Theme, keywords: "6075|159290|13042|579|6496"}
+  Motorsport:
+    template: {name: Theme, keywords: "242128|10039|233981"}
   Anthologies:
-    template: {name: Theme, keywords: "9706"}
+    template: {name: Theme, keywords: "9706|250593"}
   Animated for Adults:
     template: {name: Theme, keywords: "161919"}
+  Anime Adventures:
+    template: {name: Theme, keywords: "210024|207826|237451|10046"}
