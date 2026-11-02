@@ -31,19 +31,45 @@ libraries:
 
   # Overlays moved to Agregarr; only one tool may composite Plex posters.
   # The custom/*Overlays*.yml files are kept but no longer referenced.
+  # Charts (popular/trending/top 250) live in Agregarr as home rows with placeholders, so
+  # Kometa only builds collections from what is in the library.
   Movies:
     run_order:
       - collections
       - metadata
       - operations
+    template_variables:
+      use_separator: false
     collection_files:
       # - file: config/Pre-rolls.yml #Mounted by Kustomization
       - repo: Movies.yml
-      - repo: Movies - Holidays by Drazzizzi.yml
-      - repo: Movies - Trakt (Unplayed) by Magic815.yml
       - default: basic
-      - default: imdb
+      - default: genre
+      - default: decade
+      - default: studio
+      - default: franchise
+      - default: universe
+      - default: based
+      - default: country
+      - default: year
+      - default: resolution
+      - default: actor
+        template_variables:
+          data:
+            depth: 5
+            limit: 25
+      - default: director
+      - default: streaming
+        template_variables:
+          originals_only: true
+      - default: seasonal
+        template_variables:
+          exclude: [aapi, disabilities, independence, labor, latinx, memorial]
     operations:
+      # Only Kometa-labelled collections, so Agregarr and Maintainerr collections are never touched.
+      delete_collections:
+        managed: true
+        configured: false
       mass_genre_update: imdb
       mass_content_rating_update: omdb
       mass_audience_rating_update: mdb_tomatoesaudience
@@ -55,11 +81,32 @@ libraries:
       - collections
       - metadata
       - operations
+    template_variables:
+      use_separator: false
     collection_files:
       - repo: TV Shows.yml
-      - pmm: basic
-      - pmm: imdb
+      - default: basic
+      - default: genre
+      - default: decade
+      - default: studio
+      - default: network
+      - default: franchise
+      - default: based
+      - default: country
+      - default: year
+      - default: resolution
+      - default: actor
+        template_variables:
+          data:
+            depth: 5
+            limit: 25
+      - default: streaming
+        template_variables:
+          originals_only: true
     operations:
+      delete_collections:
+        managed: true
+        configured: false
       mass_genre_update: tmdb
       mass_content_rating_update: omdb
       mass_audience_rating_update: mdb_tomatoesaudience
@@ -80,7 +127,7 @@ settings:
   show_missing_episode_assets: false
   show_asset_not_needed: true
   sync_mode: sync
-  minimum_items: 1
+  minimum_items: 5
   default_collection_order:
   delete_below_minimum: true
   delete_not_scheduled: false
@@ -127,7 +174,7 @@ radarr:
   token: <<RADARR_API_KEY>>
   add_missing: false
   add_existing: false
-  root_folder_path: /media/movies
+  root_folder_path: /data/media/movies
   monitor: true
   availability: announced
   quality_profile: HD
@@ -142,7 +189,7 @@ sonarr:
   token: <<SONARR_API_KEY>>
   add_missing: false
   add_existing: false
-  root_folder_path: /media/tv
+  root_folder_path: /data/media/tv
   monitor: all
   quality_profile: HD
   language_profile: English
