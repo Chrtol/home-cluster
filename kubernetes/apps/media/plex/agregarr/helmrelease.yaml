@@ -61,6 +61,13 @@ spec:
         existingClaim: "{{ .Release.Name }}"
         globalMounts:
           - path: /app/config
+      # Same path Plex sees, so placeholder paths Agregarr writes match Plex's library folders.
+      # Kept out of Radarr/Sonarr on purpose.
+      placeholders:
+        existingClaim: nas-data
+        globalMounts:
+          - path: /media/placeholders
+            subPath: media/placeholders
       tmpfs:
         type: emptyDir
         advancedMounts:
