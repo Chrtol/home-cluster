@@ -347,6 +347,11 @@ integrations:
     default_url: "http://radicale.default.svc.cluster.local:5232"
     surfaces: { search: true, widgets: true }
 
+# Built-in set (DistroTube's, from GitLab, resized via wsrv.nl), fetched by
+# Holm itself; browsers never reach either. Users pick in Configure → Appearance.
+wallpapers:
+  enabled: true
+
 weather:
   enabled: true
 
