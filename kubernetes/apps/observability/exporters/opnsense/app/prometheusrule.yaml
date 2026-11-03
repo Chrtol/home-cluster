@@ -410,3 +410,86 @@ spec:
             description: >
               Lines from OPNsense fail to parse. The remote logging target must have
               RFC5424 ticked; the listener does not accept the BSD (RFC3164) format.
+
+    # FreeBSD node_exporter (os-node_exporter plugin). Its meminfo has no
+    # MemAvailable and the ZFS ARC counts as wired, so "available" is built
+    # from free + inactive + cache + the ARC above its floor (c_min).
+    - name: opnsense-host
+      interval: 1m
+      rules:
+        - alert: OPNsenseNodeExporterDown
+          expr: |
+            up{job="opnsense-node-exporter"} == 0
+              or absent(up{job="opnsense-node-exporter"})
+          for: 10m
+          labels:
+            severity: warning
+            category: host
+          annotations:
+            summary: "OPNsense node_exporter is not being scraped"
+            description: >
+              Memory, swap and disk alerts for OPNsense are blind. Check that
+              Services > Prometheus Exporter is enabled and listens on 10.0.30.1:9100,
+              and that Server > This Firewall still allows 9100 from the cluster nodes.
+
+        - alert: OPNsenseMemoryLow
+          expr: |
+            (
+              node_memory_free_bytes{job="opnsense-node-exporter"}
+              + node_memory_inactive_bytes{job="opnsense-node-exporter"}
+              + node_memory_cache_bytes{job="opnsense-node-exporter"}
+              + clamp_min(node_zfs_arcstats_size_bytes{job="opnsense-node-exporter"} - node_zfs_arcstats_c_min_bytes{job="opnsense-node-exporter"}, 0)
+            ) / node_memory_size_bytes{job="opnsense-node-exporter"} < 0.10
+          for: 15m
+          labels:
+            severity: warning
+            category: host
+          annotations:
+            summary: "OPNsense has {{ $value | humanizePercentage }} memory available"
+            description: >
+              Less than 10% of RAM is free or reclaimable. Suricata is the usual cause
+              (it reached 5.3 GB of 8 GB before the detection profile was set to Low).
+              Check Lobby > Dashboard or `top -o res` over SSH.
+
+        - alert: OPNsenseSwapping
+          expr: |
+            rate(node_memory_swap_in_bytes_total{job="opnsense-node-exporter"}[5m]) > 1048576
+          for: 10m
+          labels:
+            severity: warning
+            category: host
+          annotations:
+            summary: "OPNsense is reading {{ $value | humanize1024 }}B/s back from swap"
+            description: >
+              Pages are being swapped back in continuously, which makes the web GUI
+              and SSH take seconds to respond. Swap used alone is not alerted on:
+              FreeBSD keeps swapped pages allocated long after the pressure is gone.
+
+        - alert: OPNsenseFilesystemFilling
+          expr: |
+            node_filesystem_avail_bytes{job="opnsense-node-exporter",fstype="zfs"}
+              / node_filesystem_size_bytes{job="opnsense-node-exporter",fstype="zfs"} < 0.15
+          for: 30m
+          labels:
+            severity: warning
+            category: host
+          annotations:
+            summary: "OPNsense {{ $labels.mountpoint }} has {{ $value | humanizePercentage }} space left"
+            description: >
+              {{ $labels.mountpoint }} ({{ $labels.device }}) is filling up. /var/log has
+              its own 5 GB quota, so it fills long before the pool does; Suricata's
+              eve.json and the firewall log live there.
+
+        - alert: OPNsenseFilesystemFull
+          expr: |
+            node_filesystem_avail_bytes{job="opnsense-node-exporter",fstype="zfs"}
+              / node_filesystem_size_bytes{job="opnsense-node-exporter",fstype="zfs"} < 0.05
+          for: 5m
+          labels:
+            severity: critical
+            category: host
+          annotations:
+            summary: "OPNsense {{ $labels.mountpoint }} is almost full ({{ $value | humanizePercentage }} left)"
+            description: >
+              {{ $labels.mountpoint }} ({{ $labels.device }}) is nearly out of space. On
+              /var/log, logging and Suricata stop writing once it is full.
