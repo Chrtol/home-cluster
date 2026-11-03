@@ -38,29 +38,6 @@ jobs:
           "$RUNNER_TEMP/crd-schema-publisher" extract --include-builtins --include-kustomize -o "$RUNNER_TEMP/schemas"
           echo "dir=$(realpath "$RUNNER_TEMP/schemas/current")" >> "$GITHUB_OUTPUT"
 
-      - name: Setup Python
-        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: 3.15.x
-
-      # The extractor types Quantity as string only, but the API server accepts
-      # numbers too (cpu: 1, gpu.intel.com/i915: 1); without this, kubeconform
-      # rejects valid workloads.
-      - name: Allow Numeric Quantities
-        env:
-          SCHEMA_DIR: ${{ steps.extract.outputs.dir }}
-        shell: python
-        run: |
-          import json, os, pathlib
-          quantity = {"oneOf": [{"type": "string"}, {"type": "number"}]}
-          for path in pathlib.Path(os.environ["SCHEMA_DIR"]).rglob("*.json"):
-              schema = json.loads(path.read_text())
-              definitions = schema.get("definitions") if isinstance(schema, dict) else None
-              key = "io.k8s.apimachinery.pkg.api.resource.Quantity"
-              if definitions and key in definitions:
-                  definitions[key] = {"description": definitions[key].get("description", ""), **quantity}
-                  path.write_text(json.dumps(schema, indent=2) + "\n")
-
       - name: Setup Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
