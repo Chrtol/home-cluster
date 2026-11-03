@@ -21,7 +21,7 @@ crowdsec_traefik_access_log: /var/log/traefik/access.log
 crowdsec_papi_url: https://papi.api.crowdsec.net/
 
 # renovate: datasource=github-releases depName=crowdsecurity/cs-firewall-bouncer
-crowdsec_firewall_bouncer_version: v0.0.36
+crowdsec_firewall_bouncer_version: v0.0.38
 crowdsec_firewall_bouncer_bin: /usr/local/bin/crowdsec-firewall-bouncer
 crowdsec_firewall_bouncer_config: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
 # From 1Password (Lab/crowdsec)
