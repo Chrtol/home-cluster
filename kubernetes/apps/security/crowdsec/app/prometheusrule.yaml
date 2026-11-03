@@ -1,0 +1,28 @@
+---
+# yaml-language-server: $schema=https://chrtol-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: crowdsec-rules
+spec:
+  groups:
+    - name: crowdsec-bouncers
+      rules:
+        # The OPNsense firewall bouncer pulls /v1/decisions/stream from this LAPI
+        # every 10s and fills the crowdsec_blocklists alias the WAN block rule uses.
+        # When it stops (LAPI down, key rotated, 10.0.30.33 unreachable) the alias
+        # freezes and new bans never reach the firewall, with nothing failing loudly.
+        - alert: CrowdSecOPNsenseBouncerNotPulling
+          expr: |
+            sum(increase(cs_lapi_bouncer_requests_total{bouncer="opnsense"}[15m])) == 0
+              or absent(cs_lapi_bouncer_requests_total{bouncer="opnsense"})
+          for: 5m
+          labels:
+            severity: warning
+            category: security
+          annotations:
+            summary: "OPNsense CrowdSec bouncer has not pulled decisions for 15 minutes"
+            description: >
+              The firewall's crowdsec_blocklists alias is no longer updated, so new bans
+              are not blocked at the WAN. Check the CrowdSec plugin on OPNsense
+              (Services > CrowdSec) and that LAPI answers on 10.0.30.33:8080.
