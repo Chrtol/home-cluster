@@ -210,9 +210,10 @@ spec:
             }
           }
 
-          // Suricata alert lines carry "[Priority: N]". Counting them per priority gives
-          // Prometheus a series to alert on (loki_process_custom_suricata_alerts_total),
-          // since Loki's ruler is not wired to Alertmanager.
+          // Loki's ruler is not wired to Alertmanager, so lines worth alerting on are
+          // counted here and alerted on in Prometheus (loki_process_custom_*). Counters
+          // carry stream labels only: never extract IPs or usernames into labels, a
+          // brute force from many sources would explode the stream count.
           loki.process "opnsense" {
             stage.match {
               selector = `{program="suricata"}`
@@ -229,6 +230,35 @@ spec:
                 metric.counter {
                   name        = "suricata_alerts_total"
                   description = "Suricata alerts received from OPNsense, by priority"
+                  match_all   = true
+                  action      = "inc"
+                }
+              }
+            }
+
+            // One line per failed attempt: the web GUI writes three audit lines per
+            // failure (only this one is counted), and sshd's "Connection closed by
+            // invalid user" follow-up does not match the capital-I "Invalid user".
+            stage.match {
+              selector = `{program=~"audit|sshd.*"} |~ "Web GUI authentication error|Invalid user .* from|Connection closed by authenticating user .*\\[preauth\\]"`
+
+              stage.metrics {
+                metric.counter {
+                  name        = "opnsense_auth_failures_total"
+                  description = "Failed OPNsense web GUI and SSH logins, by program"
+                  match_all   = true
+                  action      = "inc"
+                }
+              }
+            }
+
+            stage.match {
+              selector = `{program="dhcpd"} |= "no free leases"`
+
+              stage.metrics {
+                metric.counter {
+                  name        = "opnsense_dhcp_no_free_leases_total"
+                  description = "DHCP requests OPNsense refused because the pool was full"
                   match_all   = true
                   action      = "inc"
                 }

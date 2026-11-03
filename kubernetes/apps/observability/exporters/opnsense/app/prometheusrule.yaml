@@ -322,11 +322,11 @@ spec:
               {{ $value }} connections in SYN_RCVD. May indicate a SYN flood or
               severe congestion.
 
-    # Suricata runs in IDS mode on OPNsense and its alerts arrive through remote
-    # syslog -> Alloy (alloy-syslog Service, 10.0.30.82), which counts them in
-    # loki_process_custom_suricata_alerts_total. That series only exists after the
-    # first alert, so the pipeline's own health is watched separately.
-    - name: opnsense-ids
+    # Only what the exporter cannot see. OPNsense's remote syslog reaches Alloy
+    # (alloy-syslog Service, 10.0.30.82), which counts the lines worth alerting on
+    # as loki_process_custom_* series. Those only exist after the first matching
+    # line, so the pipeline's own health is watched separately.
+    - name: opnsense-logs
       interval: 1m
       rules:
         - alert: OPNsenseSuricataHighPriorityAlert
@@ -340,6 +340,33 @@ spec:
             description: >
               Suricata on OPNsense logged priority-1 alerts in the last 10 minutes.
               Details in Loki: {job="opnsense", program="suricata", priority="1"}.
+
+        # SSH listens on LAN and Tailscale only and is key-only, so repeated
+        # failures mean a device on those networks is guessing, or a lost phone.
+        - alert: OPNsenseLoginFailures
+          expr: |
+            sum by (program) (increase(loki_process_custom_opnsense_auth_failures_total[15m])) >= 5
+          labels:
+            severity: warning
+            category: security
+          annotations:
+            summary: "{{ $value | humanize }} failed OPNsense logins via {{ $labels.program }} in 15 minutes"
+            description: >
+              Repeated failed logins to OPNsense (audit = web GUI, sshd-session = SSH).
+              Source IPs and usernames in Loki:
+              {job="opnsense", program=~"audit|sshd.*"} |~ "authentication error|Invalid user|authenticating user"
+
+        - alert: OPNsenseDHCPPoolExhausted
+          expr: |
+            sum(increase(loki_process_custom_opnsense_dhcp_no_free_leases_total[15m])) > 0
+          labels:
+            severity: warning
+            category: services
+          annotations:
+            summary: "OPNsense DHCP refused leases: pool full"
+            description: >
+              dhcpd logged "no free leases", so new devices get no address. The line
+              names the interface and subnet: {job="opnsense", program="dhcpd"} |= "no free leases"
 
         - alert: OPNsenseSyslogSilent
           expr: |
