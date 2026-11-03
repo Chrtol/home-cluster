@@ -158,17 +158,20 @@ spec:
         # bazarr_provider_status carries the provider's state in a `status` label.
         # A provider stuck in a non-working state stops contributing subtitles without
         # surfacing anywhere -- subs just quietly never arrive.
+        # Download quotas are excluded: subdl and opensubtitlescom hit theirs most days
+        # and Bazarr waits for the reset on its own. Other errors (HTTPError, SSLError)
+        # flap for up to ~2.5h, so only a provider broken for 12h is worth a page.
         - alert: BazarrProviderDown
           annotations:
             description: >-
               Bazarr subtitle provider '{{ $labels.provider }}' has been reporting
-              status '{{ $labels.status }}' for 2h. Bazarr keeps running and simply
-              stops getting subtitles from it -- usually a throttled/banned account or
-              a provider-side outage.
+              status '{{ $labels.status }}' for 12h. Bazarr keeps running and simply
+              stops getting subtitles from it -- usually a failed login, a banned
+              account or a provider that has shut down.
             summary: Bazarr provider '{{ $labels.provider }}' is not working.
           expr: |
-            bazarr_provider_status{status!~"(?i)(good|working|ok|enabled)"} == 1
-          for: 2h
+            bazarr_provider_status{status!~"(?i)(good|working|ok|enabled|DownloadLimitExceeded|TooManyRequests)"} == 1
+          for: 12h
           labels:
             severity: warning
 
