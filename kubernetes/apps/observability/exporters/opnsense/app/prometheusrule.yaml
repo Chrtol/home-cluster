@@ -321,3 +321,49 @@ spec:
             description: >
               {{ $value }} connections in SYN_RCVD. May indicate a SYN flood or
               severe congestion.
+
+    # Suricata runs in IDS mode on OPNsense and its alerts arrive through remote
+    # syslog -> Alloy (alloy-syslog Service, 10.0.30.82), which counts them in
+    # loki_process_custom_suricata_alerts_total. That series only exists after the
+    # first alert, so the pipeline's own health is watched separately.
+    - name: opnsense-ids
+      interval: 1m
+      rules:
+        - alert: OPNsenseSuricataHighPriorityAlert
+          expr: |
+            sum by (priority) (increase(loki_process_custom_suricata_alerts_total{priority="1"}[10m])) > 0
+          labels:
+            severity: warning
+            category: ids
+          annotations:
+            summary: "Suricata raised {{ $value | humanize }} priority-1 alert(s)"
+            description: >
+              Suricata on OPNsense logged priority-1 alerts in the last 10 minutes.
+              Details in Loki: {job="opnsense", program="suricata", priority="1"}.
+
+        - alert: OPNsenseSyslogSilent
+          expr: |
+            sum(increase(loki_source_syslog_entries_total{component_id="loki.source.syslog.opnsense"}[30m])) == 0
+              or absent(loki_source_syslog_entries_total{component_id="loki.source.syslog.opnsense"})
+          for: 15m
+          labels:
+            severity: warning
+            category: ids
+          annotations:
+            summary: "No syslog from OPNsense for 30 minutes"
+            description: >
+              Alloy's OPNsense syslog listener received nothing, so Suricata alerts and
+              firewall logs are not reaching Loki. Check System > Settings > Logging >
+              Remote on OPNsense and the alloy-syslog Service (10.0.30.82:514).
+
+        - alert: OPNsenseSyslogParseErrors
+          expr: |
+            sum(increase(loki_source_syslog_parsing_errors_total{component_id="loki.source.syslog.opnsense"}[15m])) > 0
+          labels:
+            severity: warning
+            category: ids
+          annotations:
+            summary: "Alloy cannot parse OPNsense syslog"
+            description: >
+              Lines from OPNsense fail to parse. The remote logging target must have
+              RFC5424 ticked; the listener does not accept the BSD (RFC3164) format.

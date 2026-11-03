@@ -1,0 +1,21 @@
+---
+# OPNsense sends its remote syslog here (System > Settings > Logging > Remote:
+# TCP, RFC5424, target 10.0.30.82 port 514). A fixed IP rather than a hostname
+# because processes on OPNsense resolve through Unbound, which never sees the
+# AdGuard rewrites external-dns manages.
+apiVersion: v1
+kind: Service
+metadata:
+  name: alloy-syslog
+  annotations:
+    lbipam.cilium.io/ips: "10.0.30.82"
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/instance: alloy
+  ports:
+    - name: syslog-tcp
+      protocol: TCP
+      port: 514
+      targetPort: 1514

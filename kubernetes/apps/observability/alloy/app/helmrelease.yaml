@@ -183,6 +183,60 @@ spec:
             forward_to = [loki.write.loki.receiver]
           }
 
+          // OPNsense remote syslog (Firewall logs + Suricata), sent over TCP in RFC5424
+          // to the alloy-syslog LoadBalancer. Every DaemonSet pod listens; the Service
+          // picks one per connection.
+          loki.source.syslog "opnsense" {
+            listener {
+              address  = "0.0.0.0:1514"
+              protocol = "tcp"
+              labels   = { job = "opnsense" }
+            }
+            relabel_rules = loki.relabel.opnsense.rules
+            forward_to    = [loki.process.opnsense.receiver]
+          }
+
+          loki.relabel "opnsense" {
+            forward_to = []
+
+            rule {
+              source_labels = ["__syslog_message_app_name"]
+              target_label  = "program"
+            }
+
+            rule {
+              source_labels = ["__syslog_message_severity"]
+              target_label  = "level"
+            }
+          }
+
+          // Suricata alert lines carry "[Priority: N]". Counting them per priority gives
+          // Prometheus a series to alert on (loki_process_custom_suricata_alerts_total),
+          // since Loki's ruler is not wired to Alertmanager.
+          loki.process "opnsense" {
+            stage.match {
+              selector = `{program="suricata"}`
+
+              stage.regex {
+                expression = `\[Priority: (?P<priority>\d)\]`
+              }
+
+              stage.labels {
+                values = { priority = "" }
+              }
+
+              stage.metrics {
+                metric.counter {
+                  name        = "suricata_alerts_total"
+                  description = "Suricata alerts received from OPNsense, by priority"
+                  match_all   = true
+                  action      = "inc"
+                }
+              }
+            }
+            forward_to = [loki.write.loki.receiver]
+          }
+
           loki.write "loki" {
             endpoint {
               url = "http://loki-headless.observability.svc.cluster.local:3100/loki/api/v1/push"
