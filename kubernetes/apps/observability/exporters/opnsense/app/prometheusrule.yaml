@@ -325,13 +325,21 @@ spec:
     # Only what the exporter cannot see. OPNsense's remote syslog reaches Alloy
     # (alloy-syslog Service, 10.0.30.82), which counts the lines worth alerting on
     # as loki_process_custom_* series. Those only exist after the first matching
-    # line, so the pipeline's own health is watched separately.
+    # line, so the pipeline's own health is watched separately. A series is born
+    # at its first count (and reborn whenever the syslog connection moves to
+    # another Alloy pod), which increase() cannot see: "or (x unless x offset w)"
+    # counts a new series' whole value, else the first event never alerts.
+    # It must come first: "or" keeps the left side when both sides have a value.
     - name: opnsense-logs
       interval: 1m
       rules:
         - alert: OPNsenseSuricataHighPriorityAlert
           expr: |
-            sum by (priority) (increase(loki_process_custom_suricata_alerts_total{priority="1"}[10m])) > 0
+            sum by (priority) (
+              (loki_process_custom_suricata_alerts_total{priority="1"}
+                unless loki_process_custom_suricata_alerts_total{priority="1"} offset 10m)
+                or increase(loki_process_custom_suricata_alerts_total{priority="1"}[10m])
+            ) > 0
           labels:
             severity: warning
             category: ids
@@ -345,7 +353,11 @@ spec:
         # failures mean a device on those networks is guessing, or a lost phone.
         - alert: OPNsenseLoginFailures
           expr: |
-            sum by (program) (increase(loki_process_custom_opnsense_auth_failures_total[15m])) >= 5
+            sum by (program) (
+              (loki_process_custom_opnsense_auth_failures_total
+                unless loki_process_custom_opnsense_auth_failures_total offset 15m)
+                or increase(loki_process_custom_opnsense_auth_failures_total[15m])
+            ) >= 5
           labels:
             severity: warning
             category: security
@@ -358,7 +370,11 @@ spec:
 
         - alert: OPNsenseDHCPPoolExhausted
           expr: |
-            sum(increase(loki_process_custom_opnsense_dhcp_no_free_leases_total[15m])) > 0
+            sum(
+              (loki_process_custom_opnsense_dhcp_no_free_leases_total
+                unless loki_process_custom_opnsense_dhcp_no_free_leases_total offset 15m)
+                or increase(loki_process_custom_opnsense_dhcp_no_free_leases_total[15m])
+            ) > 0
           labels:
             severity: warning
             category: services
