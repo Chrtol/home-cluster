@@ -1,0 +1,26 @@
+# Radicale holds one-way copies for Holm (see ../../calendar-sync/sync.py).
+# Cluster-internal only: no route, so no web UI either.
+
+[server]
+hosts = 0.0.0.0:5232
+
+[auth]
+type = htpasswd
+htpasswd_filename = /auth/users
+# The file is rendered from 1Password into a Secret, which is already where
+# the plaintext lives; hashing it in the template would re-salt it on every
+# refresh and restart Radicale each time.
+htpasswd_encryption = plain
+
+[rights]
+# Each user reads and writes only its own calendars.
+type = owner_only
+
+[storage]
+filesystem_folder = /data/collections
+
+[web]
+type = none
+
+[logging]
+level = warning

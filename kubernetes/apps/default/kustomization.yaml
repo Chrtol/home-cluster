@@ -24,6 +24,7 @@ resources:
   - ./reptile-tracker/ks.yaml
   - ./bentopdf/ks.yaml
   - ./holm/ks.yaml
+  - ./radicale/ks.yaml
   - ./outline/ks.yaml
   - ./kan/ks.yaml
   - ./moocup/ks.yaml

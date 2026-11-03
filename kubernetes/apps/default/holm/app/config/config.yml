@@ -339,10 +339,12 @@ integrations:
   karakeep:
     default_url: "https://karakeep.${SECRET_DOMAIN}"
     surfaces: { search: true, widgets: false }
-  # Holm follows iCloud's redirect to the account's own pNN-caldav.icloud.com.
-  # Widgets are the on-page reminders and the next-event line under the clock.
+  # Pinned to the in-cluster Radicale, which holds copies of iCloud and
+  # calendar links (radicale/calendar-sync). The pin covers every account a
+  # user adds, so one Radicale user per account is how sources get their own
+  # color. Widgets are the on-page reminders and the next-event line.
   caldav:
-    default_url: "https://caldav.icloud.com"
+    default_url: "http://radicale.default.svc.cluster.local:5232"
     surfaces: { search: true, widgets: true }
 
 weather:
