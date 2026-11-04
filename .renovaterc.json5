@@ -92,6 +92,16 @@
       allowedVersions: '<0.26.0',
     },
     {
+      description: 'Cap private qBittorrent to <5.3.0 (tracker client whitelist)',
+      matchFileNames: [
+        'kubernetes/apps/media/qbittorrent/private/**',
+      ],
+      matchPackageNames: [
+        'ghcr.io/home-operations/qbittorrent',
+      ],
+      allowedVersions: '<5.3.0',
+    },
+    {
       // v0.22.0 (chart 1.22.0) CRD source returns ZERO endpoints as soon as
       // --annotation-filter excludes any single DNSEndpoint (the informer transform
       // returns nil for it). The Cloudflare instance filters out the internal
