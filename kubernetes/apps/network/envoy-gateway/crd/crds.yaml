@@ -10,7 +10,7 @@ spec:
   url: https://github.com/envoyproxy/gateway
   ref:
     # renovate: datasource=github-releases depName=envoyproxy/gateway
-    tag: v1.9.3
+    tag: v1.10.0
   # Envoy's own CRDs only. Gateway API comes from the gateway-api Kustomization;
   # the copy envoy bundles beside these is older.
   ignore: |
