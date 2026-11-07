@@ -57,6 +57,23 @@
     mode: "0644"
   notify: restart crowdsec
 
+# Plex clients request thumbnails that do not exist, and each one is a 404 on a
+# distinct URL -- exactly what http-probing counts, so a viewer gets banned
+# mid-episode. Only those 404s are dropped; every other Plex request still counts.
+- name: Whitelist Plex thumbnail 404s
+  ansible.builtin.copy:
+    dest: /etc/crowdsec/parsers/s02-enrich/plex-thumbnail-404-whitelist.yaml
+    mode: "0644"
+    content: |
+      # Managed by Ansible (vps/ansible/roles/crowdsec)
+      name: local/plex-thumbnail-404-whitelist
+      description: "Plex thumbnail lookups that 404 are not probing"
+      whitelist:
+        reason: "Plex client thumbnail 404"
+        expression:
+          - "evt.Meta.http_status == '404' && evt.Meta.http_path startsWith '/photo/:/transcode'"
+  notify: restart crowdsec
+
 - name: Remove superseded acquisition files
   ansible.builtin.file:
     path: "/etc/crowdsec/acquis.d/{{ item }}"
