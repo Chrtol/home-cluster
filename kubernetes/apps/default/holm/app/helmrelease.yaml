@@ -27,7 +27,7 @@ spec:
           app:
             image:
               repository: ghcr.io/man15h/holm
-              tag: 0.11.0@sha256:8cfe413920f02df68ce42fc58b595c8302949b181dea5f133971b8cb3ff6d1d5
+              tag: 0.12.0@sha256:1bce0b3175fec60eb72d682808eb1ddcab15559b2dec7591e97268ac92e6cef5
             env:
               TZ: ${SECRET_TIMEZONE}
               CONFIG_PATH: /config/config.yml
