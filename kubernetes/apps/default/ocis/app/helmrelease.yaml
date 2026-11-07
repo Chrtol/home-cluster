@@ -21,7 +21,7 @@ spec:
           init-config:
             image: &image
               repository: docker.io/owncloud/ocis
-              tag: 8.2.2@sha256:08639361baa55e21037442daed4d8aa1a4fc4f2f12d06db92455a14782c29f61
+              tag: 8.2.3@sha256:4567aa656eeef86091e826eea8297d886ecf72c54beb00944dfa97c1455c2e9b
             command:
               - /bin/sh
               - -c
