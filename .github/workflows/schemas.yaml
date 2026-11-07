@@ -14,7 +14,7 @@ on:
 
 env:
   # renovate: datasource=github-releases depName=sholdee/crd-schema-publisher
-  CRD_SCHEMA_PUBLISHER_VERSION: v2026.1102.63220
+  CRD_SCHEMA_PUBLISHER_VERSION: v2026.1104.230219
 
 permissions:
   contents: read
