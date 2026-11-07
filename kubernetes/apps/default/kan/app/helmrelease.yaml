@@ -43,7 +43,7 @@ spec:
             image:
               repository: ghcr.io/kanbn/kan-migrate
               # renovate: datasource=docker depName=ghcr.io/kanbn/kan-migrate
-              tag: 0.6.0@sha256:3296fd28e037a93dda478981494a72c6905ecd4f0d0739e79139172844acbc4b
+              tag: 0.7.0@sha256:dc92e02b8714df0ab844ebed74e1d053318fce15d847bc271659d0852b044e83
               pullPolicy: IfNotPresent
             envFrom:
               - secretRef:
@@ -53,7 +53,7 @@ spec:
           app:
             image:
               repository: ghcr.io/kanbn/kan
-              tag: 0.6.0@sha256:0087a72a123d8462c66ddce3a303049d4ec92f03cfba297d41466605ef8cb5b5
+              tag: 0.7.0@sha256:99d60e0b539ae70c76d1a02d04e96fd17cfe1d1a6c6bab6e9f9107e644dd8038
               pullPolicy: IfNotPresent
             env:
                 NEXT_PUBLIC_BASE_URL: https://kan.${SECRET_DOMAIN}
