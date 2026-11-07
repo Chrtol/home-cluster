@@ -54,7 +54,9 @@ spec:
                     port: &port 32400
                   initialDelaySeconds: 0
                   periodSeconds: 10
-                  timeoutSeconds: 1
+                  # The library DB on Ceph can stall for over 2s when its WAL grows;
+                  # a 1s timeout let those stalls count as failures mid-stream
+                  timeoutSeconds: 5
                   failureThreshold: 3
               readiness: *probes
               startup:
