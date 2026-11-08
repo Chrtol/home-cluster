@@ -9,7 +9,7 @@ This is a Kubernetes home cluster deployment based on the onedr0p/cluster-templa
 ## Architecture
 
 **Core Infrastructure:**
-- **Operating System**: Talos Linux on bare metal nodes
+- **Operating System**: Talos Linux in QEMU VMs on Proxmox hosts (not bare metal yet)
 - **Kubernetes**: Deployed via Talos with 3 controller nodes (lenovo1, lenovo2, dell1)
 - **GitOps**: Flux CD for cluster state management
 - **Networking**: Cilium CNI with BGP load balancing
