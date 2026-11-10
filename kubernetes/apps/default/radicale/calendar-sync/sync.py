@@ -17,6 +17,7 @@ import hashlib
 import os
 import re
 import sys
+import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from urllib.error import HTTPError
@@ -28,6 +29,8 @@ NS = {"d": "DAV:", "c": "urn:ietf:params:xml:ns:caldav"}
 MARK = "X-CALSYNC-HASH"
 PRODID = "-//home-cluster//radicale-calendar-sync//EN"
 TIMEOUT = 60
+RETRY_STATUS = {429, 500, 502, 503, 504}
+RETRY_WAITS = (10, 30)
 # Holm searches 30 days back to a year ahead; copy a little more than that.
 WINDOW_PAST, WINDOW_AHEAD = timedelta(days=60), timedelta(days=400)
 
@@ -56,7 +59,12 @@ class Dav:
         self.allowed = allowed
 
     def request(self, method, url, body=None, depth=None, ctype="application/xml; charset=utf-8"):
-        for _ in range(5):
+        # iCloud's servers sit behind one name and one of them sometimes
+        # answers 503 for a few minutes; a fresh connection usually lands
+        # on a healthy one.
+        retries = list(RETRY_WAITS)
+        redirects = 0
+        while redirects < 5:
             if not self.allowed(url):
                 raise RuntimeError(f"refusing to send credentials to {url}")
             headers = {"Authorization": self.auth}
@@ -71,6 +79,11 @@ class Dav:
             except HTTPError as e:
                 if 300 <= e.code < 400 and e.headers.get("Location"):
                     url = urljoin(url, e.headers["Location"])
+                    redirects += 1
+                    continue
+                if e.code in RETRY_STATUS and retries:
+                    log(f"{method} {url} answered {e.code}, retrying in {retries[0]}s")
+                    time.sleep(retries.pop(0))
                     continue
                 return e.code, url, e.read()
         raise RuntimeError("too many redirects")

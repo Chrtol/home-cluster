@@ -32,3 +32,4 @@ tmp/*
 .env
 .kube/
 .playwright-mcp
+*.pyc
