@@ -7,7 +7,8 @@ metadata:
 spec:
   extAuth:
     failOpen: false
-    timeout: 2s
+    # Authentik answers in ms when healthy; 10s rides out a slow postgres instead of 403ing
+    timeout: 10s
     headersToExtAuth:
       - cookie
       - authorization

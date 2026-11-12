@@ -18,6 +18,7 @@ spec:
   path: ./kubernetes/apps/media/bazarr/app
   components:
     - ../../../../components/cnpg
+    - ../../../../components/cnpg-async-commit
     - ../../../../components/kopiur
     - ../../../../components/ext-auth
     - ../../../../components/proxy-application

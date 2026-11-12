@@ -18,6 +18,7 @@ spec:
   path: ./kubernetes/apps/media/sonarr/app
   components:
     - ../../../../components/cnpg
+    - ../../../../components/cnpg-async-commit
     - ../../../../components/kopiur
     - ../../../../components/ext-auth
     # Interactive search fans out to every Prowlarr indexer; a measured episode

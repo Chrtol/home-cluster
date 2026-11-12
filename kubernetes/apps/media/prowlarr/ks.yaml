@@ -18,6 +18,7 @@ spec:
   path: ./kubernetes/apps/media/prowlarr/app
   components:
     - ../../../../components/cnpg
+    - ../../../../components/cnpg-async-commit
     - ../../../../components/kopiur
     - ../../../../components/ext-auth
     # Its own UI search queries every indexer at once — the slowest one sets the

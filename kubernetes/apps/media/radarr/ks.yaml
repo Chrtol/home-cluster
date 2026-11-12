@@ -17,6 +17,7 @@ spec:
   path: ./kubernetes/apps/media/radarr/app
   components:
     - ../../../../components/cnpg
+    - ../../../../components/cnpg-async-commit
     - ../../../../components/kopiur
     - ../../../../components/ext-auth
     # Same interactive-search fan-out as sonarr — see its ks.yaml.

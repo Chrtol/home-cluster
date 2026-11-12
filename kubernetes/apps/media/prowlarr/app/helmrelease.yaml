@@ -22,6 +22,8 @@ spec:
   valuesFrom:
     - kind: ConfigMap
       name: ${APP}-cnpg-values
+    - kind: ConfigMap
+      name: ${APP}-cnpg-async-commit-values
   values:
     controllers:
       prowlarr:
