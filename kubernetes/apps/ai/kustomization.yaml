@@ -8,8 +8,9 @@ components:
   - ../../components/ghcr-pull
 resources:
   - ./nas/ks.yaml
-  - ./temporal/ks.yaml
-  - ./ai-orchestrator/ks.yaml
+  # Temporarily disabled: Temporal's constant commits were stalling WAL flushes on the shared postgres17 cluster (2026-11-12)
+  # - ./temporal/ks.yaml
+  # - ./ai-orchestrator/ks.yaml
   - ./llama-embed/ks.yaml
   - ./litellm/ks.yaml
   - ./memini/ks.yaml
