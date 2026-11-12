@@ -1,0 +1,45 @@
+---
+# app-template values fragment, layered on top of the cnpg component (needs its
+# ${APP}-initdb-secret). The consuming HelmRelease must reference it after the cnpg one:
+#   spec:
+#     valuesFrom:
+#       - kind: ConfigMap
+#         name: ${APP}-cnpg-values
+#       - kind: ConfigMap
+#         name: ${APP}-cnpg-async-commit-values
+#
+# Sets synchronous_commit=off on every database in INIT_POSTGRES_DBNAME: commits stop
+# waiting for the WAL flush, so a crash can lose the last few hundred ms of writes
+# (never corrupts). Only for apps whose data is re-derivable (e.g. the *arrs).
+#
+# Required variables : APP
+# Optional variables : DB_CONTROLLER (same meaning as in the cnpg component)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${APP}-cnpg-async-commit-values
+data:
+  values.yaml: |
+    controllers:
+      ${DB_CONTROLLER:=${APP}}:
+        initContainers:
+          async-commit:
+            dependsOn: init-db
+            image:
+              repository: ghcr.io/home-operations/postgres-init
+              # renovate: datasource=docker depName=ghcr.io/home-operations/postgres-init
+              tag: 18.6.0@sha256:b6d3af974df781c673d37e49bdddfa14a6f5be28b18d2cb7713f0449bea4057b
+              pullPolicy: IfNotPresent
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                set -eu
+                export PGPASSWORD="$${INIT_POSTGRES_SUPER_PASS}"
+                for db in $${INIT_POSTGRES_DBNAME}; do
+                  psql -h "$${INIT_POSTGRES_HOST}" -p "$${INIT_POSTGRES_PORT}" \
+                    -U "$${INIT_POSTGRES_SUPER_USER:-postgres}" -d postgres -v ON_ERROR_STOP=1 \
+                    -c "ALTER DATABASE \"$${db}\" SET synchronous_commit TO off"
+                done
+            envFrom:
+              - secretRef:
+                  name: ${APP}-initdb-secret
