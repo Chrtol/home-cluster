@@ -1,6 +1,18 @@
 ---
 # Deploy Traefik with OpenTelemetry support
 
+# OPNsense silently drops packets of connections whose state it lost (e.g. after a reboot).
+# With the default 15 retries, Traefik's pooled upstream connections hang ~15 min before
+# giving up; with 8 they give up after ~100s. Traefik runs with network_mode: host, so
+# the host value applies to it. Lives here because the deploy workflow never runs `base`.
+- name: Give up on silently dead TCP connections sooner
+  copy:
+    content: |
+      net.ipv4.tcp_retries2 = 8
+    dest: /etc/sysctl.d/60-tcp-retries.conf
+    mode: "0644"
+  notify: apply tcp sysctl
+
 # The UFW rule lives here rather than in the `firewall` role so it shares the
 # traefik_minecraft_ip toggle with the entrypoint. Split them and Traefik can bind
 # the port while UFW silently drops every packet -- indistinguishable from a
