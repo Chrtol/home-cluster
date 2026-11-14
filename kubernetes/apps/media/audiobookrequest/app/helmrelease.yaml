@@ -27,7 +27,7 @@ spec:
           app:
             image:
               repository: markbeep/audiobookrequest
-              tag: 1
+              tag: 2
             env:
               TZ: ${SECRET_TIMEZONE}
               LOG_LEVEL: "info"
