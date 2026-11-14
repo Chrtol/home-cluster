@@ -28,7 +28,7 @@ spec:
           app:
             image:
               repository: docker.io/tomsquest/docker-radicale
-              tag: 3.9.0.0@sha256:2f215d0e6a78ff68c280975af6ce580b05976f70c62b51640397e3eb5a7aa0e9
+              tag: 3.9.1.1@sha256:3869c5c013da5d76132cdeaba1fa0804324119d0ef6f3eaaf18f310f64c6bdc9
             # Straight to Radicale: the image's entrypoint chowns as root.
             command: ["/venv/bin/radicale", "--config", "/config/config"]
             env:
