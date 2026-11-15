@@ -62,7 +62,7 @@ jobs:
           base: ""
 
       - name: Run flate test
-        run: flate test all --path ./kubernetes/flux/cluster
+        run: .github/scripts/flate-supply.sh | flate test all --path ./kubernetes/flux/cluster --supply -
 
   validate:
     name: Flate Validate
@@ -93,20 +93,10 @@ jobs:
       # longer serves.
       - name: Render manifests
         run: |
-          flate build all --path ./kubernetes/flux/cluster \
+          .github/scripts/flate-supply.sh | flate build all --path ./kubernetes/flux/cluster \
+            --supply - \
             --api-versions gateway.networking.k8s.io/v1,gateway.networking.k8s.io/v1/HTTPRoute,gateway.networking.k8s.io/v1/GRPCRoute \
             > rendered.yaml
-
-      # flate wipes SOPS values to ..PLACEHOLDER_<key>.., which fails hostname
-      # and IP patterns. Reserved names (.invalid, TEST-NET) stand in for them.
-      - name: Fill cluster-secrets placeholders
-        run: |
-          sed -i \
-            -e 's/\.\.PLACEHOLDER_SECRET_DOMAIN\.\./example.invalid/g' \
-            -e 's/\.\.PLACEHOLDER_SECRET_DOMAIN_NAME\.\./example/g' \
-            -e 's/\.\.PLACEHOLDER_SECRET_TIMEZONE\.\./Etc\/UTC/g' \
-            -e 's/\.\.PLACEHOLDER_[A-Z_]*_IP\.\./192.0.2.1/g' \
-            rendered.yaml
 
       # Core types are published under core/, but kubeconform passes "v1" as
       # their group.
@@ -155,8 +145,9 @@ jobs:
       # any value replaces flate's default strip set.
       - name: Run flate diff
         run: |
-          flate diff ${{ matrix.resources }} \
+          .github/scripts/flate-supply.sh | flate diff ${{ matrix.resources }} \
             --path ./kubernetes/flux/cluster \
+            --supply - \
             --strip-attr helm.sh/chart \
             --strip-attr checksum/config \
             --strip-attr app.kubernetes.io/version \
