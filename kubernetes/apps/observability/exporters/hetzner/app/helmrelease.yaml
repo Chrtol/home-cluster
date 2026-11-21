@@ -85,7 +85,7 @@ spec:
           node-exporter:
             image:
               repository: quay.io/prometheus/node-exporter
-              tag: v1.12.1
+              tag: v1.13.1
             args:
               - --collector.disable-defaults
               - --collector.textfile
