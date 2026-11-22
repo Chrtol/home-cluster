@@ -74,6 +74,23 @@
           - "evt.Meta.http_status == '404' && evt.Meta.http_path startsWith '/photo/:/transcode'"
   notify: restart crowdsec
 
+# A transcoded stream fetches every segment from its own URL, which is what
+# http-crawl-non_statics counts, so one episode bans the viewer. Only served
+# segments are dropped: without a valid token Plex answers 401, and that still counts.
+- name: Whitelist served Plex transcode segments
+  ansible.builtin.copy:
+    dest: /etc/crowdsec/parsers/s02-enrich/plex-transcode-whitelist.yaml
+    mode: "0644"
+    content: |
+      # Managed by Ansible (vps/ansible/roles/crowdsec)
+      name: local/plex-transcode-whitelist
+      description: "Served Plex transcode segments are not crawling"
+      whitelist:
+        reason: "Plex transcode segment"
+        expression:
+          - "evt.Meta.http_status in ['200', '206'] && evt.Meta.http_path startsWith '/video/:/transcode/universal/'"
+  notify: restart crowdsec
+
 - name: Remove superseded acquisition files
   ansible.builtin.file:
     path: "/etc/crowdsec/acquis.d/{{ item }}"
