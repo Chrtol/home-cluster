@@ -88,7 +88,7 @@
       whitelist:
         reason: "Plex transcode segment"
         expression:
-          - "evt.Meta.http_status in ['200', '206'] && evt.Meta.http_path startsWith '/video/:/transcode/universal/'"
+          - "evt.Meta.http_status in ['200', '206'] && evt.Meta.http_path startsWith '/video/:/transcode/universal/' && !(evt.Meta.http_path contains '..') && !(lower(evt.Meta.http_path) contains '%2e')"
   notify: restart crowdsec
 
 - name: Remove superseded acquisition files
