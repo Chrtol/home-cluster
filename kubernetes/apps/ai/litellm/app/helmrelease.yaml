@@ -30,7 +30,7 @@ spec:
               # the non-database image: the -database variant runs prisma
               # migrations at startup and needs Postgres, which this
               # DB-less deployment deliberately does not have
-              tag: v1.106.6@sha256:37e2dafb088a7723beb998590682957386dfc83ffea1848486f8e0e5cfac0b06
+              tag: 1.111.0@sha256:ce00096d012719d58c52cecfa373f7c6256dd1b0ff08f6fa607e10e9628f1f46
             # image CMD is just "--port 4000"; the entrypoint execs `litellm "$@"`
             args:
               - --port
